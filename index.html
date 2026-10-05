@@ -429,7 +429,8 @@ const streakMult= n => 1 + 0.1*Math.min(n,10);
 function fmt1(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
 
 /* ================= STATE (сохраняется) ================= */
-function newState(){return {v:8,lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
+const randSeed=()=>1+Math.floor(Math.random()*2147483646);
+function newState(){return {v:8,seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
   fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
   day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0},p:{x:CX,y:CY+40,hp:10}};}
 function merge(def,src){
@@ -456,7 +457,7 @@ function inBounds(x,y,m){return x>m&&y>m&&x<W_SIZE-m&&y<W_SIZE-m}
 const zoneById = id => CFG.zones.find(z=>z.id===id);
 
 function buildWorld(){
-  const rng=mulberry(4242);
+  const rng=mulberry(S.seed||4242);
   trees=[];rocks=[];patches=[];mounds=[];pois=[];lairs=[];
   const spots=[];
   const free=(x,y,r)=>spots.every(s=>dist(s.x,s.y,x,y)>s.r+r+20);
@@ -2105,9 +2106,9 @@ function doAct(a){
   if(k==='copy'){const v=encodeSave();if(navigator.clipboard)navigator.clipboard.writeText(v).then(()=>toast('Код скопирован','good'),()=>{const t=$('saveCode');t.select();toast('Выделите и скопируйте код вручную')});else{$('saveCode').select()}}
   if(k==='load'){
     try{const raw=$('loadCode').value.trim();const obj=JSON.parse(decodeURIComponent(escape(atob(raw))));
-      S=migrate(obj);applyState();toast('Сохранение загружено','good')}catch(e){toast('Код не подошёл. Проверьте, что он скопирован целиком.','bad')}
+      S=migrate(obj);buildWorld();applyState();toast('Сохранение загружено','good')}catch(e){toast('Код не подошёл. Проверьте, что он скопирован целиком.','bad')}
   }
-  if(k==='reset'){if(!resetArm){resetArm=true;setTimeout(()=>{resetArm=false;menuSig=''},4000)}else{resetArm=false;S=newState();applyState();toast('Новая игра','good')}}
+  if(k==='reset'){if(!resetArm){resetArm=true;setTimeout(()=>{resetArm=false;menuSig=''},4000)}else{resetArm=false;S=newState();buildWorld();applyState();fillQuests();toast('Новая игра','good')}}
   else resetArm=false;
   save();
 }
@@ -2126,6 +2127,7 @@ function migrate(src){
     st.p.x=CX;st.p.y=CY+40;st.v=3;
   }
   if(st.weapon!=='bow'&&st.weapon!=='axe')st.weapon='axe';
+  if(src&&!(typeof src.seed==='number'&&src.seed>0))st.seed=4242; // старые сохранения — прежняя карта
   if(src&&ver<4){st.hq=hqMax(st.base);st.v=4}
   if(src&&ver<6){st.hq=Math.min(hqMax(st.base),st.hq*2);st.fence.hp=Math.min(fenceHp(st.fence.lvl),st.fence.hp*2);st.v=6}
   st.hq=Math.min(st.hq,hqMax(st.base));
@@ -2150,7 +2152,7 @@ function gameOver(){
   for(const [k,v] of rows){const li=document.createElement('li');const a=document.createElement('span');a.textContent=k;const b=document.createElement('b');b.textContent=v;li.append(a,b);ul.append(li)}
   $('over').hidden=false;keys.clear();actHeld=false;sfx.blood();save();
 }
-$('overBtn').addEventListener('click',()=>{S=newState();applyState();fillQuests();$('over').hidden=true;save();toast('Новый лагерь. Рубите берёзы и готовьтесь к первой ночи.','good')});
+$('overBtn').addEventListener('click',()=>{S=newState();buildWorld();applyState();fillQuests();$('over').hidden=true;save();toast('Новый лагерь на новой карте. Рубите берёзы и готовьтесь к первой ночи.','good')});
 
 /* ================= LOOP ================= */
 let last=performance.now(),hudT=0,miniT=0;
