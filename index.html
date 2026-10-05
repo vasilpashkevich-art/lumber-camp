@@ -2623,29 +2623,90 @@ function drawZombie(z){
   if(z.wave){ctx.strokeStyle='rgba(207,75,63,.6)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(z.x,z.y+bob,z.r+3,0,7);ctx.stroke()}
   if(z.hp<z.max){ctx.fillStyle='#000';ctx.fillRect(z.x-14,z.y-z.r-9,28,4);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-14,z.y-z.r-9,28*z.hp/z.max,4)}
 }
+/* ================= ОБЛИКИ ТОПОРА И ЛУКА ================= */
+const AXE_SKINS=[
+  {from:1, name:'Плотницкий',  haft:'#8d6540',wrap:null,     blade:'#b9bcb4',edge:'#e6e8e2',sock:'#6d6f6a',s:0.85},
+  {from:4, name:'Кованый',     haft:'#6e4a2c',wrap:'#3b2a1c',blade:'#9ea5aa',edge:'#f0f3f5',sock:'#4c5257',s:0.95},
+  {from:8, name:'Стальной серп',haft:'#4a3322',wrap:'#7a2d22',blade:'#cfd8de',edge:'#ffffff',sock:'#c9a24a',s:1.05},
+  {from:12,name:'Бронзовый',   haft:'#3a2618',wrap:'#c9a24a',blade:'#c98a3a',edge:'#f3d18a',sock:'#7a4f1f',s:1.12},
+  {from:16,name:'Обсидиановый',haft:'#241a14',wrap:'#5d3a7a',blade:'#2b2533',edge:'#b07aff',sock:'#8f8f9a',s:1.2,glow:'rgba(176,122,255,'},
+  {from:20,name:'Пламенный',   haft:'#1e1410',wrap:'#c9a24a',blade:'#5a1e12',edge:'#ffb347',sock:'#e0c060',s:1.28,glow:'rgba(255,140,40,'}];
+const BOW_SKINS=[
+  {from:1, name:'Ивовый',      wood:'#8d6540',grip:null,     str:'rgba(236,230,211,.8)',r:11,rec:0},
+  {from:3, name:'Охотничий',   wood:'#6a4528',grip:'#3b2a1c',str:'rgba(236,230,211,.9)',r:12,rec:0},
+  {from:6, name:'Составной',   wood:'#4a3322',grip:'#c9a24a',str:'#efe8d4',r:12.5,rec:1,tip:'#e8dcc0'},
+  {from:9, name:'Лесной страж',wood:'#3f6b3a',grip:'#c9a24a',str:'#e8f5d8',r:13,rec:1,tip:'#c9a24a',leaf:'#7fc06a'},
+  {from:12,name:'Драконий',    wood:'#5a1e12',grip:'#1e1410',str:'#ffd28a',r:14,rec:1.3,tip:'#ffb347',glow:'rgba(255,140,40,'}];
+const skinTier=(arr,l)=>{let t=0;for(let i=0;i<arr.length;i++)if(l>=arr[i].from)t=i;return t};
+const axeSkin=l=>AXE_SKINS[skinTier(AXE_SKINS,l)], bowSkin=l=>BOW_SKINS[skinTier(BOW_SKINS,Math.max(1,l))];
+/* топор: рукоять вдоль угла a от (x,y), длина L; две головы-серпа, симметричные буквой S */
+function drawAxeSkin(c,K,x,y,a,L,t){
+  c.save();c.translate(x,y);c.rotate(a);
+  c.lineCap='round';c.strokeStyle=K.haft;c.lineWidth=3;c.beginPath();c.moveTo(4,0);c.lineTo(L+3,0);c.stroke();
+  if(K.wrap){c.strokeStyle=K.wrap;c.lineWidth=3.6;for(let i=0;i<3;i++){c.beginPath();c.moveTo(6+i*3,0);c.lineTo(7.4+i*3,0);c.stroke()}}
+  c.translate(L,0);const s=K.s;c.scale(s,s);
+  if(K.glow){const p=0.35+0.2*Math.sin(t/160);const g=c.createRadialGradient(0,0,2,0,0,20);g.addColorStop(0,K.glow+p+')');g.addColorStop(1,K.glow+'0)');c.fillStyle=g;c.beginPath();c.arc(0,0,20,0,7);c.fill()}
+  for(const r of [0,Math.PI]){c.save();c.rotate(r);
+    c.fillStyle=K.blade;c.beginPath();
+    c.moveTo(-3,-2.2);c.lineTo(3,-2.2);
+    c.quadraticCurveTo(5.5,-7,10.5,-10.5);        // передний рог
+    c.quadraticCurveTo(5,-17.5,-5.5,-15.5);       // режущая кромка-серп
+    c.quadraticCurveTo(-0.5,-10,-3,-2.2);         // вогнутая спинка
+    c.fill();
+    c.strokeStyle=K.edge;c.lineWidth=1.3;c.beginPath();c.moveTo(10.5,-10.5);c.quadraticCurveTo(5,-17.5,-5.5,-15.5);c.stroke();
+    c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=0.8;c.beginPath();c.moveTo(-3,-2.2);c.quadraticCurveTo(-0.5,-10,-5.5,-15.5);c.stroke();
+    c.restore()}
+  c.fillStyle=K.sock;c.fillRect(-3.2,-2.6,6.4,5.2);
+  c.fillStyle=K.edge;c.beginPath();c.arc(0,0,1.1,0,7);c.fill();
+  c.restore();
+}
+/* лук: центр (bx,by), смотрит по углу a; pull — натяжение 0..4 */
+function drawBowSkin(c,K,bx,by,a,pull,t,arrow){
+  const r=K.r,e=1.15,ax=Math.cos(a),ay=Math.sin(a);
+  const t1x=bx+Math.cos(a-e)*r,t1y=by+Math.sin(a-e)*r,t2x=bx+Math.cos(a+e)*r,t2y=by+Math.sin(a+e)*r;
+  if(K.glow){const p=0.3+0.15*Math.sin(t/200);const g=c.createRadialGradient(bx,by,2,bx,by,r+8);g.addColorStop(0,K.glow+p+')');g.addColorStop(1,K.glow+'0)');c.fillStyle=g;c.beginPath();c.arc(bx,by,r+8,0,7);c.fill()}
+  // тетива и стрела
+  const nx=bx+ax*(4-pull),ny=by+ay*(4-pull);
+  c.strokeStyle=K.str;c.lineWidth=1;c.beginPath();c.moveTo(t1x,t1y);c.lineTo(nx,ny);c.lineTo(t2x,t2y);c.stroke();
+  if(arrow){c.strokeStyle='#c9b48a';c.lineWidth=1.2;c.beginPath();c.moveTo(nx,ny);c.lineTo(bx+ax*(r+6),by+ay*(r+6));c.stroke();
+    c.fillStyle=K.tip||'#9ea5aa';c.beginPath();const hx=bx+ax*(r+9),hy=by+ay*(r+9);c.moveTo(hx,hy);c.lineTo(bx+ax*(r+5)-ay*2,by+ay*(r+5)+ax*2);c.lineTo(bx+ax*(r+5)+ay*2,by+ay*(r+5)-ax*2);c.fill()}
+  // плечи
+  c.lineCap='round';c.strokeStyle=K.wood;c.lineWidth=2.6;c.beginPath();c.arc(bx,by,r,a-e,a+e);c.stroke();
+  if(K.rec){for(const sg of [-1,1]){const ta=a+sg*e,tx=bx+Math.cos(ta)*r,ty=by+Math.sin(ta)*r;
+    c.beginPath();c.moveTo(tx,ty);c.quadraticCurveTo(tx+Math.cos(ta)*2.5*K.rec+ax*2,ty+Math.sin(ta)*2.5*K.rec+ay*2,tx+Math.cos(ta)*1.5*K.rec+ax*4*K.rec,ty+Math.sin(ta)*1.5*K.rec+ay*4*K.rec);c.stroke();
+    if(K.tip){c.fillStyle=K.tip;c.beginPath();c.arc(tx+Math.cos(ta)*1.5*K.rec+ax*4*K.rec,ty+Math.sin(ta)*1.5*K.rec+ay*4*K.rec,1.3,0,7);c.fill()}}}
+  if(K.leaf){c.fillStyle=K.leaf;for(const sg of [-0.6,0.6]){const la=a+sg,lx=bx+Math.cos(la)*r,ly=by+Math.sin(la)*r;c.beginPath();c.ellipse(lx+ax*2,ly+ay*2,2.6,1.2,la+0.6,0,7);c.fill()}}
+  if(K.grip){c.strokeStyle=K.grip;c.lineWidth=3.6;c.beginPath();c.arc(bx,by,r,a-0.22,a+0.22);c.stroke()}
+}
+const skinIcoCache={};
+function skinIcon(kind,i){
+  const key=kind+i;if(skinIcoCache[key])return skinIcoCache[key];
+  try{const cv=document.createElement('canvas');cv.width=cv.height=44;const c=cv.getContext('2d');if(!c||!cv.toDataURL)return '';
+    if(kind==='axe')drawAxeSkin(c,AXE_SKINS[i],8,36,-0.8,26,0);else drawBowSkin(c,BOW_SKINS[i],26,22,0,0,0,true);
+    return skinIcoCache[key]=cv.toDataURL();}catch(e){return ''}
+}
+function skinNote(arr,l){const i=skinTier(arr,l),n=arr[i+1];return ` · облик «${arr[i].name}»${n?`, следующий «${n.name}» на ур. ${n.from}`:''}`}
 function drawPlayer(){
   const x=P.x,y=P.y;
   if(S.buffAtk>0){const a=0.25+0.12*Math.sin(performance.now()/180);const g=ctx.createRadialGradient(x,y,4,x,y,26);g.addColorStop(0,`rgba(240,140,50,${a})`);g.addColorStop(1,'rgba(240,140,50,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill()}
   if(P.dash>0||P.inv>0.15){ctx.fillStyle='rgba(159,195,214,.3)';for(let k=1;k<4;k++){ctx.beginPath();ctx.arc(x-P.ddx*k*14,y-P.ddy*k*14,12-k*2,0,7);ctx.fill()}}
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x+2,y+11,12,5,0,0,7);ctx.fill();
   const bow=S.weapon==='bow'&&S.bow>0&&P.swing<=0;
+  const nowT=performance.now();
   if(bow){
     const a=P.face,bx=x+Math.cos(a)*13,by=y+Math.sin(a)*13,pull=P.shot>0?P.shot/0.2*4:0;
-    ctx.strokeStyle=S.bow>=8?'#3a2a1c':'#8d6540';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(bx,by,11,a-1.15,a+1.15);ctx.stroke();
-    ctx.strokeStyle='rgba(236,230,211,.8)';ctx.lineWidth=1;ctx.beginPath();
-    ctx.moveTo(bx+Math.cos(a-1.15)*11,by+Math.sin(a-1.15)*11);ctx.lineTo(bx+Math.cos(a)*(4-pull),by+Math.sin(a)*(4-pull));ctx.lineTo(bx+Math.cos(a+1.15)*11,by+Math.sin(a+1.15)*11);ctx.stroke();
+    drawBowSkin(ctx,bowSkin(S.bow),bx,by,a,pull,nowT,P.cd<=0.05||P.shot>0);
   }else{
     const sw=P.swing>0?(1-P.swing/0.18)*2.2-1.1:-0.9, a=P.face+sw;
-    const hx=x+Math.cos(a)*22,hy=y+Math.sin(a)*22;
-    ctx.strokeStyle='#8d6540';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*6,y+Math.sin(a)*6);ctx.lineTo(hx,hy);ctx.stroke();
-    ctx.fillStyle='#c9ccc4';ctx.beginPath();ctx.arc(hx,hy,5,0,7);ctx.fill();
+    drawAxeSkin(ctx,axeSkin(S.up.axe),x,y,a,21,nowT);
   }
   ctx.fillStyle=P.hurt>0?'#f0e6d0':'#c4672a';ctx.beginPath();ctx.arc(x,y,12,0,7);ctx.fill();
   ctx.fillStyle='#2b2219';ctx.beginPath();ctx.arc(x,y-3,7,0,7);ctx.fill();
   const bx=x-Math.cos(P.face)*9,by=y-Math.sin(P.face)*9;
   const fill=bagTotal()/bagCap(S.up.bag);
   ctx.fillStyle='#5b4329';ctx.beginPath();ctx.arc(bx,by,5+fill*4,0,7);ctx.fill();
-  if(S.bow>0&&!bow){ctx.strokeStyle='#8d6540';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(bx,by,9,P.face+2.2,P.face+4.1);ctx.stroke()}
+  if(S.bow>0&&!bow){const K=bowSkin(S.bow);ctx.lineCap='round';ctx.strokeStyle=K.wood;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(bx,by,9,P.face+2.2,P.face+4.1);ctx.stroke()}
+  if(bow){ctx.save();ctx.translate(bx,by);ctx.scale(0.55,0.55);drawAxeSkin(ctx,axeSkin(S.up.axe),0,0,P.face+Math.PI*0.75,14,nowT);ctx.restore()}
 }
 function drawGuards(now){
   const n=S.jobs.guard;
@@ -2747,15 +2808,16 @@ function rowsFor(t){
   if(t==='gear'){
     for(const k in UP){const u=UP[k],l=S.up[k];
       let extra='';
-      if(k==='axe'){const nxt=Object.values(CFG.trees).find(tr=>tr.axe>l);if(nxt)extra=` · ур. ${nxt.axe} открывает «${nxt.name}»`}
+      if(k==='axe'){const nxt=Object.values(CFG.trees).find(tr=>tr.axe>l);if(nxt)extra=` · ур. ${nxt.axe} открывает «${nxt.name}»`;extra+=skinNote(AXE_SKINS,l)}
       if(k==='pick'){const nz=CFG.zones.find(z=>CFG.rocks.pick[z.id]>l);if(nz)extra=` · ур. ${CFG.rocks.pick[nz.id]} открывает валуны зоны «${nz.name}»`}
-      if(l>=u.max)R.push({title:u.name,lvl:`ур. ${l} · максимум`,desc:u.desc(l)});
-      else{const c=u.cost(l);R.push({title:u.name,lvl:`ур. ${l}`,desc:`${u.desc(l)} → ${u.desc(l+1)}${extra}`,cost:c,why:gate(c),act:'up:'+k})}
+      const ico=k==='axe'?skinIcon('axe',skinTier(AXE_SKINS,l)):'';
+      if(l>=u.max)R.push({title:u.name,lvl:`ур. ${l} · максимум`,desc:u.desc(l)+(k==='axe'?skinNote(AXE_SKINS,l):''),ico});
+      else{const c=u.cost(l);R.push({title:u.name,lvl:`ур. ${l}`,desc:`${u.desc(l)} → ${u.desc(l+1)}${extra}`,cost:c,why:gate(c),act:'up:'+k,ico})}
     }
     const b=S.bow;
     if(b===0){const c=bowCost(0);R.push({title:'Лук',lvl:'не изготовлен',desc:`Дальний бой: урон ${fmt1(bowDmg(1))}, дальность ${bowRange(1)}. Переключение между луком и топором кнопкой внизу или клавишей R.`,cost:c,why:gate(c),act:'bow'})}
-    else if(b>=BOW_MAX)R.push({title:'Лук',lvl:`ур. ${b} · максимум`,desc:`Урон ${fmt1(bowDmg(b))}, дальность ${bowRange(b)}`});
-    else{const c=bowCost(b);R.push({title:'Лук',lvl:`ур. ${b}`,desc:`Урон ${fmt1(bowDmg(b))} → ${fmt1(bowDmg(b+1))}, дальность ${bowRange(b)} → ${bowRange(b+1)}, выстрел раз в ${bowCd(b+1).toFixed(2)} с`,cost:c,why:gate(c),act:'bow'})}
+    else if(b>=BOW_MAX)R.push({title:'Лук',lvl:`ур. ${b} · максимум`,desc:`Урон ${fmt1(bowDmg(b))}, дальность ${bowRange(b)}${skinNote(BOW_SKINS,b)}`,ico:skinIcon('bow',skinTier(BOW_SKINS,b))});
+    else{const c=bowCost(b);R.push({title:'Лук',lvl:`ур. ${b}`,desc:`Урон ${fmt1(bowDmg(b))} → ${fmt1(bowDmg(b+1))}, дальность ${bowRange(b)} → ${bowRange(b+1)}, выстрел раз в ${bowCd(b+1).toFixed(2)} с${skinNote(BOW_SKINS,b)}`,cost:c,why:gate(c),act:'bow',ico:skinIcon('bow',skinTier(BOW_SKINS,b))})}
   }
   if(t==='items'){
     R.push({note:`${resHtml(S.shards,'shard')} осколков · ${resHtml(S.iron,'iron')} железа · ${resHtml(S.keys,'key')} ключей. Вещи надеваются где угодно. ${S.forge?(inCamp()?'Кузница рядом: можно улучшать и перековывать.':'Улучшать и перековывать можно в лагере, у кузницы.'):'Постройте кузницу во вкладке «Лагерь», чтобы улучшать вещи.'}`});
@@ -2900,7 +2962,7 @@ function renderMenu(){
     if(r.mode){h+=`<div class="item"><div><h3>${r.title}</h3><p>${r.desc}</p></div><button class="buy" data-act="${r.act}" type="button">Сменить</button></div>`;continue}
     if(r.heroPick){h+=`<div class="item"><div><h3>${r.title}<small>${r.lvl}</small></h3><p>${r.desc}</p></div><button class="buy" data-act="perkpick" type="button">Выбрать</button></div>`;continue}
     const btn=r.cost!=null?`<button class="buy" data-act="${r.act}" type="button" ${r.why?'disabled title="'+r.why+'"':''}>${costHtml(r.cost)}</button>`:'';
-    h+=`<div class="item"><div><h3>${r.title}${r.lvl?`<small>${r.lvl}</small>`:''}</h3><p>${r.desc||''}${r.why&&r.cost!=null?` · <span style="color:var(--blood)">${r.why}</span>`:''}</p></div>${btn}</div>`;
+    h+=`<div class="item"><div><h3>${r.ico?`<img src="${r.ico}" alt="" style="width:30px;height:30px;vertical-align:middle;margin-right:6px">`:''}${r.title}${r.lvl?`<small>${r.lvl}</small>`:''}</h3><p>${r.desc||''}${r.why&&r.cost!=null?` · <span style="color:var(--blood)">${r.why}</span>`:''}</p></div>${btn}</div>`;
   }
   list.innerHTML=h;
   const sc=$('saveCode');if(sc)sc.value=encodeSave();
@@ -2910,8 +2972,8 @@ function encodeSave(){try{save();return btoa(unescape(encodeURIComponent(JSON.st
 function spend(c0){const c=disc(c0);if(!inCamp()||S.wood<c.w||S.stone<(c.s||0)||S.iron<c.i||S.shards<c.sh)return false;S.wood-=c.w;S.stone-=(c.s||0);S.iron-=c.i;S.shards-=c.sh;if(c.w>=10)S.stats.upgrades++;return true}
 function doAct(a){
   const [k,arg,arg2]=a.split(':');
-  if(k==='up'){const u=UP[arg],l=S.up[arg];if(l<u.max&&spend(u.cost(l))){S.up[arg]++;if(arg==='hp')S.p.hp=maxHp(S.up.hp);toast(`${u.name}: уровень ${S.up[arg]}`,'good')}}
-  if(k==='bow'&&S.bow<BOW_MAX&&spend(bowCost(S.bow))){S.bow++;if(S.bow===1){S.weapon='bow';toast('Лук изготовлен и в руках. Переключение: кнопка внизу или R.','good')}else toast(`Лук: уровень ${S.bow}`,'good')}
+  if(k==='up'){const u=UP[arg],l=S.up[arg];if(l<u.max&&spend(u.cost(l))){S.up[arg]++;if(arg==='hp')S.p.hp=maxHp(S.up.hp);toast(`${u.name}: уровень ${S.up[arg]}`,'good');if(arg==='axe'&&AXE_SKINS.some(q=>q.from===S.up.axe))toast(`Новый облик топора: «${axeSkin(S.up.axe).name}»`,'good')}}
+  if(k==='bow'&&S.bow<BOW_MAX&&spend(bowCost(S.bow))){S.bow++;if(S.bow===1){S.weapon='bow';toast('Лук изготовлен и в руках. Переключение: кнопка внизу или R.','good')}else toast(`Лук: уровень ${S.bow}`,'good');if(S.bow>1&&BOW_SKINS.some(q=>q.from===S.bow))toast(`Новый облик лука: «${bowSkin(S.bow).name}»`,'good')}
   if(k==='farmup'){const q=poiById(arg+':'+arg2)||poiById(arg),f=q&&farmOf(q);if(f&&f.lvl<FARM.maxLvl&&spendFarm(farmUpCost(q.zone,f.lvl))){f.lvl++;f.hp=fHp(q,f);buildPeasants();toast(`${farmName(q)}: уровень ${f.lvl}, пришёл ещё один крестьянин`,'good')}}
   if(k==='farmfix'){const q=poiById(arg),f=q&&farmOf(q);if(f){const mx=fHp(q,f);if(spendFarm(farmFixCost(q,f,mx-f.hp))){f.hp=mx;toast('Хутор починен','good')}}}
   if(k==='farmpal'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.pal||0)<FARM_PAL_MAX&&spendFarm(farmPalCost(q.zone,f.pal||0))){const old=fHp(q,f);f.pal=(f.pal||0)+1;f.hp+=fHp(q,f)-old;toast(`${farmName(q)}: ${PAL_SKINS[f.pal]}`,'good')}}
