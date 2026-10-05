@@ -400,7 +400,9 @@ const hqMax = b => Math.round(2*(60 + 80*(b-1))*(1+0.15*pr('mason')));
 const BLOOD_MULT = 1.5;
 const DAY_DECAY = 0.5; // доля здоровья, которую ночной мертвец теряет за световой день
 // Хутора: восстановленные хижины и руины с крестьянами
-const FARM = {maxLvl:3, roadBase:5, clearR:250, workR:300, cartSpeed:140};
+const FARM = {maxLvl:3, roadBase:5, clearR:250, workR:300, stoneR:650, cartSpeed:140};
+const farmStored = f => (f.store||0)+(f.storeS||0);
+const rockTime = r => CFG.rocks.hp[r.zone]*0.9+3;
 const farmCap     = (z,l) => 20*z*l;
 const farmHpMax   = (z,l,pal=0) => Math.round(150*z*l*(1+0.75*pal));
 const FARM_PAL_MAX = 3, FARM_TOWER_MAX = 3, MILITIA_LVL = 2;
@@ -772,7 +774,8 @@ document.getElementById('questHead').addEventListener('click',()=>{const el=docu
 {let m=null;try{m=localStorage.getItem('lumber-camp-q')}catch(e){}if(m==='1'||(m===null&&(innerWidth<520||document.documentElement.classList.contains('touch'))))document.getElementById('quests').classList.add('min')}
 
 /* ================= ПРОГРЕСС БЕЗ ИГРЫ ================= */
-function farmRateEst(q,f){ // древесины в секунду на хутор
+function farmRateEst(q,f){ // добычи в секунду на хутор
+  if(f.mode==='stone'){if(!rocks.some(r=>Math.abs(r.x-q.x)<FARM.stoneR&&dist(r.x,r.y,q.x,q.y)<FARM.stoneR))return 0;return f.lvl*CFG.rocks.stone[q.zone]/(CFG.rocks.hp[q.zone]*0.9+3+12)*(1+0.1*pr('boss'))}
   const tt=CFG.trees[q.zone];return f.lvl*tt.wood/(tt.hp*0.6+1+7)*(1+0.1*pr('boss'));
 }
 function applyOffline(){
@@ -781,18 +784,19 @@ function applyOffline(){
   if(!(sec>=OFFLINE.min))return;
   const k=sec*OFFLINE.eff;
   const w=Math.floor(woodRate()*k),st=Math.floor(stoneRate()*k);
-  let fw=0,fs=0;
+  let fw=0,fs=0,fst=0;
   for(const q of pois){const f=farmOf(q);if(!f||f.broken)continue;
-    const made=farmRateEst(q,f)*k;
-    if(f.road){fw+=Math.floor(made)}
-    else{const cap=farmCap(q.zone,f.lvl),before=f.store;f.store=Math.min(cap,f.store+made);fs+=Math.floor(f.store-before)}}
-  S.wood+=w+fw;S.stone+=st;
-  if(w+fw+st+fs<=0)return;
+    const made=farmRateEst(q,f)*k,stone=f.mode==='stone';
+    if(f.road){if(stone)fst+=Math.floor(made);else fw+=Math.floor(made)}
+    else{const cap=farmCap(q.zone,f.lvl),room=Math.max(0,cap-farmStored(f)),n=Math.min(room,made);if(stone)f.storeS=(f.storeS||0)+n;else f.store+=n;fs+=Math.floor(n)}}
+  S.wood+=w+fw;S.stone+=st+fst;
+  if(w+fw+st+fs+fst<=0)return;
   const hrs=Math.floor(sec/3600),mins=Math.floor(sec%3600/60);
   const rows=[['Вас не было',hrs?`${hrs} ч ${mins} мин`:`${mins} мин`]];
   if(w)rows.push(['Лесорубы принесли','+'+w]);
   if(st)rows.push(['Каменщики принесли','+'+st+' камня']);
   if(fw)rows.push(['Вагончики с хуторов','+'+fw]);
+  if(fst)rows.push(['Камень с хуторов','+'+fst]);
   if(fs)rows.push(['В поленницах хуторов','+'+fs+' (заберите)']);
   if(sec>=OFFLINE.cap)rows.push(['Лимит','8 часов']);
   showDawn('Пока вас не было',rows,w+fw);
@@ -935,7 +939,7 @@ function chop(t,dmg){
 }
 function mine(r,dmg){
   r.hp-=dmg;r.shake=0.15;sfx.mine();
-  if(r.hp<=0){sfx.crumble();
+  if(r.hp<=0){sfx.crumble();if(r.claim){r.claim.tree=null;r.claim.state='idle';r.claim=null}
     const dbl=Math.random()<0.2*pr('luck'), add=Math.min(CFG.rocks.stone[r.zone]*(dbl?2:1),bagCap(S.up.bag)-bagTotal());gainXp(0.8*r.zone);
     S.bagStone+=add;S.stats.mined++;r.alive=false;r.t=CFG.rocks.respawn;
     addFloat(r.x,r.y-20,(dbl?'Двойная! ':'')+'+'+add+' камня','#c9c7bd');
@@ -1122,22 +1126,30 @@ function updateFarms(dt){
     const cap=farmCap(q.zone,f.lvl);
     if(pe.state==='hide'||pe.state==='flee'||pe.state==='fight'||pe.state==='guard'||pe.state==='walk_home')pe.state='idle';
     if(pe.state==='idle'){
-      if(f.store+pe.carry>=cap){goTo(homeX,homeY,60);continue}
-      let best=null,bd=FARM.workR;
-      for(const t of trees){if(!t.alive||t.claim||Math.abs(t.x-q.x)>FARM.workR)continue;const d=dist(t.x,t.y,q.x,q.y);if(d<bd){bd=d;best=t}}
-      if(best){best.claim=pe;pe.tree=best;pe.state='walk'}else goTo(homeX,homeY,50);
+      if(farmStored(f)+pe.carry>=cap){goTo(homeX,homeY,60);continue}
+      const stone=f.mode==='stone',list=stone?rocks:trees,R=stone?FARM.stoneR:FARM.workR;
+      let best=null,bd=R;
+      for(const t of list){if(!t.alive||t.claim||Math.abs(t.x-q.x)>R)continue;const d=dist(t.x,t.y,q.x,q.y);if(d<bd){bd=d;best=t}}
+      if(best){best.claim=pe;pe.tree=best;pe.res=stone?'stone':'wood';pe.state='walk'}else goTo(homeX,homeY,50);
     }else if(pe.state==='walk'){
       const t=pe.tree;if(!t||!t.alive){if(t)t.claim=null;pe.tree=null;pe.state='idle';continue}
       const a=Math.atan2(pe.y-t.y,pe.x-t.x);
       if(goTo(t.x+Math.cos(a)*(t.r*0.6+12),t.y+Math.sin(a)*(t.r*0.6+12),70))pe.state='chop';
     }else if(pe.state==='chop'){
       const t=pe.tree;if(!t||!t.alive){if(t)t.claim=null;pe.tree=null;pe.state='idle';continue}
-      const tt=CFG.trees[t.tier],rate=tt.hp/(tt.hp*0.6+1)*(1+0.1*pr('boss'));
-      t.hp-=rate*dt;
-      if(pe.swing<=0){pe.swing=0.6;t.shake=0.12;if(dist(t.x,t.y,P.x,P.y)<260)sfx.chop()}
-      if(t.hp<=0){t.alive=false;t.t=tt.respawn;t.claim=null;pe.tree=null;pe.carry=tt.wood;pe.state='back';if(dist(t.x,t.y,P.x,P.y)<300)sfx.fall()}
+      const near=dist(t.x,t.y,P.x,P.y);
+      if(pe.res==='stone'){
+        const mx=CFG.rocks.hp[t.zone];t.hp-=mx/rockTime(t)*(1+0.1*pr('boss'))*dt;
+        if(pe.swing<=0){pe.swing=0.7;t.shake=0.12;if(near<260)sfx.mine()}
+        if(t.hp<=0){t.alive=false;t.t=CFG.rocks.respawn;t.claim=null;pe.tree=null;pe.carry=CFG.rocks.stone[t.zone];pe.state='back';if(near<300)sfx.crumble()}
+      }else{
+        const tt=CFG.trees[t.tier],rate=tt.hp/(tt.hp*0.6+1)*(1+0.1*pr('boss'));
+        t.hp-=rate*dt;
+        if(pe.swing<=0){pe.swing=0.6;t.shake=0.12;if(near<260)sfx.chop()}
+        if(t.hp<=0){t.alive=false;t.t=tt.respawn;t.claim=null;pe.tree=null;pe.carry=tt.wood;pe.state='back';if(near<300)sfx.fall()}
+      }
     }else if(pe.state==='back'){
-      if(goTo(homeX,homeY,60)){f.store=Math.min(cap,f.store+pe.carry);pe.carry=0;pe.state='idle'}
+      if(goTo(homeX,homeY,60)){const room=Math.max(0,cap-farmStored(f)),n=Math.min(room,pe.carry);if(pe.res==='stone')f.storeS=(f.storeS||0)+n;else f.store+=n;pe.carry=0;pe.state='idle'}
     }
   }
   // вышки хуторов
@@ -1153,11 +1165,11 @@ function updateFarms(dt){
     const f=farmOf(q);if(!f||!f.road)continue;
     const c=farmCart(q),len=Math.max(1,dist(q.x,q.y,CX,CY)-CFG.baseR),T=len/FARM.cartSpeed;
     if(c.phase==='farm'){
-      if(!f.broken&&f.store>=Math.max(5,Math.floor(farmCap(q.zone,f.lvl)*0.3))){c.load=Math.floor(f.store);f.store-=c.load;c.phase='go';c.t=0}
+      if(!f.broken&&farmStored(f)>=Math.max(5,Math.floor(farmCap(q.zone,f.lvl)*0.3))){c.load=Math.floor(f.store);c.loadS=Math.floor(f.storeS||0);f.store-=c.load;f.storeS-=c.loadS;c.phase='go';c.t=0}
     }else{
       c.t+=dt/T;
       if(c.t>=1){
-        if(c.phase==='go'){S.wood+=c.load;if(inCamp()||dist(P.x,P.y,CX,CY)<400)addFloat(CX,CY-50,'+'+c.load+' древесины с хутора','#e9c46a');c.load=0;c.phase='back';c.t=0}
+        if(c.phase==='go'){S.wood+=c.load;S.stone+=c.loadS||0;if(inCamp()||dist(P.x,P.y,CX,CY)<400)addFloat(CX,CY-50,'С хутора: '+[c.load?'+'+c.load+' древесины':'',c.loadS?'+'+c.loadS+' камня':''].filter(Boolean).join(', '),'#e9c46a');c.load=0;c.loadS=0;c.phase='back';c.t=0}
         else{c.phase='farm';c.t=0}
       }
     }
@@ -1173,9 +1185,9 @@ function farmTarget(){
       return {k:'f',o:q,act:'restore',ok:S.wood>=c.w&&S.stone>=c.s,lbl:'Строить',msg:`Восстановить хутор и поселить крестьянина: ${c.w} древесины${c.s?', '+c.s+' камня':''} (со склада)`};
     }
     if(f.broken){const c=farmFixCost(q,f,fHp(q,f));return {k:'f',o:q,act:'fix',ok:S.wood>=c.w,lbl:'Чинить',msg:`Хутор разрушен. Починить: ${c.w} древесины (со склада)`}}
-    if(f.store>=1){
-      const room=bagCap(S.up.bag)-bagTotal();
-      return {k:'f',o:q,act:'take',ok:room>0,lbl:'Забрать',msg:room>0?`Забрать древесину с хутора: ${Math.floor(f.store)}`:'Сумка полна, несите добычу в лагерь'};
+    if(farmStored(f)>=1){
+      const room=bagCap(S.up.bag)-bagTotal(),w=Math.floor(f.store),st=Math.floor(f.storeS||0);
+      return {k:'f',o:q,act:'take',ok:room>0,lbl:'Забрать',msg:room>0?`Забрать с хутора: ${[w?w+' древесины':'',st?st+' камня':''].filter(Boolean).join(', ')}`:'Сумка полна, несите добычу в лагерь'};
     }
   }
   return null;
@@ -1183,11 +1195,14 @@ function farmTarget(){
 function farmAction(t){
   const q=t.o;P.cd=0.4;
   if(t.act==='restore'&&spendAny(farmRestore(q.zone))){
-    S.stats.farmsMade++;gainXp(15*q.zone);S.farms[q.id]={lvl:1,store:0,hp:farmHpMax(q.zone,1),road:false,broken:false,pal:0,tower:0};
+    S.stats.farmsMade++;gainXp(15*q.zone);S.farms[q.id]={mode:'wood',storeS:0,lvl:1,store:0,hp:farmHpMax(q.zone,1),road:false,broken:false,pal:0,tower:0};
     buildPeasants();sfx.buy();toast('Хутор восстановлен. Крестьянин заселился и пошёл рубить лес.','good');save();
   }
   if(t.act==='fix'){const f=farmOf(q),c=farmFixCost(q,f,fHp(q,f));if(spendAny(c)){f.broken=false;f.hp=fHp(q,f);sfx.buy();toast('Хутор починен, крестьяне вернулись к работе','good');save()}}
-  if(t.act==='take'){const f=farmOf(q),n=Math.min(Math.floor(f.store),bagCap(S.up.bag)-bagTotal());if(n>0){f.store-=n;S.bag+=n;sfx.deposit();addFloat(q.x,q.y-30,'+'+n+' древесины','#e9c46a');save()}}
+  if(t.act==='take'){const f=farmOf(q);let room=bagCap(S.up.bag)-bagTotal();
+    const ns=Math.min(Math.floor(f.storeS||0),room);f.storeS=(f.storeS||0)-ns;S.bagStone+=ns;room-=ns;
+    const n=Math.min(Math.floor(f.store),room);f.store-=n;S.bag+=n;
+    if(n+ns>0){sfx.deposit();addFloat(q.x,q.y-30,[n?'+'+n+' древесины':'',ns?'+'+ns+' камня':''].filter(Boolean).join(', '),'#e9c46a');save()}}
 }
 function updatePois(){
   for(const q of pois){
@@ -1703,7 +1718,8 @@ function drawCart(q,now){
   ctx.save();ctx.translate(x,y);ctx.rotate(c.phase==='go'?a+Math.PI:a);
   ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(-13,-6,28,16);
   ctx.fillStyle='#6b4a2c';ctx.fillRect(-14,-9,28,16);
-  if(c.load>0){ctx.fillStyle='#8d6540';for(let i=0;i<3;i++)ctx.fillRect(-12,-8+i*5,24,4);ctx.fillStyle='#e2b46a';for(let i=0;i<3;i++)ctx.fillRect(10,-8+i*5,3,4)}
+  if(c.loadS>0){ctx.fillStyle='#8b8a84';for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(-6+i*6,-2+(i%2)*3,4,0,7);ctx.fill()}}
+  else if(c.load>0){ctx.fillStyle='#8d6540';for(let i=0;i<3;i++)ctx.fillRect(-12,-8+i*5,24,4);ctx.fillStyle='#e2b46a';for(let i=0;i<3;i++)ctx.fillRect(10,-8+i*5,3,4)}
   ctx.fillStyle='#2b2219';const sp=now/120;for(const wx of [-9,9])for(const wy of [-11,9]){ctx.beginPath();ctx.arc(wx,wy,3.5,0,7);ctx.fill()}
   ctx.fillStyle='#7a6a55';ctx.beginPath();ctx.arc(20,-1,5,0,7);ctx.fill();ctx.fillRect(15,-2,6,3);
   ctx.restore();
@@ -1719,7 +1735,7 @@ function drawPeasant(pe,now){
     ctx.strokeStyle='#8d6540';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*13,y+Math.sin(a)*13);ctx.stroke();ctx.fillStyle='#c9ccc4';ctx.beginPath();ctx.arc(x+Math.cos(a)*13,y+Math.sin(a)*13,2.5,0,7);ctx.fill()}
   ctx.fillStyle='#7a5a3a';ctx.beginPath();ctx.arc(x,y+bob,6,0,7);ctx.fill();
   ctx.fillStyle='#e0c07a';ctx.beginPath();ctx.ellipse(x,y-3+bob,6.5,3,0,0,7);ctx.fill();ctx.fillStyle='#c9a35a';ctx.beginPath();ctx.arc(x,y-4+bob,3,0,7);ctx.fill();
-  if(pe.carry>0){ctx.fillStyle='#8d6540';ctx.fillRect(x-7,y+1+bob,14,4);ctx.fillStyle='#e2b46a';ctx.fillRect(x+6,y+1+bob,2,4)}
+  if(pe.carry>0){if(pe.res==='stone'){ctx.fillStyle='#9a998f';ctx.beginPath();ctx.arc(x,y+3+bob,4.5,0,7);ctx.fill()}else{ctx.fillStyle='#8d6540';ctx.fillRect(x-7,y+1+bob,14,4);ctx.fillStyle='#e2b46a';ctx.fillRect(x+6,y+1+bob,2,4)}}
 }
 function drawPoi(q,now){
   const x=q.x,y=q.y,looted=!!S.poi[q.id],f=farmOf(q);
@@ -1768,15 +1784,16 @@ function drawFarm(q,f,now){
   }
   if(f.tower&&!f.broken){const tp=farmTowerPos(q);drawTower(tp.x,tp.y,f.tower,FT[q.id],now)}
   // поленница = мини-склад
-  const cap=farmCap(q.zone,f.lvl),n=Math.min(9,Math.ceil(9*f.store/cap));
+  const cap=farmCap(q.zone,f.lvl),n=Math.min(9,Math.ceil(9*f.store/cap)),ns=Math.min(6,Math.ceil(6*(f.storeS||0)/cap));
   for(let i=0;i<n;i++){const r=Math.floor(i/3),c=i%3;ctx.fillStyle=i%2?'#7b5634':'#8d6540';ctx.fillRect(x+30+c*9+r*3,y+10-r*6,8,5)}
+  for(let i=0;i<ns;i++){const r=Math.floor(i/3),c=i%3;ctx.fillStyle=i%2?'#8b8a84':'#a3a29a';ctx.beginPath();ctx.arc(x-38+c*8+r*4,y+16-r*6,4,0,7);ctx.fill()}
   // флажок восстановленного хутора
   if(!f.broken){ctx.strokeStyle='#3a2a1c';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-28,y+12);ctx.lineTo(x-28,y-14);ctx.stroke();ctx.fillStyle='#86a85c';ctx.beginPath();ctx.moveTo(x-28,y-14);ctx.lineTo(x-16,y-11+Math.sin(now/300)*1.5);ctx.lineTo(x-28,y-7);ctx.fill()}
   const d=dist(x,y,P.x,P.y);
   if(d<320){
     const mx=fHp(q,f);
     ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(x-48,y-62,96,26);
-    ctx.fillStyle='#ece6d3';ctx.fillText(`Хутор ур. ${f.lvl} · ${Math.floor(f.store)}/${cap}`,x,y-50);
+    ctx.fillStyle='#ece6d3';ctx.fillText(`Хутор ур. ${f.lvl} · ${f.mode==='stone'?'камень':'дерево'} ${Math.floor(farmStored(f))}/${cap}`,x,y-50);
     ctx.fillStyle='#000';ctx.fillRect(x-40,y-44,80,4);ctx.fillStyle=f.broken?'#cf4b3f':'#86a85c';ctx.fillRect(x-40,y-44,80*Math.max(0,Math.min(1,f.hp/mx)),4);
   }
 }
@@ -1978,9 +1995,11 @@ function rowsFor(t){
     if(S.base<FARM.roadBase)R.push({note:`Дороги и вагончики откроются на ${FARM.roadBase} уровне главного дома («${HQ_SKINS[FARM.roadBase]}»). По дороге древесина сама поедет на склад.`});
     for(const q of list){
       const f=farmOf(q),cap=farmCap(q.zone,f.lvl),mx=fHp(q,f);
-      const st=f.broken?'разрушен, почините на месте':`крестьян: ${f.lvl}${f.lvl>=MILITIA_LVL?' (ополчение)':''} · склад ${Math.floor(f.store)}/${cap} · прочность ${Math.ceil(f.hp)}/${mx}${f.road?' · дорога есть':''}`;
+      const st=f.broken?'разрушен, почините на месте':`крестьян: ${f.lvl}${f.lvl>=MILITIA_LVL?' (ополчение)':''} · добывают ${f.mode==='stone'?'камень':'древесину'} · склад ${Math.floor(farmStored(f))}/${cap} · прочность ${Math.ceil(f.hp)}/${mx}${f.road?' · дорога есть':''}`;
       if(f.lvl<FARM.maxLvl&&!f.broken){const c=farmUpCost(q.zone,f.lvl);R.push({title:farmName(q),lvl:`ур. ${f.lvl}`,desc:`${st}. Улучшение: +1 крестьянин, склад ${cap} → ${farmCap(q.zone,f.lvl+1)}${f.lvl+1>=MILITIA_LVL&&f.lvl<MILITIA_LVL?'. С этого уровня крестьяне ночью не прячутся, а отбиваются вилами':''}`,cost:c,why:gateFor(c),act:'farmup:'+q.id})}
       else R.push({title:farmName(q),lvl:`ур. ${f.lvl}${f.lvl>=FARM.maxLvl?' · максимум':''}`,desc:st});
+      {const st=f.mode==='stone',noRock=st&&farmRateEst(q,f)===0;
+        R.push({title:`Добыча: ${st?'камень':'древесина'}`,lvl:'',desc:`${farmName(q)}: ${st?(noRock?'рядом нет валунов, крестьяне сидят без дела. ':'крестьяне ходят к ближайшим валунам, работа медленнее. '):'крестьяне рубят ближайшие деревья. '}Переключить на ${st?'древесину':'камень'}?`,mode:true,act:'farmmode:'+q.id})}
       if(!f.broken&&f.hp<mx){const c=farmFixCost(q,f,mx-f.hp);R.push({title:'Починить',lvl:'',desc:`${farmName(q)}: 1 древесина за 12 прочности`,cost:c,why:gateFor(c),act:'farmfix:'+q.id})}
       if(!f.broken){
         const p=f.pal||0;
@@ -2024,6 +2043,7 @@ function renderMenu(){
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="buy" data-act="copy" type="button">Скопировать код</button></div>
       <textarea id="loadCode" placeholder="Вставьте код сохранения"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="buy" data-act="load" type="button">Загрузить код</button><button class="buy" data-act="reset" type="button" style="background:#5a2b26;color:#ece6d3">${resetArm?'Точно? Нажмите ещё раз':'Начать заново'}</button></div></div>`;continue}
+    if(r.mode){h+=`<div class="item"><div><h3>${r.title}</h3><p>${r.desc}</p></div><button class="buy" data-act="${r.act}" type="button">Сменить</button></div>`;continue}
     if(r.heroPick){h+=`<div class="item"><div><h3>${r.title}<small>${r.lvl}</small></h3><p>${r.desc}</p></div><button class="buy" data-act="perkpick" type="button">Выбрать</button></div>`;continue}
     const btn=r.cost!=null?`<button class="buy" data-act="${r.act}" type="button" ${r.why?'disabled title="'+r.why+'"':''}>${costHtml(r.cost)}</button>`:'';
     h+=`<div class="item"><div><h3>${r.title}${r.lvl?`<small>${r.lvl}</small>`:''}</h3><p>${r.desc||''}${r.why&&r.cost!=null?` · <span style="color:var(--blood)">${r.why}</span>`:''}</p></div>${btn}</div>`;
@@ -2043,6 +2063,7 @@ function doAct(a){
   if(k==='farmpal'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.pal||0)<FARM_PAL_MAX&&spend(farmPalCost(q.zone,f.pal||0))){const old=fHp(q,f);f.pal=(f.pal||0)+1;f.hp+=fHp(q,f)-old;toast(`${farmName(q)}: ${PAL_SKINS[f.pal]}`,'good')}}
   if(k==='farmtower'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.tower||0)<FARM_TOWER_MAX&&spend(farmTowerCost(q.zone,f.tower||0))){f.tower=(f.tower||0)+1;toast(f.tower===1?`${farmName(q)}: вышка с лучником построена`:`${farmName(q)}: вышка ур. ${f.tower}`,'good')}}
   if(k==='road'){const q=poiById(arg),f=q&&farmOf(q);if(f&&!f.road&&S.base>=FARM.roadBase&&spend(farmRoadCost(q.zone))){f.road=true;toast('Дорога проложена. Вагончик повезёт древесину, когда поленница наполнится на треть.','good')}}
+  if(k==='farmmode'){const q=poiById(arg),f=q&&farmOf(q);if(f){f.mode=f.mode==='stone'?'wood':'stone';for(const pe of peasants)if(pe.farm===q.id){if(pe.tree)pe.tree.claim=null;pe.tree=null;pe.carry=0;pe.state='idle'}toast(`${farmName(q)}: теперь добывают ${f.mode==='stone'?'камень':'древесину'}`,'good')}}
   if(k==='perkpick'){toggleMenu(false);showPerks();return}
   if(k==='hqfix'){const miss=hqMax(S.base)-S.hq;if(miss>0&&spend(C(Math.ceil(miss/8)))){S.hq=hqMax(S.base);toast('Ратуша восстановлена','good')}}
   if(k==='base'&&S.base<BASE.max&&spend(BASE.cost[S.base])){S.base++;S.hq+=hqMax(S.base)-hqMax(S.base-1);toast(`Главный дом: ${HQ_SKINS[S.base]} (ур. ${S.base}). Открыто: ${BASE.unlocks[S.base]}`,'good')}
@@ -2073,7 +2094,7 @@ function migrate(src){
   const ver=(src&&src.v)||1;
   const st=merge(newState(),src);
   for(const k of ['bosses','mounds','poi'])st[k]=(src&&src[k]&&typeof src[k]==='object')?{...src[k]}:{};
-  st.farms={};if(src&&src.farms&&typeof src.farms==='object')for(const id in src.farms){const f=src.farms[id];if(f&&f.lvl>=1)st.farms[id]={lvl:Math.min(FARM.maxLvl,f.lvl|0),store:+f.store||0,hp:+f.hp||0,road:!!f.road,broken:!!f.broken,pal:Math.min(FARM_PAL_MAX,f.pal|0),tower:Math.min(FARM_TOWER_MAX,f.tower|0)};if(ver<7)st.farms[id].hp*=3}
+  st.farms={};if(src&&src.farms&&typeof src.farms==='object')for(const id in src.farms){const f=src.farms[id];if(f&&f.lvl>=1)st.farms[id]={lvl:Math.min(FARM.maxLvl,f.lvl|0),store:+f.store||0,hp:+f.hp||0,road:!!f.road,broken:!!f.broken,pal:Math.min(FARM_PAL_MAX,f.pal|0),tower:Math.min(FARM_TOWER_MAX,f.tower|0),mode:f.mode==='stone'?'stone':'wood',storeS:+f.storeS||0};if(ver<7)st.farms[id].hp*=3}
   st.waveZ=Array.isArray(src&&src.waveZ)?src.waveZ.filter(w=>w&&CFG.zombies[w.t]):[];
   st.perks={};if(src&&src.perks)for(const k in src.perks)if(PERKS[k])st.perks[k]=Math.min(PERKS[k].max,src.perks[k]|0);
   st.quests=Array.isArray(src&&src.quests)?src.quests.filter(q=>q&&QUESTS[q.type]):[];
