@@ -30,7 +30,13 @@ html,body{height:100%;overflow:hidden}
 .win-card{border-color:#f4c766;border-top-color:#f4c766}.win-card h2{color:#f4c766}
 .win-note{font-size:12px;color:var(--muted)}.win-b{display:grid;gap:8px}
 #ngBtn{background:#6a4a10;border-color:#f4c766}
-.itm{border-left:3px solid var(--rc)}.itm h3{color:var(--rc)}
+.item.itm{border-left:3px solid var(--rc);grid-template-columns:auto minmax(0,1fr) auto;align-items:start}
+@media (max-width:640px){.item.itm{grid-template-columns:auto minmax(0,1fr)}.item.itm .itm-b{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}.itm h3{color:var(--rc)}
+.itm.better{box-shadow:inset 0 0 0 1px rgba(126,224,126,.45);background:linear-gradient(90deg,rgba(126,224,126,.08),transparent 60%),var(--panel2)}
+.itm-ico{width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:radial-gradient(circle,color-mix(in srgb,var(--rc) 22%,transparent),rgba(0,0,0,.25));border:1px solid color-mix(in srgb,var(--rc) 45%,transparent)}
+.cmp{font-size:12px}.cmp .up,.cmp b.up{color:#7ee07e}.cmp .dn,.cmp b.dn{color:#e07070}.vs{color:var(--muted);font-size:11px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.stats-grid div{display:grid;gap:2px;min-width:0}.stats-grid small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}.stats-grid b{font-size:13px;font-variant-numeric:tabular-nums}
 .itm-b{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .buy.sec{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
 .buy .ico{vertical-align:-0.2em}
@@ -815,8 +821,10 @@ function giveItem(it,x,y){
 function pickItem(d){
   if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее во вкладке «Вещи».','bad','invfull');return}
   S.inv.push(d.it);d.t=0;sfx.pickup();
-  addFloat(d.x,d.y-24,d.it.name,RAR[d.it.rar].col);
-  if(d.it.rar>=2)toast(`${RAR[d.it.rar].n} предмет: ${d.it.name}`,'good');
+  const cmp=itemCompare(d.it);
+  addFloat(d.x,d.y-24,d.it.name+(cmp.better?' ▲':''),cmp.better?'#7ee07e':RAR[d.it.rar].col);
+  if(cmp.better)toast(`${d.it.name} — ${cmp.e?`лучше надетого (+${cmp.delta})`:'ячейка была пустой'}. Наденьте во вкладке «Вещи».`,'good');
+  else if(d.it.rar>=2)toast(`${RAR[d.it.rar].n} предмет: ${d.it.name}`,'good');
   save();
 }
 // урон героя с учётом вещей; возвращает [урон, крит]
@@ -1049,6 +1057,94 @@ function showRelics(){
   for(const k of relicOffer){const R=RELICS[k],b=document.createElement('button');b.type='button';b.className='perk';b.dataset.relic=k;b.style.setProperty('--bc','#f4c766');
     b.innerHTML=`<small>Реликвия</small><b>${R.name}</b><span>${R.desc}</span><em>ранг ${rl(k)} → ${rl(k)+1} из ${R.max}</em>`;box.append(b)}
   $('perks').hidden=false;keys.clear();actHeld=false;
+}
+
+/* ================= РИСУНКИ ВЕЩЕЙ ================= */
+// c — цвет редкости (камни, отделка), картинки 32×32
+const ICON_ART = {
+  'Топорик': c=>`<path d="M9 27L22 9" stroke="#8d6540" stroke-width="3" stroke-linecap="round"/><path d="M18 5c4 0 8 3 9 7l-6 2-5-6z" fill="#b8bec6"/><path d="M18 5l3 3-5 0z" fill="${c}"/>`,
+  'Секира':  c=>`<path d="M8 28L20 7" stroke="#7b5634" stroke-width="3" stroke-linecap="round"/><path d="M15 6c6-4 14 0 14 9-3-2-6-3-9-2z" fill="#c9ced6"/><path d="M15 6c6-4 14 0 14 9" stroke="${c}" stroke-width="2" fill="none"/><circle cx="18" cy="11" r="1.6" fill="${c}"/>`,
+  'Колун':   c=>`<path d="M10 28L19 10" stroke="#6b4a2c" stroke-width="3.5" stroke-linecap="round"/><path d="M13 7l10-3 4 6-11 5z" fill="#9aa2ac"/><path d="M23 4l4 6" stroke="${c}" stroke-width="2.4"/>`,
+  'Бердыш':  c=>`<path d="M6 30L24 4" stroke="#7b5634" stroke-width="2.4" stroke-linecap="round"/><path d="M19 6c7 1 10 7 8 15-2-5-6-7-11-7z" fill="#c9ced6"/><path d="M19 6c7 1 10 7 8 15" stroke="${c}" stroke-width="1.8" fill="none"/><circle cx="24" cy="3.5" r="1.8" fill="${c}"/>`,
+  'Кожух':   c=>`<path d="M9 8l7-3 7 3 4 6-3 2-1-3v15H9V13l-1 3-3-2z" fill="#7b5634"/><path d="M9 8l7 4 7-4-3-3h-8z" fill="#d9c7a6"/><path d="M16 12v15" stroke="#4a3424"/><circle cx="16" cy="17" r="1.3" fill="${c}"/><circle cx="16" cy="22" r="1.3" fill="${c}"/>`,
+  'Стёганка':c=>`<path d="M9 7l7-2 7 2 4 7-3 2-1-3v15H9V13l-1 3-3-2z" fill="#a08a62"/><path d="M10 12h12M10 17h12M10 22h12M13 9v19M19 9v19" stroke="#7a6848" stroke-width="1"/><path d="M13 5l3 4 3-4" stroke="${c}" stroke-width="2" fill="none"/>`,
+  'Кольчуга':c=>`<path d="M9 7l7-2 7 2 4 7-3 2-1-3v15H9V13l-1 3-3-2z" fill="#8a929c"/><g fill="#5f6670">${Array.from({length:20},(_,i)=>`<circle cx="${11+(i%5)*2.6}" cy="${11+Math.floor(i/5)*4}" r=".9"/>`).join('')}</g><path d="M9 27h14" stroke="${c}" stroke-width="2.4"/>`,
+  'Латы':    c=>`<path d="M10 9h12l2 4-1 14H9L8 13z" fill="#b8bec6"/><path d="M4 11c1-4 5-5 7-3v5H5zM28 11c-1-4-5-5-7-3v5h6z" fill="#9aa2ac"/><path d="M16 9v18" stroke="#7d8592"/><path d="M11 15h10" stroke="${c}" stroke-width="2"/><circle cx="16" cy="20" r="1.8" fill="${c}"/>`,
+  'Оберег':  c=>`<path d="M9 4c2 6 12 6 14 0" stroke="#8d6540" stroke-width="1.3" fill="none"/><circle cx="16" cy="18" r="8" fill="#9a7048"/><circle cx="16" cy="18" r="5" fill="none" stroke="#5a3e26" stroke-width="1.2"/><path d="M16 13v10M11 18h10" stroke="${c}" stroke-width="1.8"/>`,
+  'Ладанка': c=>`<path d="M9 4c2 6 12 6 14 0" stroke="#8d6540" stroke-width="1.3" fill="none"/><path d="M11 13h10l2 11c-3 3-11 3-14 0z" fill="#7b5634"/><path d="M11 13c2-2 8-2 10 0" stroke="${c}" stroke-width="2" fill="none"/><circle cx="16" cy="20" r="1.8" fill="${c}"/>`,
+  'Талисман':c=>`<path d="M9 4c2 6 12 6 14 0" stroke="#8d6540" stroke-width="1.3" fill="none"/><path d="M13 12c4-2 8 1 7 6l-4 11-3-11z" fill="#e8e2d2"/><path d="M13 12c4-2 8 1 7 6" stroke="${c}" stroke-width="1.6" fill="none"/>`,
+  'Амулет':  c=>`<path d="M9 4c2 6 12 6 14 0" stroke="#d4b46a" stroke-width="1.3" fill="none"/><path d="M16 10l7 8-7 10-7-10z" fill="#d4b46a"/><path d="M16 13l4.5 5-4.5 6.5-4.5-6.5z" fill="${c}"/>`,
+  'Перстень':c=>`<ellipse cx="16" cy="21" rx="8" ry="6" fill="none" stroke="#d4b46a" stroke-width="2.6"/><path d="M12 12l4-5 4 5-4 4z" fill="${c}"/><path d="M12 12l4 4 4-4" stroke="#fff" stroke-opacity=".4" fill="none"/>`,
+  'Кольцо':  c=>`<ellipse cx="16" cy="18" rx="9" ry="7" fill="none" stroke="#c9ced6" stroke-width="3"/><circle cx="16" cy="11" r="2.2" fill="${c}"/>`,
+  'Печатка': c=>`<ellipse cx="16" cy="21" rx="8" ry="6" fill="none" stroke="#a9b2bf" stroke-width="2.6"/><rect x="10" y="8" width="12" height="8" rx="2" fill="#7d8592"/><path d="M13 12h6M16 9.5v5" stroke="${c}" stroke-width="1.6"/>`,
+  'Обруч':   c=>`<ellipse cx="16" cy="16" rx="10" ry="8" fill="none" stroke="#8a7a5a" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="10" ry="8" fill="none" stroke="${c}" stroke-width="1.2" stroke-dasharray="3 3"/>`,
+};
+const UQ_ART = {
+  felling:c=>`<path d="M16 30V5" stroke="#5a3e26" stroke-width="3" stroke-linecap="round"/><path d="M16 7c-6-3-12 1-12 8 3-2 7-3 12-1zM16 7c6-3 12 1 12 8-3-2-7-3-12-1z" fill="#f0c060"/><path d="M16 7c-6-3-12 1-12 8M16 7c6-3 12 1 12 8" stroke="#a06a20" stroke-width="1.2" fill="none"/><circle cx="16" cy="9" r="2" fill="#fff4c0"/>`,
+  shadow: c=>`<path d="M16 4c-5 0-8 4-8 8l-3 16c4 2 18 2 22 0l-3-16c0-4-3-8-8-8z" fill="#2a2638"/><path d="M12 10c2-3 6-3 8 0l-1 5h-6z" fill="#120e18"/><circle cx="14" cy="12" r="1" fill="${c}"/><circle cx="18" cy="12" r="1" fill="${c}"/><path d="M8 28c3-6 4-10 5-14M24 28c-3-6-4-10-5-14" stroke="#4a4466" stroke-width="1"/>`,
+  heart:  c=>`<path d="M9 4c2 6 12 6 14 0" stroke="#5a3e26" stroke-width="1.3" fill="none"/><path d="M16 28s-9-6-9-12c0-4 3-6 5-6 2 0 3 1 4 3 1-2 2-3 4-3 2 0 5 2 5 6 0 6-9 12-9 12z" fill="#8a1a2a"/><path d="M12 14c1-2 2-2 3-2" stroke="#ff6a7a" stroke-width="1.4" fill="none"/><circle cx="16" cy="18" r="2" fill="#8cf0a0"/>`,
+  flame:  c=>`<ellipse cx="16" cy="22" rx="8" ry="6" fill="none" stroke="#d4b46a" stroke-width="2.6"/><path d="M16 4c3 4 5 6 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3 0-5 1-8z" fill="#f08a3a"/><path d="M16 9c1 2 2 3 2 5a2 2 0 0 1-4 0c0-1 1-2 2-5z" fill="#ffe08a"/>`,
+};
+const iconBase = it => SLOT_BASE[it.slot][Math.min(3,Math.floor((it.tier-1)/2))][0];
+function itemSvg(it,size=32){
+  const c=RAR[it.rar].col,art=it.uq?UQ_ART[it.uq](c):ICON_ART[iconBase(it)](c);
+  return `<svg class="itm-svg" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${art}</svg>`;
+}
+const iconImgs={};
+function itemImg(it){
+  const k=(it.uq||iconBase(it))+'|'+it.rar;
+  if(!iconImgs[k]){const im=new Image();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${(it.uq?UQ_ART[it.uq]:ICON_ART[iconBase(it)])(RAR[it.rar].col)}</svg>`);iconImgs[k]=im}
+  return iconImgs[k];
+}
+
+/* ================= СРАВНЕНИЕ И ХАРАКТЕРИСТИКИ ================= */
+// «вес» свойства для общей оценки вещи
+const MOD_W = {dmg:1, spd:1, crit:1.2, burn:0.6, vamp:6, hp:0.6, armor:1.6, move:0.8, gather:0.5, dbl:0.6, loot:0.5};
+function itemScore(it){if(!it)return 0;let s=0;for(const [k,v] of it.mods)s+=v*(MOD_W[k]||0.5);if(it.uq)s+=15;return s}
+function itemCompare(it){
+  const e=S.eq[it.slot];
+  const sum=x=>{const o={};if(x)for(const [k,v] of x.mods)o[k]=(o[k]||0)+v;return o};
+  const a=sum(it),b=sum(e),keys=[...new Set([...Object.keys(a),...Object.keys(b)])];
+  const diffs=keys.map(k=>[k,Math.round(((a[k]||0)-(b[k]||0))*10)/10]).filter(([,d])=>d!==0);
+  if(it.uq&&!(e&&e.uq===it.uq))diffs.push(['uq',1]);
+  if(e&&e.uq&&e.uq!==it.uq)diffs.push(['uq',-1]);
+  const delta=Math.round(itemScore(it)-itemScore(e));
+  return {e,diffs,delta,better:!e||delta>0,worse:!!e&&delta<0};
+}
+function compareHtml(it){
+  const c=itemCompare(it);
+  const parts=c.diffs.map(([k,d])=>{
+    if(k==='uq')return `<span class="${d>0?'up':'dn'}">${d>0?'+ особый эффект':'− теряете особый эффект'}</span>`;
+    const m=MODS[k];return `<span class="${d>0?'up':'dn'}">${d>0?'+':'−'}${Math.abs(d)}${m.pct?'%':''} ${m.n.toLowerCase()}</span>`});
+  const head=!c.e?'<b class="up">▲ ячейка пустая — надеть</b>':c.better?`<b class="up">▲ лучше надетого (+${c.delta})</b>`:c.worse?`<b class="dn">▼ хуже надетого (${c.delta})</b>`:'<b>≈ равноценно</b>';
+  return `<span class="cmp">${head}${parts.length?' · '+parts.join(' · '):''}</span>`;
+}
+function heroStats(){
+  const spd=1+gear('spd')/100,dm=(1+gear('dmg')/100)*(1+0.10*rl('steel'))*(1+0.12*pr('str'));
+  const crit=Math.min(100,gear('crit')),critMul=1+crit/100;
+  const axeHit=axeDmg(S.up.axe)*dm*(1+0.2*S.forgeUp.melee),axeCdv=axeCd(S.up.axe)/spd;
+  const bowHit=S.bow?bowDmg(S.bow)*dm*(1+0.2*S.forgeUp.bow):0,bowCdv=S.bow?bowCd(S.bow)/spd:0;
+  const gm=(1+0.15*pr('hand'))*(1+gear('gather')/100)*(1+0.15*rl('gather'));
+  const buff=S.buffAtk>0?' (сейчас ×1,2 от зелья силы)':'';
+  const f1=n=>Math.round(n*10)/10;
+  return [
+    ['Уровень героя',`${S.lvl} · опыт ${Math.floor(S.xp)}/${xpNeed(S.lvl)}`],
+    ['Урон топором',`${f1(axeHit)} за удар · ${f1(axeHit*critMul/axeCdv)} в секунду${buff}`],
+    ['Урон луком',S.bow?`${f1(bowHit)} за выстрел · ${f1(bowHit*critMul/bowCdv)} в секунду · дальность ${bowRange(S.bow)}`:'лука нет'],
+    ['Скорость удара',`топор раз в ${f1(axeCdv)} с${S.bow?` · лук раз в ${f1(bowCdv)} с`:''}${gear('spd')?` (+${gear('spd')}%)`:''}`],
+    ['Шанс крита (×2)',`${crit}%`],
+    ['Поджог',hasUq('flame')?'каждый удар':`${Math.min(100,gear('burn'))}% ударов`],
+    ['Здоровье',`${Math.ceil(S.p.hp)} / ${maxHp(S.up.hp)}`],
+    ['Защита',`−${Math.min(60,gear('armor'))}% входящего урона`],
+    ['Здоровье за убийство',`+${f1(pr('vamp')+gear('vamp'))}`],
+    ['Скорость бега',`${speedOf(S.up.boots)}`],
+    ['Рывок',`раз в ${f1(dashCd())} с`],
+    ['Сила по дереву / камню',`${f1(axeDmg(S.up.axe)*gm)} / ${f1(pickDmg(S.up.pick)*gm)}`],
+    ['Двойная добыча',`${Math.round(20*pr('luck')+gear('dbl'))}%`],
+    ['Шанс добычи с мертвецов',`+${gear('loot')}%`],
+    ['Сумка',`${bagCap(S.up.bag)} мест`],
+    ['Зелья',`до ${potMax()} каждого вида`],
+  ];
 }
 
 /* ================= ВИД И АТАКИ БОССОВ ================= */
@@ -1948,7 +2044,10 @@ function render(now){
     if(!vis(d.x,d.y))continue;
     if(d.t<10&&Math.floor(d.t*6)%2===0)continue;
     const bob=Math.sin(now/250+d.x)*2,x=d.x,y=d.y+bob,big=d.kind==='big';
-    if(d.kind==='item'){const col=RAR[d.it.rar].col;ctx.globalAlpha=0.35+0.15*Math.sin(now/200);ctx.fillStyle=col;ctx.fillRect(x-2,y-60,4,56);ctx.globalAlpha=1;const g2=ctx.createRadialGradient(x,y,1,x,y,20);g2.addColorStop(0,col);g2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g2;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(x,y,20,0,7);ctx.fill();ctx.globalAlpha=1;ctx.fillStyle='#6b4a2c';ctx.beginPath();ctx.arc(x,y+2,7,0,7);ctx.fill();ctx.fillStyle=col;ctx.fillRect(x-5,y-6,10,4);continue}
+    if(d.kind==='item'){const col=RAR[d.it.rar].col;ctx.globalAlpha=0.35+0.15*Math.sin(now/200);ctx.fillStyle=col;ctx.fillRect(x-2,y-62,4,50);ctx.globalAlpha=1;const g2=ctx.createRadialGradient(x,y,1,x,y,22);g2.addColorStop(0,col);g2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g2;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(x,y,22,0,7);ctx.fill();ctx.globalAlpha=1;
+      const im=itemImg(d.it);if(im.complete&&im.naturalWidth)ctx.drawImage(im,x-14,y-16,28,28);else{ctx.fillStyle=col;ctx.fillRect(x-6,y-6,12,12)}
+      if(Math.abs(d.x-P.x)<400){const cmp=itemCompare(d.it);ctx.font='700 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#000';ctx.fillText(cmp.better?'▲ лучше':cmp.worse?'▼ хуже':'≈',x+1,y-19);ctx.fillStyle=cmp.better?'#7ee07e':cmp.worse?'#e07070':'#c4c2b8';ctx.fillText(cmp.better?'▲ лучше':cmp.worse?'▼ хуже':'≈',x,y-20)}
+      continue}
     const flask=d.kind==='potion'||d.kind==='potatk';
     const g=ctx.createRadialGradient(x,y,1,x,y,big?30:18);g.addColorStop(0,d.kind==='potion'?'rgba(220,80,70,.45)':d.kind==='potatk'?'rgba(240,150,60,.5)':'rgba(244,199,102,.5)');g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,big?30:18,0,7);ctx.fill();
@@ -2556,9 +2655,11 @@ function rowsFor(t){
   }
   if(t==='items'){
     R.push({note:`${resHtml(S.shards,'shard')} осколков · ${resHtml(S.iron,'iron')} железа · ${resHtml(S.keys,'key')} ключей. Вещи надеваются где угодно. ${S.forge?(inCamp()?'Кузница рядом: можно улучшать и перековывать.':'Улучшать и перековывать можно в лагере, у кузницы.'):'Постройте кузницу во вкладке «Лагерь», чтобы улучшать вещи.'}`});
+    R.push({heroStats:true});
+    R.push({note:'<b>Надето</b>'});
     for(const sl in SLOTS){const it=S.eq[sl];R.push(it?{itm:it,eqd:true}:{note:`<b>${SLOTS[sl]}</b>: пусто`})}
     R.push({note:`<b>Сумка вещей</b> ${S.inv.length}/${INV_MAX}`});
-    for(const it of S.inv)R.push({itm:it,eqd:false});
+    for(const it of S.inv.slice().sort((a,b)=>itemCompare(b).delta-itemCompare(a).delta))R.push({itm:it,eqd:false});
     if(S.forge){
       R.push({note:'<b>Кузница: закалка</b>'});
       for(const [k,nm] of [['melee','Окованный топор: +20% урона в ближнем бою'],['bow','Железные наконечники: +20% урона луком']]){const l=S.forgeUp[k];
@@ -2668,7 +2769,7 @@ function renderMenu(){
   const fq=menuFarm&&poiById(menuFarm);
   if(menuFarm&&(!fq||!farmOf(fq)||dist(fq.x,fq.y,P.x,P.y)>140)){toggleMenu(false);return}
   const rows=fq?farmRowsHead(fq).concat(farmRows(fq)):rowsFor(tab);
-  const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+merchantHere()+'|'+S.shards+'|'+S.iron+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc,r.itm&&r.itm.id,r.itm&&r.itm.rar,r.itm&&JSON.stringify(r.itm.mods),r.eqd]));
+  const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+merchantHere()+'|'+S.shards+'|'+S.iron+'|'+(tab==='items'?JSON.stringify(heroStats()):'')+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc,r.itm&&r.itm.id,r.itm&&r.itm.rar,r.itm&&JSON.stringify(r.itm.mods),r.eqd]));
   if(sig===menuSig)return;menuSig=sig;
   menuTitle.textContent=fq?farmName(fq):'Лагерь';tabsEl.hidden=!!fq;
   tabsEl.innerHTML=fq?'':TABS.concat(merchantHere()?[['shop','Торговец']]:[]).map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
@@ -2686,10 +2787,12 @@ function renderMenu(){
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="buy" data-act="copy" type="button">Скопировать код</button></div>
       <textarea id="loadCode" placeholder="Вставьте код сохранения"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="buy" data-act="load" type="button">Загрузить код</button><button class="buy" data-act="reset" type="button" style="background:#5a2b26;color:#ece6d3">${resetArm?'Точно? Нажмите ещё раз':'Начать заново'}</button></div></div>`;continue}
-    if(r.itm){const it=r.itm,rc=RAR[it.rar],cmp=!r.eqd&&S.eq[it.slot]?` · сейчас надето: ${S.eq[it.slot].name}`:'';
+    if(r.heroStats){h+=`<div class="stats-grid">${heroStats().map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join('')}</div>`;continue}
+    if(r.itm){const it=r.itm,rc=RAR[it.rar],cmp=r.eqd?'':'<br>'+compareHtml(it)+(S.eq[it.slot]?` <span class="vs">вместо «${S.eq[it.slot].name}»</span>`:'');
       let btns=r.eqd?`<button class="buy sec" data-act="unequip:${it.slot}" type="button">Снять</button>`:`<button class="buy" data-act="equip:${it.id}" type="button">Надеть</button><button class="buy sec" data-act="salvage:${it.id}" type="button">Разобрать +${rc.sh}</button>`;
       if(S.forge&&inCamp()){if(it.rar<3){const c=FORGE.rar(it.rar);btns+=`<button class="buy" data-act="rarup:${it.id}" type="button" ${S.shards<c.sh||S.iron<c.i?'disabled':''}>Редкость ↑ ${costHtml(c)}</button>`}const c2=FORGE.reroll(it.rar);btns+=`<button class="buy sec" data-act="reroll:${it.id}" type="button" ${S.shards<c2.sh||S.iron<c2.i?'disabled':''}>Перековать ${costHtml(c2)}</button>`}
-      h+=`<div class="item itm" style="--rc:${rc.col}"><div><h3>${it.name}<small>${rc.n} · ${SLOTS[it.slot]} · ур. ${it.tier}${r.eqd?' · надето':''}</small></h3><p>${modText(it)}${cmp}</p></div><div class="itm-b">${btns}</div></div>`;continue}
+      const better=!r.eqd&&itemCompare(it).better;
+      h+=`<div class="item itm${better?' better':''}" style="--rc:${rc.col}"><div class="itm-ico">${itemSvg(it,40)}</div><div><h3>${it.name}<small>${rc.n} · ${SLOTS[it.slot]} · ур. ${it.tier}${r.eqd?' · надето':''}</small></h3><p>${modText(it)}${cmp}</p></div><div class="itm-b">${btns}</div></div>`;continue}
     if(r.mode){h+=`<div class="item"><div><h3>${r.title}</h3><p>${r.desc}</p></div><button class="buy" data-act="${r.act}" type="button">Сменить</button></div>`;continue}
     if(r.heroPick){h+=`<div class="item"><div><h3>${r.title}<small>${r.lvl}</small></h3><p>${r.desc}</p></div><button class="buy" data-act="perkpick" type="button">Выбрать</button></div>`;continue}
     const btn=r.cost!=null?`<button class="buy" data-act="${r.act}" type="button" ${r.why?'disabled title="'+r.why+'"':''}>${costHtml(r.cost)}</button>`:'';
