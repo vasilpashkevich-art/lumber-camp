@@ -237,7 +237,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 <div id="menu" hidden>
   <div class="sheet" role="dialog" aria-label="Меню лагеря">
     <div class="sh-head">
-      <h2>Лагерь</h2>
+      <h2 id="menuTitle">Лагерь</h2>
       <div class="sh-wood" id="mStore"></div>
       <button class="gbtn" id="closeBtn" type="button" style="padding:8px 12px">Закрыть</button>
     </div>
@@ -568,7 +568,7 @@ const keys=new Set();
 let actHeld=false, joy=null, menuOpen=false;
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='TEXTAREA')return;
-  if(e.code==='KeyB'){toggleMenu();e.preventDefault();return}
+  if(e.code==='KeyB'){openMenuHere();e.preventDefault();return}
   if(e.code==='KeyM'){setSound(!Snd.on);return}
   if(e.code==='KeyQ'||e.code==='KeyH'){drinkPotion();return}
   if(e.code==='KeyF'){drinkAtk();return}
@@ -1187,7 +1187,7 @@ function farmTarget(){
     if(f.broken){const c=farmFixCost(q,f,fHp(q,f));return {k:'f',o:q,act:'fix',ok:S.wood>=c.w,lbl:'Чинить',msg:`Хутор разрушен. Починить: ${c.w} древесины (со склада)`}}
     if(farmStored(f)>=1){
       const room=bagCap(S.up.bag)-bagTotal(),w=Math.floor(f.store),st=Math.floor(f.storeS||0);
-      return {k:'f',o:q,act:'take',ok:room>0,lbl:'Забрать',msg:room>0?`Забрать с хутора: ${[w?w+' древесины':'',st?st+' камня':''].filter(Boolean).join(', ')}`:'Сумка полна, несите добычу в лагерь'};
+      return {k:'f',o:q,act:'take',ok:room>0,hint:true,lbl:'Забрать',msg:room>0?`Забрать с хутора: ${[w?w+' древесины':'',st?st+' камня':''].filter(Boolean).join(', ')}`:'Сумка полна, несите добычу в лагерь'};
     }
   }
   return null;
@@ -1862,7 +1862,7 @@ const $=id=>document.getElementById(id);
 const mini=$('mini'),mctx=mini.getContext('2d');
 const htmlCache={};
 function setHtml(id,h){if(htmlCache[id]!==h){htmlCache[id]=h;$(id).innerHTML=h}}
-const wpnBtn=$('wpnBtn');
+const wpnBtn=$('wpnBtn'),campBtn=$('campBtn');
 function hud(){
   const mh=maxHp(S.up.hp),cap=bagCap(S.up.bag);
   $('hpTxt').textContent=`${Math.ceil(Math.max(0,S.p.hp))}/${mh}`;$('hpbar').firstChild.style.width=(100*Math.max(0,S.p.hp)/mh)+'%';
@@ -1878,6 +1878,7 @@ function hud(){
   {const b=S.buffAtk>0,t=Math.ceil(S.buffAtk);atkBtn.hidden=S.potAtk<=0&&!b;atkBtn.classList.toggle('on',b);setHtml('atkBtn',`<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="6.4" y="1.5" width="3.2" height="3" rx=".6" fill="#d8d2c0"/><path d="M6.6 4.4h2.8v1.8a4.6 4.6 0 1 1-2.8 0z" fill="#e8822e"/><path d="M6 12.6l4-4" stroke="#ffe0b0" stroke-width="1.3" stroke-linecap="round"/></svg> ×${S.potAtk}${b?` <small>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</small>`:''}`);atkBtn.title='Зелье силы: +20% урона на минуту (F)'}
   wpnBtn.hidden=S.bow<=0;const wl=S.weapon==='bow'?'Лук':'Топор';if(wpnBtn.textContent!==wl)wpnBtn.textContent=wl;
   $('phaseTxt').textContent=(ph.night?'до рассвета ':'до ночи ')+m+':'+String(s).padStart(2,'0');
+  {const fq=nearFarm(),lbl=fq?'Хутор':'Лагерь';if(campBtn.textContent!==lbl)campBtn.textContent=lbl}
   $('clock').classList.toggle('night',ph.night);
   const bloodNow=ph.night&&S.night.blood&&S.night.active, bloodNext=!ph.night&&isBlood(S.day);
   $('clock').classList.toggle('blood',bloodNow||bloodNext);
@@ -1916,12 +1917,14 @@ function drawMini(){
 /* ================= МЕНЮ ЛАГЕРЯ ================= */
 const TABS=[['hero','Герой'],['gear','Снаряжение'],['camp','Лагерь'],['def','Оборона'],['vil','Деревня'],['farm','Хутора'],['save','Сохранение']];
 let tab='hero', menuSig='';
-const menu=$('menu'),list=$('list'),tabsEl=$('tabs');
-function toggleMenu(force){
+const menu=$('menu'),list=$('list'),tabsEl=$('tabs'),menuTitle=$('menuTitle');
+function toggleMenu(force,farmId){
   menuOpen=force===undefined?!menuOpen:force;menu.hidden=!menuOpen;
+  menuFarm=menuOpen?(farmId||null):null;
   if(menuOpen){keys.clear();actHeld=false;menuSig='';renderMenu()}
 }
-$('campBtn').onclick=()=>toggleMenu();$('closeBtn').onclick=()=>toggleMenu(false);
+function openMenuHere(){if(menuOpen){toggleMenu(false);return}const q=nearFarm();toggleMenu(true,q?q.id:null)}
+$('campBtn').onclick=openMenuHere;$('closeBtn').onclick=()=>toggleMenu(false);
 menu.addEventListener('click',e=>{if(e.target===menu)toggleMenu(false)});
 tabsEl.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;menuSig='';renderMenu()}});
 list.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled){const t0=S.wood+S.stone;doAct(b.dataset.act);if(S.wood+S.stone<t0)sfx.buy();menuSig='';renderMenu()}});
@@ -1991,26 +1994,10 @@ function rowsFor(t){
   }
   if(t==='farm'){
     const list=pois.filter(q=>farmOf(q));
-    R.push({note:`Хуторов: ${list.length} из ${pois.length}. Чтобы восстановить хутор, заберите тайник в хижине или руинах, перебейте мертвецов вокруг и подойдите к дому. Крестьяне рубят деревья рядом и складывают их в поленницу у дома. Забирайте сами${S.base>=FARM.roadBase?' или проложите дорогу':''}.`});
-    if(S.base<FARM.roadBase)R.push({note:`Дороги и вагончики откроются на ${FARM.roadBase} уровне главного дома («${HQ_SKINS[FARM.roadBase]}»). По дороге древесина сама поедет на склад.`});
-    for(const q of list){
-      const f=farmOf(q),cap=farmCap(q.zone,f.lvl),mx=fHp(q,f);
-      const st=f.broken?'разрушен, почините на месте':`крестьян: ${f.lvl}${f.lvl>=MILITIA_LVL?' (ополчение)':''} · добывают ${f.mode==='stone'?'камень':'древесину'} · склад ${Math.floor(farmStored(f))}/${cap} · прочность ${Math.ceil(f.hp)}/${mx}${f.road?' · дорога есть':''}`;
-      if(f.lvl<FARM.maxLvl&&!f.broken){const c=farmUpCost(q.zone,f.lvl);R.push({title:farmName(q),lvl:`ур. ${f.lvl}`,desc:`${st}. Улучшение: +1 крестьянин, склад ${cap} → ${farmCap(q.zone,f.lvl+1)}${f.lvl+1>=MILITIA_LVL&&f.lvl<MILITIA_LVL?'. С этого уровня крестьяне ночью не прячутся, а отбиваются вилами':''}`,cost:c,why:gateFor(c),act:'farmup:'+q.id})}
-      else R.push({title:farmName(q),lvl:`ур. ${f.lvl}${f.lvl>=FARM.maxLvl?' · максимум':''}`,desc:st});
-      {const st=f.mode==='stone',noRock=st&&farmRateEst(q,f)===0;
-        R.push({title:`Добыча: ${st?'камень':'древесина'}`,lvl:'',desc:`${farmName(q)}: ${st?(noRock?'рядом нет валунов, крестьяне сидят без дела. ':'крестьяне ходят к ближайшим валунам, работа медленнее. '):'крестьяне рубят ближайшие деревья. '}Переключить на ${st?'древесину':'камень'}?`,mode:true,act:'farmmode:'+q.id})}
-      if(!f.broken&&f.hp<mx){const c=farmFixCost(q,f,mx-f.hp);R.push({title:'Починить',lvl:'',desc:`${farmName(q)}: 1 древесина за 12 прочности`,cost:c,why:gateFor(c),act:'farmfix:'+q.id})}
-      if(!f.broken){
-        const p=f.pal||0;
-        if(p<FARM_PAL_MAX){const c=farmPalCost(q.zone,p);R.push({title:p?`Ограда: ${PAL_SKINS[p]}`:'Построить ограду',lvl:p?`ур. ${p}`:'',desc:`${farmName(q)}: прочность ${mx} → ${farmHpMax(q.zone,f.lvl,p+1)}${p+1<FARM_PAL_MAX||!p?'':''}`,cost:c,why:gateFor(c),act:'farmpal:'+q.id})}
-        else R.push({title:`Ограда: ${PAL_SKINS[p]}`,lvl:'максимум',desc:farmName(q)});
-        const tl=f.tower||0;
-        if(tl<FARM_TOWER_MAX){const c=farmTowerCost(q.zone,tl);R.push({title:tl?`Вышка хутора`:'Поставить вышку',lvl:tl?`ур. ${tl}`:'',desc:`${farmName(q)}: лучник сам стреляет по нечисти · урон ${fmt1(farmTowerDmg(q.zone,tl||1))}${tl?' → '+fmt1(farmTowerDmg(q.zone,tl+1)):''}, дальность ${farmTowerRange(tl+1)}`,cost:c,why:gateFor(c),act:'farmtower:'+q.id})}
-        else R.push({title:'Вышка хутора',lvl:'максимум',desc:`${farmName(q)}: урон ${fmt1(farmTowerDmg(q.zone,tl))}`});
-      }
-      if(S.base>=FARM.roadBase&&!f.road){const c=farmRoadCost(q.zone);R.push({title:'Проложить дорогу',lvl:'',desc:`${farmName(q)}: вагончик сам повезёт древесину на склад`,cost:c,why:gateFor(c),act:'road:'+q.id})}
-    }
+    R.push({note:`Хуторов: ${list.length} из ${pois.length}. Улучшать, строить ограду и вышку, менять добычу и прокладывать дорогу можно только у самого хутора: подойдите к нему и нажмите «Хутор» (клавиша B).`});
+    if(S.base<FARM.roadBase)R.push({note:`Дороги и вагончики откроются на ${FARM.roadBase} уровне главного дома («${HQ_SKINS[FARM.roadBase]}»).`});
+    for(const q of list){const f=farmOf(q),cap=farmCap(q.zone,f.lvl);
+      R.push({title:farmName(q),lvl:`ур. ${f.lvl}`,desc:f.broken?'разрушен, почините на месте':`${f.mode==='stone'?'камень':'древесина'} · склад ${Math.floor(farmStored(f))}/${cap} · прочность ${Math.ceil(f.hp)}/${fHp(q,f)}${f.road?' · дорога':''}`});}
   }
   if(t==='hero'){
     R.push({note:`Уровень ${S.lvl} · опыт ${Math.floor(S.xp)}/${xpNeed(S.lvl)}. Опыт даётся за мертвецов, боссов, могильники, срубленные деревья, разбитые валуны, пережитые ночи, хутора и задания. Каждый уровень — выбор 1 из 3 умений.`});
@@ -2025,13 +2012,47 @@ function rowsFor(t){
   if(t==='save')R.push({save:true});
   return R;
 }
+function farmRows(q){
+  const R=[];if(!farmOf(q))return R;
+      const f=farmOf(q),cap=farmCap(q.zone,f.lvl),mx=fHp(q,f);
+      const st=f.broken?'разрушен, почините на месте':`крестьян: ${f.lvl}${f.lvl>=MILITIA_LVL?' (ополчение)':''} · добывают ${f.mode==='stone'?'камень':'древесину'} · склад ${Math.floor(farmStored(f))}/${cap} · прочность ${Math.ceil(f.hp)}/${mx}${f.road?' · дорога есть':''}`;
+      if(f.lvl<FARM.maxLvl&&!f.broken){const c=farmUpCost(q.zone,f.lvl);R.push({title:'Уровень хутора',lvl:`ур. ${f.lvl}`,desc:`Улучшение: +1 крестьянин, склад ${cap} → ${farmCap(q.zone,f.lvl+1)}${f.lvl+1>=MILITIA_LVL&&f.lvl<MILITIA_LVL?'. С этого уровня крестьяне ночью не прячутся, а отбиваются вилами':''}`,cost:c,why:gateFarm(c),act:'farmup:'+q.id})}
+      else if(!f.broken)R.push({title:'Уровень хутора',lvl:`ур. ${f.lvl} · максимум`,desc:''});
+      {const st=f.mode==='stone',noRock=st&&farmRateEst(q,f)===0;
+        R.push({title:`Добыча: ${st?'камень':'древесина'}`,lvl:'',desc:`${st?(noRock?'рядом нет валунов, крестьяне сидят без дела. ':'крестьяне ходят к ближайшим валунам, работа медленнее. '):'крестьяне рубят ближайшие деревья. '}Переключить на ${st?'древесину':'камень'}?`,mode:true,act:'farmmode:'+q.id})}
+      if(!f.broken&&f.hp<mx){const c=farmFixCost(q,f,mx-f.hp);R.push({title:'Починить',lvl:'',desc:`1 древесина за 12 прочности`,cost:c,why:gateFarm(c),act:'farmfix:'+q.id})}
+      if(!f.broken){
+        const p=f.pal||0;
+        if(p<FARM_PAL_MAX){const c=farmPalCost(q.zone,p);R.push({title:p?`Ограда: ${PAL_SKINS[p]}`:'Построить ограду',lvl:p?`ур. ${p}`:'',desc:`прочность ${mx} → ${farmHpMax(q.zone,f.lvl,p+1)}${p+1<FARM_PAL_MAX||!p?'':''}`,cost:c,why:gateFarm(c),act:'farmpal:'+q.id})}
+        else R.push({title:`Ограда: ${PAL_SKINS[p]}`,lvl:'максимум',desc:''});
+        const tl=f.tower||0;
+        if(tl<FARM_TOWER_MAX){const c=farmTowerCost(q.zone,tl);R.push({title:tl?`Вышка хутора`:'Поставить вышку',lvl:tl?`ур. ${tl}`:'',desc:`лучник сам стреляет по нечисти · урон ${fmt1(farmTowerDmg(q.zone,tl||1))}${tl?' → '+fmt1(farmTowerDmg(q.zone,tl+1)):''}, дальность ${farmTowerRange(tl+1)}`,cost:c,why:gateFarm(c),act:'farmtower:'+q.id})}
+        else R.push({title:'Вышка хутора',lvl:'максимум',desc:`урон ${fmt1(farmTowerDmg(q.zone,tl))}`});
+      }
+      if(S.base>=FARM.roadBase&&!f.road){const c=farmRoadCost(q.zone);R.push({title:'Проложить дорогу',lvl:'',desc:`вагончик сам повезёт древесину на склад`,cost:c,why:gateFarm(c),act:'road:'+q.id})}
+  return R;
+}
+function farmRowsHead(q){
+  const f=farmOf(q),cap=farmCap(q.zone,f.lvl);
+  return [{note:f.broken?'Хутор разрушен. Почините его прямо здесь кнопкой «Чинить».':`Крестьян: ${f.lvl}${f.lvl>=MILITIA_LVL?' (ополчение)':''} · склад ${Math.floor(f.store)} ${RES.wood.icon} ${Math.floor(f.storeS||0)} ${RES.stone.icon} из ${cap} · прочность ${Math.ceil(f.hp)}/${fHp(q,f)}${f.road?' · дорога проложена':''}. Цены списываются со склада лагеря.`}];
+}
+function gateFarm(c0){
+  const c=disc(c0),nw=S.wood<c.w,ns=S.stone<(c.s||0);
+  return nw&&ns?'Не хватает древесины и камня':nw?'Не хватает древесины':ns?'Не хватает камня':'';
+}
+function spendFarm(c0){const c=disc(c0);if(!spendAny(c0))return false;if(c.w>=10)S.stats.upgrades++;return true}
+let menuFarm=null;
+const nearFarm=()=>{if(inCamp())return null;let best=null,bd=90;for(const q of pois){const f=farmOf(q);if(!f||Math.abs(q.x-P.x)>bd)continue;const d=dist(q.x,q.y,P.x,P.y);if(d<bd){bd=d;best=q}}return best};
 function renderMenu(){
-  const rows=rowsFor(tab);
-  const sig=tab+'|'+inCamp()+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc]));
+  const fq=menuFarm&&poiById(menuFarm);
+  if(menuFarm&&(!fq||!farmOf(fq)||dist(fq.x,fq.y,P.x,P.y)>140)){toggleMenu(false);return}
+  const rows=fq?farmRowsHead(fq).concat(farmRows(fq)):rowsFor(tab);
+  const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc]));
   if(sig===menuSig)return;menuSig=sig;
-  tabsEl.innerHTML=TABS.map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
+  menuTitle.textContent=fq?farmName(fq):'Лагерь';tabsEl.hidden=!!fq;
+  tabsEl.innerHTML=fq?'':TABS.map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
   let h='';
-  if(!inCamp()&&tab!=='save'&&tab!=='vil')h+=`<p class="warn">Строить и улучшать можно только в лагере.</p>`;
+  if(!fq&&!inCamp()&&tab!=='save'&&tab!=='vil'&&tab!=='farm'&&tab!=='hero')h+=`<p class="warn">Строить и улучшать можно только в лагере.</p>`;
   for(const r of rows){
     if(r.note){h+=`<p class="note">${r.note}</p>`;continue}
     if(r.job){
@@ -2058,11 +2079,11 @@ function doAct(a){
   const [k,arg,arg2]=a.split(':');
   if(k==='up'){const u=UP[arg],l=S.up[arg];if(l<u.max&&spend(u.cost(l))){S.up[arg]++;if(arg==='hp')S.p.hp=maxHp(S.up.hp);toast(`${u.name}: уровень ${S.up[arg]}`,'good')}}
   if(k==='bow'&&S.bow<BOW_MAX&&spend(bowCost(S.bow))){S.bow++;if(S.bow===1){S.weapon='bow';toast('Лук изготовлен и в руках. Переключение: кнопка внизу или R.','good')}else toast(`Лук: уровень ${S.bow}`,'good')}
-  if(k==='farmup'){const q=poiById(arg+':'+arg2)||poiById(arg),f=q&&farmOf(q);if(f&&f.lvl<FARM.maxLvl&&spend(farmUpCost(q.zone,f.lvl))){f.lvl++;f.hp=fHp(q,f);buildPeasants();toast(`${farmName(q)}: уровень ${f.lvl}, пришёл ещё один крестьянин`,'good')}}
-  if(k==='farmfix'){const q=poiById(arg),f=q&&farmOf(q);if(f){const mx=fHp(q,f);if(spend(farmFixCost(q,f,mx-f.hp))){f.hp=mx;toast('Хутор починен','good')}}}
-  if(k==='farmpal'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.pal||0)<FARM_PAL_MAX&&spend(farmPalCost(q.zone,f.pal||0))){const old=fHp(q,f);f.pal=(f.pal||0)+1;f.hp+=fHp(q,f)-old;toast(`${farmName(q)}: ${PAL_SKINS[f.pal]}`,'good')}}
-  if(k==='farmtower'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.tower||0)<FARM_TOWER_MAX&&spend(farmTowerCost(q.zone,f.tower||0))){f.tower=(f.tower||0)+1;toast(f.tower===1?`${farmName(q)}: вышка с лучником построена`:`${farmName(q)}: вышка ур. ${f.tower}`,'good')}}
-  if(k==='road'){const q=poiById(arg),f=q&&farmOf(q);if(f&&!f.road&&S.base>=FARM.roadBase&&spend(farmRoadCost(q.zone))){f.road=true;toast('Дорога проложена. Вагончик повезёт древесину, когда поленница наполнится на треть.','good')}}
+  if(k==='farmup'){const q=poiById(arg+':'+arg2)||poiById(arg),f=q&&farmOf(q);if(f&&f.lvl<FARM.maxLvl&&spendFarm(farmUpCost(q.zone,f.lvl))){f.lvl++;f.hp=fHp(q,f);buildPeasants();toast(`${farmName(q)}: уровень ${f.lvl}, пришёл ещё один крестьянин`,'good')}}
+  if(k==='farmfix'){const q=poiById(arg),f=q&&farmOf(q);if(f){const mx=fHp(q,f);if(spendFarm(farmFixCost(q,f,mx-f.hp))){f.hp=mx;toast('Хутор починен','good')}}}
+  if(k==='farmpal'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.pal||0)<FARM_PAL_MAX&&spendFarm(farmPalCost(q.zone,f.pal||0))){const old=fHp(q,f);f.pal=(f.pal||0)+1;f.hp+=fHp(q,f)-old;toast(`${farmName(q)}: ${PAL_SKINS[f.pal]}`,'good')}}
+  if(k==='farmtower'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.tower||0)<FARM_TOWER_MAX&&spendFarm(farmTowerCost(q.zone,f.tower||0))){f.tower=(f.tower||0)+1;toast(f.tower===1?`${farmName(q)}: вышка с лучником построена`:`${farmName(q)}: вышка ур. ${f.tower}`,'good')}}
+  if(k==='road'){const q=poiById(arg),f=q&&farmOf(q);if(f&&!f.road&&S.base>=FARM.roadBase&&spendFarm(farmRoadCost(q.zone))){f.road=true;toast('Дорога проложена. Вагончик повезёт древесину, когда поленница наполнится на треть.','good')}}
   if(k==='farmmode'){const q=poiById(arg),f=q&&farmOf(q);if(f){f.mode=f.mode==='stone'?'wood':'stone';for(const pe of peasants)if(pe.farm===q.id){if(pe.tree)pe.tree.claim=null;pe.tree=null;pe.carry=0;pe.state='idle'}toast(`${farmName(q)}: теперь добывают ${f.mode==='stone'?'камень':'древесину'}`,'good')}}
   if(k==='perkpick'){toggleMenu(false);showPerks();return}
   if(k==='hqfix'){const miss=hqMax(S.base)-S.hq;if(miss>0&&spend(C(Math.ceil(miss/8)))){S.hq=hqMax(S.base);toast('Ратуша восстановлена','good')}}
