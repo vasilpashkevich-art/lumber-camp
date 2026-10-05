@@ -442,7 +442,7 @@ function fmt1(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
 
 /* ================= STATE (сохраняется) ================= */
 const randSeed=()=>1+Math.floor(Math.random()*2147483646);
-function newState(){return {v:9,meta:{ng:0,relics:{},wins:0,relicPend:0},inv:[],eq:{weapon:null,armor:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
+function newState(){return {v:10,meta:{ng:0,relics:{},wins:0,relicPend:0},inv:[],eq:{weapon:null,armor:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
   fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
   day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0,fog:false},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0,crypts:0},p:{x:CX,y:CY+40,hp:10}};}
 function merge(def,src){
@@ -880,7 +880,8 @@ function leaveCrypt(msg){
 function dunRects(){
   const R=[];
   for(const r of DG.rooms){if(r.i===0||DG.rooms[r.i-1].cleared)R.push(r)}
-  for(const c of DG.cors)if(DG.rooms[c.i].cleared)R.push(c);
+  // проход заходит в соседние залы, чтобы на стыке не было «щели»
+  for(const c of DG.cors)if(DG.rooms[c.i].cleared)R.push({x:c.x-40,y:c.y,w:c.w+80,h:c.h});
   return R;
 }
 function clampIn(o,rad,rects){
@@ -2767,7 +2768,8 @@ function migrate(src){
   st.crypts=(src&&src.crypts&&typeof src.crypts==='object')?{...src.crypts}:{};
   st.meta.relics={};if(src&&src.meta&&src.meta.relics)for(const k in src.meta.relics)if(RELICS[k])st.meta.relics[k]=Math.min(RELICS[k].max,src.meta.relics[k]|0);
   for(const sl in st.eq){const it=st.eq[sl];if(it&&!(SLOTS[it.slot]&&Array.isArray(it.mods)))st.eq[sl]=null}
-  st.v=9;
+  if(src&&ver<10&&src.crypts&&Object.keys(src.crypts).length){st.crypts={};st.keys+=Object.keys(src.crypts).length}
+  st.v=10;
   if(!st.itemSeq||st.itemSeq<2)st.itemSeq=1+Math.max(0,...st.inv.map(i=>i.id||0),...Object.values(st.eq).map(i=>i?i.id:0));
   if(src&&!(typeof src.seed==='number'&&src.seed>0))st.seed=4242; // старые сохранения — прежняя карта
   if(src&&ver<4){st.hq=hqMax(st.base);st.v=4}
