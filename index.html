@@ -98,6 +98,8 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .dawn-card .gbtn{justify-self:end;padding:3px 10px;font-size:11px;border-radius:6px}
 #sndBtn[aria-pressed="false"]{color:var(--muted)}
 #help{position:fixed;z-index:5;left:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--muted);line-height:1.5;pointer-events:none}
+#help{max-width:calc(100vw - 640px)}
+@media (max-width:1100px){#help{display:none}}
 /* camp menu */
 #menu{position:fixed;inset:0;z-index:20;background:rgba(5,8,6,.6);display:flex;align-items:flex-end;justify-content:center}
 .sheet{width:min(100%,720px);max-height:82%;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:16px 16px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -1080,6 +1082,7 @@ function updateFarms(dt){
   const night=phase().night;
   for(const pe of peasants){
     const q=poiById(pe.farm),f=q&&farmOf(q);if(!f)continue;
+    if(f.hp>fHp(q,f))f.hp=fHp(q,f);
     pe.swing=Math.max(0,pe.swing-dt);
     const homeX=q.x+(pe.i-1)*12,homeY=q.y+20;
     const goTo=(tx,ty,sp)=>{const d=dist(pe.x,pe.y,tx,ty);if(d<6)return true;pe.x+=(tx-pe.x)/d*sp*dt;pe.y+=(ty-pe.y)/d*sp*dt;return false};
@@ -1751,7 +1754,7 @@ function drawFarm(q,f,now){
     const mx=fHp(q,f);
     ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(x-48,y-62,96,26);
     ctx.fillStyle='#ece6d3';ctx.fillText(`Хутор ур. ${f.lvl} · ${Math.floor(f.store)}/${cap}`,x,y-50);
-    ctx.fillStyle='#000';ctx.fillRect(x-40,y-44,80,4);ctx.fillStyle=f.broken?'#cf4b3f':'#86a85c';ctx.fillRect(x-40,y-44,80*f.hp/mx,4);
+    ctx.fillStyle='#000';ctx.fillRect(x-40,y-44,80,4);ctx.fillStyle=f.broken?'#cf4b3f':'#86a85c';ctx.fillRect(x-40,y-44,80*Math.max(0,Math.min(1,f.hp/mx)),4);
   }
 }
 function drawZombie(z){
@@ -2067,6 +2070,7 @@ function applyState(){
   for(const m of mounds){m.dead=!!S.mounds[m.id];m.hp=m.max;m.cd=3+Math.random()*5}
   P.x=S.p.x;P.y=S.p.y;if(S.p.hp<=0)S.p.hp=maxHp(S.up.hp);lastNight=null;
   spawnZoneZombies();fixJobs();buildPeasants();
+  for(const q of pois){const f=farmOf(q);if(f)f.hp=Math.max(0,Math.min(fHp(q,f),+f.hp||0))}
   clearedSeen=new Set(CFG.zones.filter(zoneCleared).map(z=>z.id));
 }
 
