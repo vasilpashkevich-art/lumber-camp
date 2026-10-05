@@ -1,16 +1,3 @@
-<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0d120f">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Лагерь лесоруба">
-<style>html,body{margin:0;padding:0}body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
 <title>Лагерь лесоруба</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700&display=swap">
@@ -26,14 +13,6 @@
 }
 html,body{height:100%;overflow:hidden}
 [hidden]{display:none!important}
-#win{position:fixed;inset:0;z-index:40;background:rgba(6,8,4,.8);display:flex;align-items:center;justify-content:center;padding:16px}
-.win-card{border-color:#f4c766;border-top-color:#f4c766}.win-card h2{color:#f4c766}
-.win-note{font-size:12px;color:var(--muted)}.win-b{display:grid;gap:8px}
-#ngBtn{background:#6a4a10;border-color:#f4c766}
-.itm{border-left:3px solid var(--rc)}.itm h3{color:var(--rc)}
-.itm-b{display:flex;flex-direction:column;gap:6px;align-items:stretch}
-.buy.sec{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
-.buy .ico{vertical-align:-0.2em}
 #quests{top:calc(140px + env(safe-area-inset-top,0px));right:12px;width:min(230px,46vw);pointer-events:auto;background:rgba(14,19,15,.78);border:1px solid var(--line);border-radius:8px;padding:4px 8px 6px;font-size:11px}
 #questHead{all:unset;cursor:pointer;display:flex;justify-content:space-between;width:100%;font:600 11px var(--f-body);color:#f4c766;letter-spacing:.06em;text-transform:uppercase;padding:2px 0}
 #questHead:focus-visible{outline:2px solid var(--ember)}
@@ -242,9 +221,6 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 <div id="over" hidden><div class="over-card"><h2>Лагерь пал</h2><p id="overTxt"></p><ul id="overList"></ul><button class="gbtn" id="overBtn" type="button">Начать заново</button></div></div>
 <div class="hud" id="quests"><button type="button" id="questHead">Задания <span>▾</span></button><ul id="questList"></ul></div>
 <div id="perks" hidden><div class="perk-card"><h3 id="perkTitle">Новый уровень</h3><div id="perkList"></div></div></div>
-<div id="win" hidden><div class="over-card win-card"><h2>Лес очищен!</h2><p id="winTxt"></p><ul id="winList"></ul>
-<p class="win-note">Великое переселение: новая случайная карта, враги сильнее на 25%, а вы забираете 2 реликвии — постоянные бонусы на все следующие забеги. Вещи, ресурсы и постройки остаются здесь.</p>
-<div class="win-b"><button class="gbtn" id="stayBtn" type="button">Остаться на этой карте</button><button class="gbtn" id="ngBtn" type="button">Великое переселение</button></div></div></div>
 <div id="menu" hidden>
   <div class="sheet" role="dialog" aria-label="Меню лагеря">
     <div class="sh-head">
@@ -294,13 +270,13 @@ const CFG = {
     {id:7,name:'Костяная пуща', r0:2050,r1:3200,tree:7,ztier:7,zcount:32,trees:120,mounds:3,tint:'#171b1a'},
   ],
   bosses: {
-    1:{name:'Королева слизи',     ability:'summon', skin:'slime'},
-    2:{name:'Древень',            ability:'slam',   skin:'treant'},
-    3:{name:'Двуглавая гидра',    ability:'slam',   skin:'hydra'},
-    4:{name:'Болотный ящер',      ability:'charge', skin:'croc'},
-    5:{name:'Крылатый змей',      ability:'dragon', skin:'dragon'},
-    6:{name:'Пепельный голем',    ability:'slam',   skin:'golem'},
-    7:{name:'Царь Мор',           ability:'all',    skin:'lich'},
+    1:{name:'Матка гнильцов',    ability:'summon'},
+    2:{name:'Вожак бродяг',      ability:'charge'},
+    3:{name:'Вурдалак-громила',  ability:'slam'},
+    4:{name:'Болотная ведьма',   ability:'summon'},
+    5:{name:'Лихо одноглазое',   ability:'charge'},
+    6:{name:'Пепельный великан', ability:'slam'},
+    7:{name:'Царь Мор',          ability:'all'},
   },
   // валуны по зонам: нужная кирка, камня за валун, прочность
   rocks: {pick:[0,1,1,3,5,7,9,12], stone:[0,1,2,3,4,6,8,11], hp:[0,4,8,14,22,34,50,70], respawn:60},
@@ -312,8 +288,8 @@ const pickDmg= l => 1 + 0.5*(l-1);
 const pickCd = l => Math.max(0.25, 0.6 - 0.03*(l-1));
 const pr = id => (S&&S.perks&&S.perks[id])||0;
 const bagCap = l => 10 + 6*(l-1) + 4*pr('pack');
-const speedOf= l => Math.round((150 + 15*(l-1))*(1+0.06*pr('legs'))*(1+gear('move')/100));
-const maxHp  = l => Math.round(10 + 6*(l-1) + 8*pr('vit') + gear('hp') + 15*rl('heart'));
+const speedOf= l => Math.round((150 + 15*(l-1))*(1+0.06*pr('legs')));
+const maxHp  = l => 10 + 6*(l-1) + 8*pr('vit');
 const bowDmg  = l => 1.5 + 0.8*(l-1);
 const bowRange= l => Math.round((240 + 15*(l-1))*(1+0.1*pr('aim')));
 const bowCd   = l => Math.max(0.3, 0.85 - 0.04*(l-1))/(1+0.1*pr('aim'));
@@ -348,17 +324,17 @@ const JOBS = {
   stone:{name:'Каменщики',  desc:'Носят камень на склад'},
   guard:{name:'Стражники',  desc:'Ходят вдоль забора и стреляют по нечисти'},
 };
-const woodRate  = () => S.jobs.wood*0.04*(1+bestCleared())*(1+0.1*pr('boss'))*(1+0.15*rl('gather'));
-const stoneRate = () => S.jobs.stone*0.025*(1+bestCleared())*(1+0.1*pr('boss'))*(1+0.15*rl('gather'));
+const woodRate  = () => S.jobs.wood*0.04*(1+bestCleared())*(1+0.1*pr('boss'));
+const stoneRate = () => S.jobs.stone*0.025*(1+bestCleared())*(1+0.1*pr('boss'));
 const guardDmg  = () => 1.5 + 0.5*S.base;
 const moundHp   = z => Math.round(25*z**1.4);
 const SAVE_KEY = 'lumber-camp-save';
 // Ресурсы: новые материалы добавляются сюда со своей иконкой
 const ICONS = {heart:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2S2.2 10.7 2.2 6.6C2.2 4.4 3.8 2.9 5.6 2.9c1 0 1.9.5 2.4 1.4.5-.9 1.4-1.4 2.4-1.4 1.8 0 3.4 1.5 3.4 3.7 0 4.1-5.8 7.6-5.8 7.6z" fill="#cf4b3f"/><path d="M4.6 5.2c.4-.8 1.1-1 1.6-1" stroke="#f3a097" stroke-width="1.1" fill="none" stroke-linecap="round"/></svg>', bag:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.6 5.4V4.2a2.4 2.4 0 0 1 4.8 0v1.2" stroke="#c9a46a" stroke-width="1.4" fill="none"/><rect x="2.4" y="5.2" width="11.2" height="9" rx="2.6" fill="#6b4a2c"/><rect x="5.2" y="8.2" width="5.6" height="2.2" rx="1" fill="#e98b3d"/></svg>', potion:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="6.4" y="1.5" width="3.2" height="3" rx=".6" fill="#d8d2c0"/><path d="M6.6 4.4h2.8v1.8a4.6 4.6 0 1 1-2.8 0z" fill="#cf4b3f"/><circle cx="6.6" cy="9.4" r="1" fill="#f3a097"/></svg>'};
-const RES = {iron:{name:'Железо', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 10.5l2.2-4.6h7.6L14 10.5z" fill="#7d8592"/><path d="M4.2 5.9h7.6l-1.1-2.2H5.3z" fill="#a9b2bf"/><path d="M2 10.5h12v2.3H2z" fill="#5a616c"/></svg>'}, shard:{name:'Осколки', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l4.5 5L8 14.5 3.5 6.5z" fill="#b47ae6"/><path d="M8 1.5l4.5 5H3.5z" fill="#d4a8f5"/></svg>'}, key:{name:'Ключи от склепов', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="5" cy="8" r="3.2" fill="none" stroke="#f4c766" stroke-width="1.8"/><path d="M8 8h6.5M12 8v2.5M14 8v2" stroke="#f4c766" stroke-width="1.8" fill="none"/></svg>'}, wood:{name:'Древесина', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="8.6" width="11.5" height="5.4" rx="2.7" fill="#8d6540"/><ellipse cx="12.4" cy="11.3" rx="2.3" ry="2.7" fill="#e2b46a"/><ellipse cx="12.4" cy="11.3" rx="1" ry="1.2" fill="#a8763f"/><rect x="2.8" y="2.6" width="10.6" height="5.4" rx="2.7" fill="#7b5634"/><ellipse cx="13.3" cy="5.3" rx="2.3" ry="2.7" fill="#e2b46a"/><ellipse cx="13.3" cy="5.3" rx="1" ry="1.2" fill="#a8763f"/></svg>'}, stone:{name:'Камень', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11.5l1.6-5L7 3.5l4.6.8 2.6 3.6-.6 4.6-3.8 1.9H5z" fill="#8b8a84"/><path d="M7 3.5l1 4.2-4.4-1.2zM8 7.7l6.2.2-2.6-3.6z" fill="#b3b2aa"/><path d="M8 7.7L5 13.4 2 11.5l1.6-5z" fill="#6f6e69"/></svg>'}};
+const RES = {wood:{name:'Древесина', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="8.6" width="11.5" height="5.4" rx="2.7" fill="#8d6540"/><ellipse cx="12.4" cy="11.3" rx="2.3" ry="2.7" fill="#e2b46a"/><ellipse cx="12.4" cy="11.3" rx="1" ry="1.2" fill="#a8763f"/><rect x="2.8" y="2.6" width="10.6" height="5.4" rx="2.7" fill="#7b5634"/><ellipse cx="13.3" cy="5.3" rx="2.3" ry="2.7" fill="#e2b46a"/><ellipse cx="13.3" cy="5.3" rx="1" ry="1.2" fill="#a8763f"/></svg>'}, stone:{name:'Камень', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11.5l1.6-5L7 3.5l4.6.8 2.6 3.6-.6 4.6-3.8 1.9H5z" fill="#8b8a84"/><path d="M7 3.5l1 4.2-4.4-1.2zM8 7.7l6.2.2-2.6-3.6z" fill="#b3b2aa"/><path d="M8 7.7L5 13.4 2 11.5l1.6-5z" fill="#6f6e69"/></svg>'}};
 const resHtml = (n,k='wood') => `<span class="val" title="${RES[k].name}">${n} ${RES[k].icon}</span>`;
-const disc = c => {const k=1-0.05*pr('thrift');return {w:Math.ceil((c.w||0)*k),s:Math.ceil((c.s||0)*k),i:c.i||0,sh:c.sh||0}};
-const costHtml = c0 => {const c=disc(c0);return [c.w?resHtml(c.w):'',c.s?resHtml(c.s,'stone'):'',c.i?resHtml(c.i,'iron'):'',c.sh?resHtml(c.sh,'shard'):''].filter(Boolean).join(' ')||'бесплатно'};
+const disc = c => {const k=1-0.05*pr('thrift');return {w:Math.ceil(c.w*k),s:Math.ceil((c.s||0)*k)}};
+const costHtml = c0 => {const c=disc(c0);return resHtml(c.w)+(c.s?' '+resHtml(c.s,'stone'):'')};
 // ---------- Герой: опыт, уровни, умения
 const xpNeed = l => Math.round(25*1.32**(l-1));
 const PERKS = {
@@ -432,7 +408,7 @@ const farmRoadCost= z => C(80*z, 25*z);
 const farmName = q => (q.kind==='hut'?'Хутор':'Каменный хутор')+' · '+zoneById(q.zone).name;
 let peasants=[], carts={};
 const DASH = {cd:2.5, time:0.15, speed:900, inv:0.3};
-const dashCd = () => DASH.cd*(1-0.15*pr('agile'))*(hasUq('shadow')?0.5:1);
+const dashCd = () => DASH.cd*(1-0.15*pr('agile'));
 let spits=[];
 let camX0=0,camX1=0,camY0=0,camY1=0;
 const streakMult= n => 1 + 0.1*Math.min(n,10);
@@ -441,9 +417,9 @@ function fmt1(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
 
 /* ================= STATE (сохраняется) ================= */
 const randSeed=()=>1+Math.floor(Math.random()*2147483646);
-function newState(){return {v:9,meta:{ng:0,relics:{},wins:0,relicPend:0},inv:[],eq:{weapon:null,armor:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
+function newState(){return {v:8,seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
   fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
-  day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0,fog:false},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0,crypts:0},p:{x:CX,y:CY+40,hp:10}};}
+  day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0},p:{x:CX,y:CY+40,hp:10}};}
 function merge(def,src){
   if(!src||typeof src!=='object')return def;
   for(const k in def){
@@ -456,7 +432,7 @@ function merge(def,src){
 }
 let S = newState();
 function loadLocal(){try{const raw=localStorage.getItem(SAVE_KEY);if(raw)return JSON.parse(raw);}catch(e){}return null;}
-function save(){try{if(DG){S.p.x=DG.ex;S.p.y=DG.ey}S.lastSeen=Date.now();S.waveZ=zombies.filter(z=>z.wave).map(z=>({t:z.tier,k:z.kind,f:z.farm,x:Math.round(z.x),y:Math.round(z.y),hp:Math.round(z.hp*10)/10}));localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
+function save(){try{S.lastSeen=Date.now();S.waveZ=zombies.filter(z=>z.wave).map(z=>({t:z.tier,k:z.kind,f:z.farm,x:Math.round(z.x),y:Math.round(z.y),hp:Math.round(z.hp*10)/10}));localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 
 /* ================= WORLD (runtime) ================= */
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
@@ -511,14 +487,7 @@ function buildWorld(){
   }
   decor=[];
   for(let i=0;i<1300;i++)decor.push({x:rng()*W_SIZE,y:rng()*W_SIZE,s:1+rng()*2.5,k:rng()});
-  // эндгейм: отдельный генератор, чтобы не сдвигать старые карты
-  const rng2=mulberry(((S.seed||4242)*7+13)|0);
-  for(const r of rocks){if(r.zone>=4&&rng2()<0.3){r.iron=true;r.hp=rockMax(r)}}
-  const sw=patches.find(p=>p.kind==='swamp'&&p.zone===4),l4=lairs.find(l=>l.zone===4);
-  if(sw&&l4){l4.x=sw.x;l4.y=sw.y}
-  buildCrypts(spots,rng2);
 }
-const rockMax = r => CFG.rocks.hp[r.zone]*(r.iron?1.5:1);
 function randInRing(zn){
   let x,y,g=0;
   do{const a=Math.random()*Math.PI*2,r=zn.r0+40+Math.random()*(Math.min(zn.r1,3000)-zn.r0-60);x=CX+Math.cos(a)*r;y=CY+Math.sin(a)*r;g++;}while(!inBounds(x,y,60)&&g<50);
@@ -533,9 +502,8 @@ function spawnZoneZombies(){
 }
 function makeZombie(tier,x,y,wave,zone,kind){
   const c=CFG.zombies[tier],k=ZTYPES[kind];
-  const ng=ngMul();
-  const z={tier,x,y,hp:c.hp*ng,max:c.hp*ng,r:c.r,dmg:Math.ceil(c.dmg*ng),speed:c.speed,wave,zone,hx:x,hy:y,wx:x,wy:y,atk:0,hit:0,outside:true,ph:Math.random()*6,fenceMul:1,spitT:1+Math.random()*2};
-  if(k){z.kind=kind;z.max=z.hp=Math.max(1,c.hp*k.hp*ng);z.speed=c.speed*k.speed;z.r=c.r*k.r;z.dmg=Math.max(1,Math.round(c.dmg*k.dmg));z.fenceMul=k.fence}
+  const z={tier,x,y,hp:c.hp,max:c.hp,r:c.r,dmg:c.dmg,speed:c.speed,wave,zone,hx:x,hy:y,wx:x,wy:y,atk:0,hit:0,outside:true,ph:Math.random()*6,fenceMul:1,spitT:1+Math.random()*2};
+  if(k){z.kind=kind;z.max=z.hp=Math.max(1,c.hp*k.hp);z.speed=c.speed*k.speed;z.r=c.r*k.r;z.dmg=Math.max(1,Math.round(c.dmg*k.dmg));z.fenceMul=k.fence}
   return z;
 }
 function pickKind(day,blood){
@@ -548,7 +516,7 @@ function pickKind(day,blood){
 function makeBoss(zid){
   const zn=zoneById(zid),l=lairs.find(q=>q.zone===zid)||randInRing(zn),c=CFG.zombies[zn.ztier];
   const z=makeZombie(zn.ztier,l.x,l.y,false,null);
-  z.boss=zid;z.max=z.hp=c.hp*6*ngMul();z.r=c.r*2;z.dmg=Math.ceil(c.dmg*1.6*ngMul());z.speed=c.speed*0.72;z.skin=CFG.bosses[zid].skin;
+  z.boss=zid;z.max=z.hp=c.hp*6;z.r=c.r*2;z.dmg=Math.ceil(c.dmg*1.6);z.speed=c.speed*0.72;
   z.ab=CFG.bosses[zid].ability;z.abT=3;z.name=CFG.bosses[zid].name;z.charge=0;z.slam=0;
   return z;
 }
@@ -560,8 +528,8 @@ const zoneCleared = z => (S.killed[z.id]||0)>=z.zcount && !!S.bosses[z.id] && mo
 const clearedCount = () => CFG.zones.filter(zoneCleared).length;
 const bestCleared = () => {let b=0;for(const z of CFG.zones)if(zoneCleared(z))b=z.id;return b};
 const maxHouses = () => S.base>=4 ? 1+2*clearedCount() : 0;
-const residents = () => S.houses*2+(S.extraRes||0);
-const bagTotal = () => S.bag+S.bagStone+(S.bagIron||0);
+const residents = () => S.houses*2;
+const bagTotal = () => S.bag+S.bagStone;
 const inSwamp = (x,y) => patches.some(p=>p.kind==='swamp'&&Math.abs(p.x-x)<p.r&&dist(p.x,p.y,x,y)<p.r*0.9);
 function fixJobs(){
   const r=residents();let sum=S.jobs.wood+S.jobs.stone+S.jobs.guard;
@@ -722,507 +690,6 @@ sfx.blood=()=>{tone({freq:55,dur:3,type:'sawtooth',vol:0.18,attack:0.6,lp:220});
 sfx.levelup=()=>{[523,659,784,1046].forEach((f,i)=>tone({freq:f,dur:0.18,type:'triangle',vol:0.16,delay:i*0.08}))};
 sfx.drink=()=>{for(let i=0;i<3;i++)tone({freq:300+i*90,to:200+i*90,dur:0.09,type:'sine',vol:0.2,delay:i*0.09})};
 
-/* =====================================================================
-   ЭНДГЕЙМ: вещи и редкость, железо и кузница, склепы, события,
-   финал и Великое переселение
-   ===================================================================== */
-
-// ---------- общие помощники ----------
-const ngMul = () => 1 + 0.25*((S.meta&&S.meta.ng)||0);
-const rl = id => (S&&S.meta&&S.meta.relics&&S.meta.relics[id])||0;
-const potMax = () => LOOT.potionMax + rl('flask');
-const randOf = a => a[Math.floor(Math.random()*a.length)];
-
-// ---------- ВЕЩИ ----------
-const RAR = [
-  {n:'Обычный',     col:'#c4c2b8', mods:1, sh:1},
-  {n:'Редкий',      col:'#5aa0e6', mods:2, sh:3},
-  {n:'Эпический',   col:'#b47ae6', mods:3, sh:8},
-  {n:'Легендарный', col:'#f0a040', mods:3, sh:20},
-];
-const SLOTS = {weapon:'Оружие', armor:'Броня', amulet:'Амулет', ring:'Кольцо'};
-// род: m — мужской, f — женский, n — средний, p — множественное
-const SLOT_BASE = {
-  weapon:[['Топорик','m'],['Секира','f'],['Колун','m'],['Бердыш','m']],
-  armor: [['Кожух','m'],['Стёганка','f'],['Кольчуга','f'],['Латы','p']],
-  amulet:[['Оберег','m'],['Ладанка','f'],['Талисман','m'],['Амулет','m']],
-  ring:  [['Перстень','m'],['Кольцо','n'],['Печатка','f'],['Обруч','m']],
-};
-// [основа, тип окончания]: ой — простой, ый — старый, кий — крепкий, ний — древний
-const RAR_ADJ = [[['прост','ой'],['стар','ый'],['походн','ый']],[['креп','кий'],['добротн','ый'],['мет','кий']],[['древ','ний'],['заговорённ','ый'],['рунн','ый']]];
-const ADJ_END = {'ой':{m:'ой',f:'ая',n:'ое',p:'ые'},'ый':{m:'ый',f:'ая',n:'ое',p:'ые'},'кий':{m:'кий',f:'кая',n:'кое',p:'кие'},'ний':{m:'ний',f:'няя',n:'нее',p:'ние'}};
-const MODS = {
-  dmg:   {n:'Урон',                    pct:1, slots:['weapon','ring'],   base:6},
-  spd:   {n:'Скорость удара',          pct:1, slots:['weapon','ring'],   base:4},
-  crit:  {n:'Шанс крита (×2)',         pct:1, slots:['weapon','ring'],   base:3},
-  burn:  {n:'Шанс поджога',            pct:1, slots:['weapon'],          base:6},
-  vamp:  {n:'Здоровья за убийство',    pct:0, slots:['weapon','amulet'], base:0.5},
-  hp:    {n:'Здоровье',                pct:0, slots:['armor','amulet'],  base:4},
-  armor: {n:'Защита',                  pct:1, slots:['armor'],           base:3},
-  move:  {n:'Скорость бега',           pct:1, slots:['armor','ring'],    base:2},
-  gather:{n:'Сила добычи',             pct:1, slots:['weapon','amulet'], base:6},
-  dbl:   {n:'Двойная добыча',          pct:1, slots:['amulet','ring'],   base:3},
-  loot:  {n:'Шанс добычи с мертвецов', pct:1, slots:['amulet'],          base:4},
-};
-const UNIQUES = {
-  weapon:{id:'felling', name:'Секира Первого Лесоруба', desc:'Раз в 10 с удар валит дерево или раскалывает валун сразу'},
-  armor: {id:'shadow',  name:'Плащ Тени',               desc:'Рывок перезаряжается вдвое быстрее'},
-  amulet:{id:'heart',   name:'Сердце Мора',             desc:'На каждом рассвете +1 зелье лечения'},
-  ring:  {id:'flame',   name:'Кольцо Пламени',          desc:'Каждый удар поджигает врага'},
-};
-const INV_MAX = 20;
-function modVal(k,tier,rar){
-  const m=MODS[k];let v=m.base*(1+0.45*(tier-1))*(1+0.25*rar)*(0.8+Math.random()*0.4);
-  return m.pct||k==='hp'?Math.max(1,Math.round(v)):Math.round(v*10)/10;
-}
-function rollMods(slot,tier,rar){
-  const pool=Object.keys(MODS).filter(k=>MODS[k].slots.includes(slot)),out=[];
-  while(out.length<RAR[rar].mods&&pool.length){const k=pool.splice(Math.floor(Math.random()*pool.length),1)[0];out.push([k,modVal(k,tier,rar)])}
-  return out;
-}
-function rollRar(minRar=0){
-  const luck=0.05*rl('seek');
-  const r=Math.random();let rar=r<0.02+luck*0.4?3:r<0.12+luck*0.8?2:r<0.40+luck?1:0;
-  return Math.max(minRar,rar);
-}
-function makeItem(tier,minRar=0,slot){
-  slot=slot||randOf(Object.keys(SLOTS));tier=Math.max(1,Math.min(7,tier|0));
-  const rar=rollRar(minRar);
-  const it={id:S.itemSeq++,slot,rar,tier,mods:rollMods(slot,tier,rar),uq:null};
-  it.name=itemName(it);
-  if(rar===3){it.uq=UNIQUES[slot].id;it.name=UNIQUES[slot].name}
-  return it;
-}
-function itemName(it){
-  const [base,g]=SLOT_BASE[it.slot][Math.min(3,Math.floor((it.tier-1)/2))];
-  const [stem,type]=randOf(RAR_ADJ[Math.min(2,it.rar)]),adj=stem+ADJ_END[type][g];
-  return adj[0].toUpperCase()+adj.slice(1)+' '+base.toLowerCase();
-}
-const uqInfo = id => Object.values(UNIQUES).find(u=>u.id===id);
-function gear(k){let s=0;if(!S.eq)return 0;for(const sl in S.eq){const it=S.eq[sl];if(!it)continue;for(const [mk,v] of it.mods)if(mk===k)s+=v}return s}
-function hasUq(id){if(!S.eq)return false;for(const sl in S.eq){const it=S.eq[sl];if(it&&it.uq===id)return true}return false}
-function modText(it){
-  const parts=it.mods.map(([k,v])=>`${MODS[k].n} +${v}${MODS[k].pct?'%':''}`);
-  if(it.uq)parts.push('★ '+uqInfo(it.uq).desc);
-  return parts.join(' · ');
-}
-function giveItem(it,x,y){
-  if(x!=null){drops.push({x,y,kind:'item',it,t:180});return}
-  if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее во вкладке «Вещи».','bad','invfull');return false}
-  S.inv.push(it);return true;
-}
-function pickItem(d){
-  if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее во вкладке «Вещи».','bad','invfull');return}
-  S.inv.push(d.it);d.t=0;sfx.pickup();
-  addFloat(d.x,d.y-24,d.it.name,RAR[d.it.rar].col);
-  if(d.it.rar>=2)toast(`${RAR[d.it.rar].n} предмет: ${d.it.name}`,'good');
-  save();
-}
-// урон героя с учётом вещей; возвращает [урон, крит]
-function heroHit(base){
-  let d=base*(1+gear('dmg')/100)*(1+0.10*rl('steel'));
-  const crit=Math.random()<gear('crit')/100;if(crit)d*=2;
-  return [d,crit];
-}
-function maybeBurn(z,d){
-  if(hasUq('flame')||Math.random()<gear('burn')/100){z.burn=3;z.burnDps=Math.max(z.burnDps||0,d*0.35)}
-}
-
-// ---------- ЖЕЛЕЗО И КУЗНИЦА ----------
-const FORGE = {
-  build: C(300,120), base:3,
-  up: lvl => ({i:[10,25,60][lvl], sh:[0,0,0][lvl]}),
-  rar: r => [{sh:10,i:5},{sh:25,i:15},{sh:60,i:40}][r],
-  reroll: r => ({sh:4*(r+1), i:2*(r+1)}),
-  temper: l => ({i:[20,45,90][l]}),
-};
-const ironOf = r => 1+Math.floor(r.zone/2);
-
-// ---------- СКЛЕПЫ ----------
-let crypts=[], DG=null;
-const CRYPT_CD = 3; // дней до повторного открытия
-const DUN = {RW:560, RH:420, CW:190, CH:150, X:W_SIZE+900, Y:CY};
-const inDun = () => !!DG;
-function buildCrypts(spots,rng2){
-  crypts=[];
-  const free=(x,y,r)=>spots.every(s=>dist(s.x,s.y,x,y)>s.r+r+20)&&trees.every(t=>Math.abs(t.x-x)>r+20||dist(t.x,t.y,x,y)>r+20);
-  for(const z of CFG.zones){
-    for(let g=0;g<80;g++){
-      const a=rng2()*6.283,outer=Math.min(z.r1,3000),r=z.r0+70+rng2()*Math.max(1,outer-z.r0-140);
-      const x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;
-      if(!inBounds(x,y,100)||!free(x,y,40))continue;
-      crypts.push({id:'c'+z.id,zone:z.id,x,y});spots.push({x,y,r:40});break;
-    }
-  }
-}
-function enterCrypt(c){
-  S.keys--;S.crypts[c.id]=S.day+CRYPT_CD;
-  const n=3+(c.zone>=4?1:0)+(c.zone>=6?1:0);
-  const rooms=[],cors=[];
-  for(let i=0;i<n;i++){
-    const x=DUN.X+i*(DUN.RW+DUN.CW),y=DUN.Y-DUN.RH/2;
-    rooms.push({i,x,y,w:DUN.RW,h:DUN.RH,spawned:false,cleared:false,last:i===n-1});
-    if(i<n-1)cors.push({i,x:x+DUN.RW,y:DUN.Y-DUN.CH/2,w:DUN.CW,h:DUN.CH});
-  }
-  const traps=[];
-  for(const r of rooms){if(r.i===0)continue;const k=2+Math.floor(c.zone/2);for(let j=0;j<k;j++)traps.push({x:r.x+80+Math.random()*(r.w-160),y:r.y+70+Math.random()*(r.h-140),t:Math.random()*2.4,hit:false,room:r.i})}
-  DG={crypt:c,zone:c.zone,rooms,cors,traps,chest:null,exit:null,ex:c.x,ey:c.y+46,entry:{x:rooms[0].x+60,y:DUN.Y}};
-  P.x=rooms[0].x+110;P.y=DUN.Y;S.p.x=P.x;S.p.y=P.y;
-  sfx.roar(0.25);toast(`Склеп ${zoneById(c.zone).name}: ${n} залов. Выход — у входа, где вы стоите.`,'');
-}
-function leaveCrypt(msg){
-  if(!DG)return;
-  for(let i=zombies.length-1;i>=0;i--)if(zombies[i].dun!=null)zombies.splice(i,1);
-  P.x=DG.ex;P.y=DG.ey;S.p.x=P.x;S.p.y=P.y;DG=null;spits=[];
-  if(msg)toast(msg,'good');save();
-}
-function dunRects(){
-  const R=[];
-  for(const r of DG.rooms){if(r.i===0||DG.rooms[r.i-1].cleared)R.push(r)}
-  for(const c of DG.cors)if(DG.rooms[c.i].cleared)R.push(c);
-  return R;
-}
-function clampIn(o,rad,rects){
-  for(const r of rects)if(o.x>=r.x+rad&&o.x<=r.x+r.w-rad&&o.y>=r.y+rad&&o.y<=r.y+r.h-rad)return;
-  let best=null,bd=1e9;
-  for(const r of rects){const x=Math.max(r.x+rad,Math.min(r.x+r.w-rad,o.x)),y=Math.max(r.y+rad,Math.min(r.y+r.h-rad,o.y)),d=(x-o.x)**2+(y-o.y)**2;if(d<bd){bd=d;best={x,y}}}
-  if(best){o.x=best.x;o.y=best.y}
-}
-function roomAt(x,y){return DG.rooms.find(r=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h)}
-function updateDungeon(dt){
-  if(!DG)return;
-  clampIn(P,14,dunRects());
-  const room=roomAt(P.x,P.y);
-  if(room&&!room.spawned&&P.x>room.x+(room.i===0?room.w*0.3:40)){
-    room.spawned=true;const zn=zoneById(DG.zone);
-    if(room.last){
-      const g=makeGuardian(DG.zone,room.x+room.w-120,DUN.Y);g.dun=room.i;zombies.push(g);
-      toast(`${g.name} пробудился!`,'bad');sfx.roar(0.5);
-    }
-    const n=Math.min(10,3+DG.zone)-(room.last?2:0);
-    for(let k=0;k<n;k++){
-      const kinds=DG.zone>=3?[undefined,'runner','ram','spitter']:[undefined,'runner'];
-      const z=makeZombie(zn.ztier,room.x+room.w*0.45+Math.random()*room.w*0.5,room.y+50+Math.random()*(room.h-100),false,null,randOf(kinds));
-      z.dun=room.i;zombies.push(z);
-    }
-  }
-  for(const r of DG.rooms){
-    if(!r.spawned||r.cleared)continue;
-    if(!zombies.some(z=>z.dun===r.i)){
-      r.cleared=true;
-      if(r.last){DG.chest={x:r.x+r.w/2,y:DUN.Y,open:false};toast('Хранитель пал. Откройте сундук.','good')}
-      else {toast('Зал очищен, проход открыт','good');sfx.dawn()}
-    }
-  }
-  for(const z of zombies){if(z.dun==null)continue;const r=DG.rooms[z.dun];if(r)clampIn(z,z.r,[r])}
-  for(const t of DG.traps){
-    const r=DG.rooms[t.room];if(!r.spawned)continue;
-    t.t=(t.t+dt)%2.4;const armed=t.t>1.8;
-    if(!armed)t.hit=false;
-    else if(!t.hit&&dist(t.x,t.y,P.x,P.y)<24){t.hit=true;damagePlayer(Math.max(3,maxHp(S.up.hp)*0.12));sfx.slam()}
-  }
-}
-function makeGuardian(zid,x,y){
-  const zn=zoneById(zid),c=CFG.zombies[zn.ztier],b=CFG.bosses[zid];
-  const z=makeZombie(zn.ztier,x,y,false,null);
-  z.guard=true;z.max=z.hp=c.hp*3*ngMul();z.r=c.r*1.6;z.dmg=Math.ceil(c.dmg*1.4*ngMul());z.speed=c.speed*0.8;
-  z.ab=b.ability==='dragon'?'charge':b.ability;z.skin=b.skin;z.abT=2;z.name='Хранитель склепа';z.charge=0;z.slam=0;
-  return z;
-}
-function openDunChest(){
-  const c=DG.chest;if(!c||c.open)return;c.open=true;
-  const zid=DG.zone,n=1+(zid>=5?1:0);
-  for(let i=0;i<n;i++)drops.push({x:c.x-30+i*60,y:c.y+40,kind:'item',it:makeItem(zid,1),t:300});
-  const iron=3+zid*2,sh=2+zid,w=40*zid,st=12*zid;
-  S.iron+=iron;S.shards+=sh;S.wood+=w;S.stone+=st;S.stats.chests++;
-  if(Math.random()<0.5)drops.push({x:c.x+50,y:c.y-30,kind:'potion',t:300});
-  if(Math.random()<0.4)drops.push({x:c.x-50,y:c.y-30,kind:'potatk',t:300});
-  sfx.chest();gainXp(20*zid);
-  addFloat(c.x,c.y-40,`+${iron} железа, +${sh} осколков, +${w} древесины, +${st} камня`,'#f4c766');
-  DG.exit={x:c.x+140,y:c.y};
-  toast('Сокровища на складе. Портал к выходу открылся справа от сундука.','good');save();
-}
-
-// ---------- СОБЫТИЯ ----------
-let refugees=[];
-const SIDES=[['востока',0],['юга',Math.PI/2],['запада',Math.PI],['севера',-Math.PI/2]];
-function merchantHere(){return S.merchant===S.day&&!phase().night}
-const MERCH = [
-  {id:'w2s',  t:'Обменять 50 древесины на 15 камня',   c:{w:50},          give:()=>{S.stone+=15}},
-  {id:'s2w',  t:'Обменять 20 камня на 50 древесины',   c:{w:0,s:20},      give:()=>{S.wood+=50}},
-  {id:'heal', t:'Зелье лечения',                       c:{w:40},          give:()=>{if(S.potions<potMax()){S.potions++;return true}toast('Зелий лечения уже максимум','bad');return false}},
-  {id:'atk',  t:'Зелье силы',                          c:{w:70,s:10},     give:()=>{if(S.potAtk<potMax()){S.potAtk++;return true}toast('Зелий силы уже максимум','bad');return false}},
-  {id:'key',  t:'Ключ от склепа',                      c:{w:150,s:50},    give:()=>{S.keys++}},
-  {id:'iron', t:'Железо ×5',                           c:{w:120,s:40},    give:()=>{S.iron+=5}},
-  {id:'item', t:'Случайная вещь (редкая или лучше), одна за визит', c:{w:350,s:100,i:10}, once:true, give:()=>giveItem(makeItem(Math.max(1,bestCleared()+1),1))},
-];
-function spawnCaravan(){
-  const a=Math.random()*6.283,r=780+Math.random()*120,x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;
-  refugees=[];for(let i=0;i<3;i++)refugees.push({x:x+i*16,y:y+(i%2)*14,hp:40,max:40,i});
-  const zn=zoneById(2);
-  for(let k=0;k<3+Math.floor(S.day/5);k++){const b=Math.random()*6.283,z=makeZombie(Math.min(5,1+Math.floor(S.day/5)),x+Math.cos(b)*260,y+Math.sin(b)*260,false,null);z.hunt=true;zombies.push(z)}
-  const side=SIDES.reduce((best,s)=>Math.abs(Math.atan2(Math.sin(a-s[1]),Math.cos(a-s[1])))<Math.abs(Math.atan2(Math.sin(a-best[1]),Math.cos(a-best[1])))?s:best);
-  toast(`Беженцы идут к лагерю с ${side[0]}! Проведите их, за ними гонятся мертвецы.`,'good');sfx.dawn();
-}
-function updateRefugees(dt){
-  if(!refugees.length)return;
-  for(let i=refugees.length-1;i>=0;i--){
-    const r=refugees[i],d=dist(r.x,r.y,CX,CY);
-    if(d<CFG.baseR){refugees.splice(i,1);S.extraRes=(S.extraRes||0)+1;S.jobs.wood++;fixJobs();S.wood+=30*S.day;gainXp(15);
-      toast(`Беженец добрался до лагеря: +1 житель, +${30*S.day} древесины`,'good');sfx.chest();save();continue}
-    const scared=zombies.some(z=>Math.abs(z.x-r.x)<60&&dist(z.x,z.y,r.x,r.y)<40);
-    const sp=scared?62:44;r.x+=(CX-r.x)/d*sp*dt;r.y+=(CY-r.y)/d*sp*dt;
-    for(const z of zombies){if(Math.abs(z.x-r.x)>30)continue;if(dist(z.x,z.y,r.x,r.y)<z.r+10&&z.atk<=0){z.atk=1;r.hp-=z.dmg;addFloat(r.x,r.y-16,'−'+z.dmg,'#cf4b3f')}}
-    if(r.hp<=0){refugees.splice(i,1);toast('Мертвецы настигли беженца','bad')}
-  }
-}
-function drawRefugee(r){
-  const x=r.x,y=r.y,b=Math.sin(performance.now()/130+r.i)*1.2;
-  ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x+1,y+6,6,3,0,0,7);ctx.fill();
-  ctx.fillStyle='#5a6f8a';ctx.beginPath();ctx.arc(x,y+b,6,0,7);ctx.fill();
-  ctx.fillStyle='#d9c7a6';ctx.beginPath();ctx.arc(x,y-3+b,3.5,0,7);ctx.fill();
-  ctx.fillStyle='#6b4a2c';ctx.fillRect(x-8,y-1+b,5,6);
-  ctx.fillStyle='#000';ctx.fillRect(x-10,y-14,20,3);ctx.fillStyle='#9fc3d6';ctx.fillRect(x-10,y-14,20*r.hp/r.max,3);
-}
-function drawMerchant(now){
-  const x=CX+92,y=CY+56;
-  ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(x-24,y+4,52,12);
-  ctx.fillStyle='#6b4a2c';ctx.fillRect(x-22,y-12,40,18);ctx.fillStyle='#b8442e';ctx.beginPath();ctx.moveTo(x-26,y-12);ctx.quadraticCurveTo(x-2,y-34,x+22,y-12);ctx.fill();
-  ctx.fillStyle='#2b2219';for(const wx of [-14,10]){ctx.beginPath();ctx.arc(x+wx,y+8,5,0,7);ctx.fill()}
-  ctx.fillStyle='#3a5a8a';ctx.beginPath();ctx.arc(x+32,y,7,0,7);ctx.fill();ctx.fillStyle='#d9c7a6';ctx.beginPath();ctx.arc(x+32,y-4,4,0,7);ctx.fill();
-  ctx.fillStyle='#2b2219';ctx.beginPath();ctx.ellipse(x+32,y-8,7,2.5,0,0,7);ctx.fill();ctx.fillRect(x+29,y-13,6,5);
-  ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#f4c766';ctx.fillText('Торговец',x+4,y-38+Math.sin(now/400)*2);
-}
-
-// ---------- ФИНАЛ И ПЕРЕСЕЛЕНИЕ ----------
-const allCleared = () => CFG.zones.every(zoneCleared);
-const portalPos = () => {const l=lairs.find(q=>q.zone===7);return l?{x:l.x,y:l.y}:null};
-const RELICS = {
-  gather:{name:'Наследие лесоруба', max:5, desc:'+15% к добыче: ваши удары, жители, хутора'},
-  flask: {name:'Запасливость',      max:3, desc:'+1 к запасу каждого зелья, старт с 2 зельями лечения'},
-  fort:  {name:'Старый частокол',   max:1, desc:'Старт с главным домом 2 уровня и забором'},
-  vet:   {name:'Ветеран',           max:3, desc:'Старт на 2 уровня героя выше'},
-  steel: {name:'Закалённая сталь',  max:5, desc:'+10% урона героя'},
-  heart: {name:'Крепкое здоровье',  max:5, desc:'+15 к здоровью'},
-  hoard: {name:'Клад предков',      max:5, desc:'Старт со 150 древесины и 40 камня'},
-  seek:  {name:'Удача искателя',    max:5, desc:'Выше шанс редких вещей'},
-  keyr:  {name:'Ключник',           max:3, desc:'Старт с 2 ключами от склепов'},
-};
-function summonFinal(){
-  const p=portalPos();if(!p||zombies.some(z=>z.final))return;
-  const c=CFG.zombies[7];
-  const z=makeZombie(7,p.x,p.y+60,false,null);
-  z.boss=8;z.final=true;z.max=z.hp=c.hp*6*3*ngMul();z.r=46;z.dmg=Math.ceil(c.dmg*1.8*ngMul());z.speed=70;
-  z.ab='all';z.skin='lord';z.abT=2;z.name='Владыка Мора';z.charge=0;z.slam=0;z.hx=p.x;z.hy=p.y;z.phase2=false;
-  zombies.push(z);sfx.blood();toast('Владыка Мора вышел из портала!','bad');
-}
-function newGame(keepMeta){
-  const meta=keepMeta?S.meta:null;
-  S=newState();if(meta)S.meta=meta;
-  // стартовые бонусы реликвий
-  S.potions=rl('flask')?2:0;
-  if(rl('fort')){S.base=2;S.fence.lvl=1;S.fence.hp=fenceHp(1);S.hq=hqMax(2)}
-  for(let i=0;i<rl('vet')*2;i++){S.lvl++;S.perkPend++}
-  S.wood+=150*rl('hoard');S.stone+=40*rl('hoard');S.keys+=2*rl('keyr');
-  S.p.hp=maxHp(S.up.hp);
-  DG=null;refugees=[];
-  buildWorld();applyState();fillQuests();
-}
-function showVictory(){
-  const st=S.stats;
-  $('winTxt').textContent=`Владыка Мора повержен на ${S.day}-й день. Лес очищен${S.meta.ng?` (переселение ${S.meta.ng})`:''}.`;
-  const rows=[['Пережито ночей',S.day-1],['Убито нечисти',st.kills],['Боссов повержено',st.bosses],['Склепов пройдено',st.crypts||0],['Уровень героя',S.lvl]];
-  const ul=$('winList');ul.textContent='';
-  for(const [k,v] of rows){const li=document.createElement('li');const a=document.createElement('span');a.textContent=k;const b=document.createElement('b');b.textContent=v;li.append(a,b);ul.append(li)}
-  $('win').hidden=false;keys.clear();actHeld=false;sfx.levelup();
-}
-let relicOffer=[];
-function showRelics(){
-  if(!S.meta||S.meta.relicPend<=0)return;
-  const open=Object.keys(RELICS).filter(k=>rl(k)<RELICS[k].max);
-  relicOffer=open.sort(()=>Math.random()-0.5).slice(0,3);
-  if(!relicOffer.length){S.meta.relicPend=0;return}
-  $('perkTitle').textContent=`Реликвия: выберите (осталось ${S.meta.relicPend})`;
-  const box=$('perkList');box.textContent='';
-  for(const k of relicOffer){const R=RELICS[k],b=document.createElement('button');b.type='button';b.className='perk';b.dataset.relic=k;b.style.setProperty('--bc','#f4c766');
-    b.innerHTML=`<small>Реликвия</small><b>${R.name}</b><span>${R.desc}</span><em>ранг ${rl(k)} → ${rl(k)+1} из ${R.max}</em>`;box.append(b)}
-  $('perks').hidden=false;keys.clear();actHeld=false;
-}
-
-/* ================= ВИД И АТАКИ БОССОВ ================= */
-function bossAbility(z,dP,dt){
-  // возвращает true, если босс в этот кадр занят особым действием
-  if(z.skin==='dragon'){
-    z.phT=(z.phT??9)-dt;
-    if(z.phT<=0){z.fly=!z.fly;z.phT=9;sfx.roar(0.4);addFloat(z.x,z.y-z.r-30,z.fly?'Взлетел! Бей луком':'Приземлился! Бей топором','#f4c766')}
-    if(z.fly){
-      // кружит над героем и плюётся огнём
-      z.orb=(z.orb||0)+dt*0.9;const R=170,tx=P.x+Math.cos(z.orb)*R,ty=P.y+Math.sin(z.orb)*R,d=dist(z.x,z.y,tx,ty);
-      if(d>4){z.x+=(tx-z.x)/d*Math.min(d,z.speed*2.2*dt);z.y+=(ty-z.y)/d*Math.min(d,z.speed*2.2*dt)}
-      z.abT-=dt;
-      if(z.abT<=0&&dP<420){z.abT=1.6;const v=260;spits.push({x:z.x,y:z.y,vx:(P.x-z.x)/dP*v,vy:(P.y-z.y)/dP*v,t:2,dmg:z.dmg,col:'#f08a3a',r:7});sfx.spit()}
-      return true;
-    }
-  }
-  if(z.skin==='hydra'||z.final&&z.phase2){
-    z.spT=(z.spT??2)-dt;
-    if(z.spT<=0&&dP>90&&dP<340){z.spT=z.final?1.4:2.2;const v=230,a=Math.atan2(P.y-z.y,P.x-z.x);
-      for(const o of (z.final?[-0.3,-0.1,0.1,0.3]:[-0.12,0.12])){spits.push({x:z.x+Math.cos(a+o*4)*z.r*0.6,y:z.y+Math.sin(a+o*4)*z.r*0.6,vx:Math.cos(a+o)*v,vy:Math.sin(a+o)*v,t:1.8,dmg:Math.ceil(z.dmg*0.6),col:z.final?'#b06ae0':'#5fd0b0',r:5})}sfx.spit()}
-  }
-  if(z.skin==='treant'){
-    // корни: метка под героем, через 1 с бьёт
-    z.rtT=(z.rtT??3)-dt;
-    if(z.rtT<=0&&dP<300){z.rtT=3.2;roots.push({x:P.x,y:P.y,t:1,dmg:z.dmg*1.4})}
-  }
-  if(z.final&&!z.phase2&&z.hp<z.max*0.5){z.phase2=true;z.speed*=1.25;sfx.blood();toast('Владыка Мора в ярости! Вторая фаза.','bad')}
-  return false;
-}
-let roots=[];
-function updateRoots(dt){
-  for(const r of roots){r.t-=dt;if(r.t<=0&&!r.done){r.done=true;sfx.slam();if(dist(r.x,r.y,P.x,P.y)<52)damagePlayer(r.dmg)}}
-  roots=roots.filter(r=>r.t>-0.4);
-}
-function drawRoots(){
-  for(const r of roots){
-    if(r.t>0){const k=1-r.t;ctx.strokeStyle=`rgba(140,100,50,${0.4+k*0.5})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,52,0,7);ctx.stroke();ctx.fillStyle=`rgba(120,80,40,${0.15+k*0.2})`;ctx.beginPath();ctx.arc(r.x,r.y,52*k,0,7);ctx.fill()}
-    else{ctx.strokeStyle='#5a3e26';ctx.lineWidth=4;ctx.lineCap='round';for(let i=0;i<7;i++){const a=i/7*6.28;ctx.beginPath();ctx.moveTo(r.x+Math.cos(a)*8,r.y+Math.sin(a)*8);ctx.lineTo(r.x+Math.cos(a)*40,r.y+Math.sin(a)*40-14);ctx.stroke()}}
-  }
-}
-// может ли этот удар задеть босса (дракон в воздухе — только стрелы, на земле — только ближний бой)
-function canHit(z,src){
-  if(z.skin!=='dragon')return true;
-  if(z.fly&&src==='melee')return false;
-  if(!z.fly&&src==='ranged')return false;
-  return true;
-}
-function drawBoss(z,bob){
-  const x=z.x,y=z.y+bob,r=z.r,hit=z.hit>0,a=Math.atan2(P.y-z.y,P.x-z.x),t=performance.now()/1000;
-  const sk=z.skin;
-  const W=hit?'#f0e6d0':null;
-  if(sk==='slime'){
-    const w=1+Math.sin(t*4)*0.06;
-    ctx.fillStyle=W||'rgba(110,190,80,.85)';ctx.beginPath();ctx.ellipse(x,y+r*0.15,r*1.05*w,r*0.85/w,0,0,7);ctx.fill();
-    ctx.fillStyle='rgba(160,230,120,.5)';ctx.beginPath();ctx.ellipse(x-r*0.3,y-r*0.25,r*0.35,r*0.22,-0.5,0,7);ctx.fill();
-    ctx.fillStyle='rgba(90,160,60,.8)';for(let i=0;i<4;i++){const dx=(i-1.5)*r*0.45;ctx.beginPath();ctx.ellipse(x+dx,y+r*0.85+Math.sin(t*3+i)*3,4,7,0,0,7);ctx.fill()}
-    ctx.fillStyle='#1d2a14';for(const s of [-1,1]){ctx.beginPath();ctx.arc(x+s*r*0.3+Math.cos(a)*4,y-r*0.1+Math.sin(a)*3,r*0.13,0,7);ctx.fill()}
-    ctx.fillStyle='#f4c766';ctx.beginPath();ctx.moveTo(x-r*0.4,y-r*0.6);for(let i=0;i<5;i++){ctx.lineTo(x-r*0.4+i*r*0.2,y-r*(i%2?0.75:1.0))}ctx.lineTo(x+r*0.4,y-r*0.6);ctx.fill();
-  }else if(sk==='treant'){
-    ctx.strokeStyle='#4a3420';ctx.lineWidth=7;ctx.lineCap='round';
-    for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(x+s*r*0.2,y+r*0.6);ctx.lineTo(x+s*r*0.6,y+r*1.05);ctx.stroke()}
-    ctx.fillStyle=W||'#5a3e26';ctx.beginPath();ctx.ellipse(x,y,r*0.6,r*0.95,0,0,7);ctx.fill();
-    ctx.strokeStyle='#3a2a18';ctx.lineWidth=2;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(x-r*0.4+i*r*0.4,y-r*0.6);ctx.lineTo(x-r*0.3+i*r*0.35,y+r*0.6);ctx.stroke()}
-    ctx.strokeStyle='#4a3420';ctx.lineWidth=6;const sw=Math.sin(t*2)*0.2;
-    for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(x+s*r*0.5,y-r*0.2);ctx.quadraticCurveTo(x+s*r*1.2,y-r*0.4+sw*20*s,x+s*r*1.3,y+r*0.2);ctx.stroke()}
-    ctx.fillStyle='#3f6a2a';for(const [dx,dy,rr] of [[0,-1.15,0.8],[-0.55,-0.85,0.5],[0.55,-0.85,0.5]]){ctx.beginPath();ctx.arc(x+dx*r,y+dy*r,rr*r,0,7);ctx.fill()}
-    ctx.fillStyle='#57883a';ctx.beginPath();ctx.arc(x-r*0.2,y-r*1.3,r*0.35,0,7);ctx.fill();
-    ctx.fillStyle='#f4c766';for(const s of [-1,1]){ctx.beginPath();ctx.arc(x+s*r*0.2,y-r*0.35,3.5,0,7);ctx.fill()}
-  }else if(sk==='hydra'){
-    ctx.fillStyle=W||'#2f6a5e';ctx.beginPath();ctx.ellipse(x,y+r*0.2,r*0.95,r*0.7,0,0,7);ctx.fill();
-    ctx.fillStyle='#3d8a7a';ctx.beginPath();ctx.ellipse(x,y+r*0.05,r*0.6,r*0.35,0,0,7);ctx.fill();
-    for(const s of [-1,1]){
-      const na=a+s*0.5+Math.sin(t*3+s)*0.15,nx=x+Math.cos(na)*r*1.25,ny=y-r*0.3+Math.sin(na)*r*0.9;
-      ctx.strokeStyle=W||'#2f6a5e';ctx.lineWidth=r*0.32;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x+s*r*0.3,y-r*0.1);ctx.quadraticCurveTo(x+s*r*0.6,y-r*1.1,nx,ny);ctx.stroke();
-      ctx.fillStyle=W||'#3d8a7a';ctx.beginPath();ctx.ellipse(nx,ny,r*0.32,r*0.24,na,0,7);ctx.fill();
-      ctx.fillStyle='#d8f0a0';ctx.beginPath();ctx.arc(nx+Math.cos(na+0.6)*r*0.12,ny+Math.sin(na+0.6)*r*0.12-2,2.5,0,7);ctx.fill();
-      ctx.fillStyle='#e8e2d2';ctx.beginPath();ctx.moveTo(nx+Math.cos(na)*r*0.3,ny+Math.sin(na)*r*0.3);ctx.lineTo(nx+Math.cos(na+0.4)*r*0.2,ny+Math.sin(na+0.4)*r*0.2);ctx.lineTo(nx+Math.cos(na-0.4)*r*0.2,ny+Math.sin(na-0.4)*r*0.2);ctx.fill();
-    }
-  }else if(sk==='croc'){
-    const ma=z.charge>0?Math.atan2(z.cdy,z.cdx):a;ctx.save();ctx.translate(x,y);ctx.rotate(ma);
-    ctx.fillStyle=W||'#3d5a2a';ctx.beginPath();ctx.moveTo(-r*1.8,0);ctx.quadraticCurveTo(-r*1.2,-r*0.3,-r*0.6,-r*0.5);ctx.lineTo(r*0.6,-r*0.45);ctx.lineTo(r*1.6,-r*0.18);ctx.lineTo(r*1.6,r*0.18);ctx.lineTo(r*0.6,r*0.45);ctx.lineTo(-r*0.6,r*0.5);ctx.quadraticCurveTo(-r*1.2,r*0.3,-r*1.8,0);ctx.fill();
-    ctx.fillStyle='#2a3f1c';for(let i=0;i<6;i++)ctx.fillRect(-r*1.2+i*r*0.38,-r*0.12,r*0.18,r*0.24);
-    const leg=Math.sin(t*10)*r*0.15;ctx.fillStyle=W||'#3d5a2a';for(const [lx,s] of [[-r*0.4,1],[-r*0.4,-1],[r*0.5,1],[r*0.5,-1]]){ctx.beginPath();ctx.ellipse(lx+leg*s,s*r*0.6,r*0.2,r*0.12,0,0,7);ctx.fill()}
-    ctx.fillStyle='#e8e2d2';for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(r*0.9+i*r*0.14,-r*0.17);ctx.lineTo(r*0.97+i*r*0.14,-r*0.04);ctx.lineTo(r*1.04+i*r*0.14,-r*0.17);ctx.fill()}
-    ctx.fillStyle='#f4c766';ctx.beginPath();ctx.arc(r*0.65,-r*0.3,3,0,7);ctx.arc(r*0.65,r*0.3,3,0,7);ctx.fill();
-    ctx.restore();
-  }else if(sk==='dragon'){
-    const fy=z.fly?34+Math.sin(t*3)*4:0,flap=Math.sin(t*(z.fly?9:3))*(z.fly?0.6:0.2);
-    if(z.fly){ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x,y+r*0.6,r*1.4,r*0.45,0,0,7);ctx.fill()}
-    const yy=y-fy;ctx.save();ctx.translate(x,yy);ctx.rotate(a+Math.PI/2);
-    ctx.fillStyle=W||'#8a2a24';
-    for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*r*0.3,-r*0.2);ctx.lineTo(s*r*(1.9+flap),-r*(0.9-flap));ctx.lineTo(s*r*(1.6+flap*0.5),r*0.1);ctx.lineTo(s*r*(1.2),r*0.5);ctx.lineTo(s*r*0.3,r*0.4);ctx.fill()}
-    ctx.strokeStyle='#5a1a16';ctx.lineWidth=2;for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*r*0.3,-r*0.2);ctx.lineTo(s*r*(1.6+flap*0.5),r*0.1);ctx.stroke()}
-    ctx.fillStyle=W||'#b0382e';ctx.beginPath();ctx.ellipse(0,0,r*0.45,r*0.85,0,0,7);ctx.fill();
-    ctx.beginPath();ctx.moveTo(-r*0.2,r*0.7);ctx.quadraticCurveTo(0,r*1.6,r*0.25,r*1.9);ctx.lineTo(r*0.15,r*1.5);ctx.quadraticCurveTo(0,r*1.2,r*0.2,r*0.7);ctx.fill();
-    ctx.beginPath();ctx.ellipse(0,-r*0.95,r*0.32,r*0.4,0,0,7);ctx.fill();
-    ctx.fillStyle='#e8c070';for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(s*r*0.15,-r*1.2);ctx.lineTo(s*r*0.32,-r*1.55);ctx.lineTo(s*r*0.25,-r*1.15);ctx.fill()}
-    ctx.fillStyle='#f4c766';for(const s of [-1,1]){ctx.beginPath();ctx.arc(s*r*0.13,-r*1.0,3,0,7);ctx.fill()}
-    ctx.restore();
-    ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle=z.fly?'#9fc3d6':'#f4c766';ctx.fillText(z.fly?'в воздухе — только лук':'на земле — только топор',x,y+r+18);
-  }else if(sk==='golem'){
-    ctx.fillStyle=W||'#3a3532';
-    ctx.fillRect(x-r*0.8,y-r*0.7,r*1.6,r*1.3);ctx.fillRect(x-r*0.45,y-r*1.25,r*0.9,r*0.6);
-    for(const s of [-1,1]){ctx.fillRect(x+s*r*0.8-(s>0?0:r*0.45),y-r*0.6,r*0.45,r*1.0)}
-    ctx.strokeStyle=`rgba(255,${120+Math.sin(t*5)*40},40,.9)`;ctx.lineWidth=2.5;
-    for(const [x1,y1,x2,y2] of [[-0.5,-0.5,0,0],[0,0,0.4,-0.3],[0,0,-0.2,0.5],[0.3,0.2,0.6,0.5]]){ctx.beginPath();ctx.moveTo(x+x1*r,y+y1*r);ctx.lineTo(x+x2*r,y+y2*r);ctx.stroke()}
-    ctx.fillStyle='#ffb040';for(const s of [-1,1])ctx.fillRect(x+s*r*0.18-3,y-r*1.0,6,4);
-    if(Math.random()<0.3){ctx.fillStyle='rgba(255,140,40,.8)';ctx.fillRect(x+(Math.random()-0.5)*r*1.4,y-r*1.3-Math.random()*10,2,2)}
-  }else if(sk==='lich'||sk==='lord'){
-    const big=sk==='lord',col=big?'#2a1420':'#24222e';
-    const g=ctx.createRadialGradient(x,y,4,x,y,r*1.8);g.addColorStop(0,big?'rgba(200,40,60,.35)':'rgba(120,230,150,.3)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*1.8,0,7);ctx.fill();
-    ctx.fillStyle=W||col;ctx.beginPath();ctx.moveTo(x,y-r*0.9);ctx.lineTo(x+r*0.9,y+r*0.9);ctx.lineTo(x-r*0.9,y+r*0.9);ctx.fill();
-    ctx.fillStyle='#e6dec9';ctx.beginPath();ctx.arc(x,y-r*0.75,r*0.36,0,7);ctx.fill();
-    ctx.fillStyle='#120e10';ctx.fillRect(x-r*0.2,y-r*0.82,r*0.14,r*0.12);ctx.fillRect(x+r*0.06,y-r*0.82,r*0.14,r*0.12);
-    ctx.fillStyle=big?'#ff4a3a':'#8cf0a0';ctx.fillRect(x-r*0.17,y-r*0.8,3,3);ctx.fillRect(x+r*0.09,y-r*0.8,3,3);
-    ctx.fillStyle='#f4c766';ctx.beginPath();ctx.moveTo(x-r*0.38,y-r*1.0);for(let i=0;i<5;i++)ctx.lineTo(x-r*0.38+i*r*0.19,y-r*(i%2?1.12:1.38));ctx.lineTo(x+r*0.38,y-r*1.0);ctx.fill();
-    if(big){ctx.fillStyle='#4a2a30';for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(x+s*r*0.3,y-r*1.0);ctx.quadraticCurveTo(x+s*r*0.9,y-r*1.4,x+s*r*0.8,y-r*1.9);ctx.lineTo(x+s*r*0.45,y-r*1.1);ctx.fill()}}
-    const sx=x+r*0.85,sy=y-r*0.3;ctx.strokeStyle='#6b4a2c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy+r*1.1);ctx.lineTo(sx,sy-r*0.4);ctx.stroke();
-    ctx.fillStyle=big?'#ff6a5a':'#8cf0a0';ctx.beginPath();ctx.arc(sx,sy-r*0.5,5+Math.sin(t*4)*1.5,0,7);ctx.fill();
-  }else if(sk==='mimic'){
-    const o=Math.abs(Math.sin(t*6))*r*0.35;
-    ctx.fillStyle=W||'#6b4a2c';ctx.fillRect(x-r,y-r*0.2,r*2,r*0.9);ctx.fillStyle='#8a6240';ctx.fillRect(x-r,y-r*0.6-o,r*2,r*0.45);
-    ctx.fillStyle='#f4c766';ctx.fillRect(x-r,y-r*0.05,r*2,3);
-    ctx.fillStyle='#8a1a1a';ctx.fillRect(x-r*0.9,y-r*0.2-o*0.6,r*1.8,o*0.8+2);
-    ctx.fillStyle='#e8e2d2';for(let i=0;i<6;i++){ctx.beginPath();ctx.moveTo(x-r*0.85+i*r*0.33,y-r*0.2);ctx.lineTo(x-r*0.7+i*r*0.33,y-r*0.2-o*0.5);ctx.lineTo(x-r*0.55+i*r*0.33,y-r*0.2);ctx.fill()}
-  }else{
-    ctx.fillStyle=W||CFG.zombies[z.tier].col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
-  }
-}
-
-/* ================= ОТРИСОВКА: склепы, портал, подземелье ================= */
-function drawCrypt(c,now){
-  const x=c.x,y=c.y,sealed=(S.crypts[c.id]||0)>S.day;
-  ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x+3,y+14,36,12,0,0,7);ctx.fill();
-  ctx.fillStyle='#55525a';ctx.fillRect(x-30,y-18,60,32);
-  ctx.fillStyle='#6a6770';ctx.beginPath();ctx.moveTo(x-34,y-18);ctx.lineTo(x,y-40);ctx.lineTo(x+34,y-18);ctx.fill();
-  ctx.fillStyle='#45424a';for(let i=0;i<3;i++)ctx.fillRect(x-30,y-10+i*8,60,1.5);
-  ctx.fillStyle=sealed?'#2a2830':'#0e0c12';ctx.beginPath();ctx.moveTo(x-11,y+14);ctx.lineTo(x-11,y-4);ctx.quadraticCurveTo(x,y-14,x+11,y-4);ctx.lineTo(x+11,y+14);ctx.fill();
-  if(!sealed){const g=0.4+0.3*Math.sin(now/300+x);ctx.fillStyle=`rgba(180,120,230,${g})`;ctx.beginPath();ctx.arc(x,y+4,6,0,7);ctx.fill()}
-  else{ctx.strokeStyle='#8a8478';ctx.lineWidth=2;for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(x+i*6,y-6);ctx.lineTo(x+i*6,y+14);ctx.stroke()}}
-  ctx.fillStyle='#d8cfb8';ctx.fillRect(x-2,y-36,4,10);ctx.fillRect(x-6,y-32,12,3);
-  if(Math.abs(P.x-x)<320&&dist(P.x,P.y,x,y)<320){ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#c08ae8';ctx.fillText(sealed?`Склеп · запечатан до ${S.crypts[c.id]}-го дня`:S.keys>0?`Склеп · ключей: ${S.keys}`:'Склеп · нужен ключ',x,y-48)}
-}
-function drawPortal(p,now){
-  const t=now/1000;
-  for(let i=3;i>0;i--){ctx.fillStyle=`rgba(${120+i*30},20,${40+i*20},${0.18*i})`;ctx.beginPath();ctx.ellipse(p.x,p.y,34+i*10+Math.sin(t*2+i)*3,48+i*12,0,0,7);ctx.fill()}
-  ctx.strokeStyle='#ff6a5a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,30,44,0,0,7);ctx.stroke();
-  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(t*1.5);ctx.strokeStyle='rgba(255,180,160,.6)';ctx.lineWidth=2;for(let i=0;i<3;i++){ctx.rotate(2.09);ctx.beginPath();ctx.arc(0,0,18,0,2);ctx.stroke()}ctx.restore();
-  ctx.font='700 13px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#ff8a7a';ctx.fillText('Портал Мора',p.x,p.y-62);
-}
-function drawDungeon(now){
-  const D2=DG,open=dunRects();
-  const rect=(r,fill)=>{ctx.fillStyle=fill;ctx.fillRect(r.x,r.y,r.w,r.h)};
-  // стены вокруг
-  for(const r of D2.rooms)rect({x:r.x-18,y:r.y-18,w:r.w+36,h:r.h+36},'#1a1820');
-  for(const c of D2.cors)rect({x:c.x,y:c.y-14,w:c.w,h:c.h+28},'#1a1820');
-  for(const r of D2.rooms){rect(r,'#2c2a30');ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=1;for(let gx=r.x;gx<r.x+r.w;gx+=40){ctx.beginPath();ctx.moveTo(gx,r.y);ctx.lineTo(gx,r.y+r.h);ctx.stroke()}for(let gy=r.y;gy<r.y+r.h;gy+=40){ctx.beginPath();ctx.moveTo(r.x,gy);ctx.lineTo(r.x+r.w,gy);ctx.stroke()}
-    ctx.fillStyle='rgba(220,210,190,.18)';for(let k=0;k<5;k++){const bx=r.x+((k*137+r.i*61)%r.w),by=r.y+((k*89+r.i*47)%r.h);ctx.fillRect(bx,by,7,2.5)}
-    for(const [tx,ty] of [[r.x+30,r.y+30],[r.x+r.w-30,r.y+30]]){ctx.fillStyle='#4a3424';ctx.fillRect(tx-2,ty-2,4,10);drawFire(tx,ty-2,0.35,now)}}
-  for(const c of D2.cors){rect(c,'#29272d');
-    if(!D2.rooms[c.i].cleared){ctx.fillStyle='#3a3530';ctx.fillRect(c.x+c.w/2-8,c.y,16,c.h);ctx.strokeStyle='#8a8478';ctx.lineWidth=3;for(let k=0;k<6;k++){const yy=c.y+12+k*(c.h-24)/5;ctx.beginPath();ctx.moveTo(c.x+c.w/2-14,yy);ctx.lineTo(c.x+c.w/2+14,yy);ctx.stroke()}}}
-  // ловушки
-  for(const t of D2.traps){if(!D2.rooms[t.room].spawned)continue;const armed=t.t>1.8,warn=t.t>1.3;
-    ctx.fillStyle=armed?'#7a2a24':warn?'#5a3a2a':'#3a3634';ctx.fillRect(t.x-18,t.y-18,36,36);
-    ctx.fillStyle=armed?'#d8d2c0':'#5a5650';for(let i=0;i<3;i++)for(let j=0;j<3;j++){const px=t.x-12+i*12,py=t.y-12+j*12;ctx.beginPath();ctx.moveTo(px-3,py+3);ctx.lineTo(px,py-(armed?8:2));ctx.lineTo(px+3,py+3);ctx.fill()}}
-  // вход/выход
-  const e=D2.entry;ctx.fillStyle='rgba(159,195,214,.25)';ctx.beginPath();ctx.ellipse(e.x,e.y,22,32,0,0,7);ctx.fill();ctx.strokeStyle='#9fc3d6';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,22,32,0,0,7);ctx.stroke();
-  ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#9fc3d6';ctx.fillText('Выход',e.x,e.y-40);
-  if(D2.chest){const c=D2.chest;ctx.fillStyle='#6b4a2c';ctx.fillRect(c.x-20,c.y-12,40,26);ctx.fillStyle=c.open?'#3a2a1c':'#8a6240';ctx.fillRect(c.x-20,c.y-(c.open?26:20),40,10);ctx.fillStyle='#f4c766';ctx.fillRect(c.x-20,c.y-4,40,3);ctx.fillRect(c.x-3,c.y-8,6,8);
-    if(!c.open){const g=0.3+0.2*Math.sin(now/200);ctx.fillStyle=`rgba(244,199,102,${g})`;ctx.beginPath();ctx.arc(c.x,c.y,36,0,7);ctx.fill()}}
-  if(D2.exit){const x=D2.exit.x,y=D2.exit.y;ctx.fillStyle='rgba(134,168,92,.3)';ctx.beginPath();ctx.ellipse(x,y,24,34,0,0,7);ctx.fill();ctx.strokeStyle='#86a85c';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y,24,34,0,0,7);ctx.stroke();ctx.fillStyle='#86a85c';ctx.fillText('Наружу',x,y-42)}
-  // подпись зала
-  const cur=roomAt(P.x,P.y);if(cur){ctx.font='600 13px Rubik, sans-serif';ctx.fillStyle='rgba(236,230,211,.5)';ctx.fillText(`Зал ${cur.i+1} из ${D2.rooms.length}${cur.last?' · хранитель':''}`,cur.x+cur.w/2,cur.y+26)}
-}
-
 /* ================= ГЕРОЙ ================= */
 function gainXp(n){
   S.xp+=n;let up=0;
@@ -1248,13 +715,6 @@ function showPerks(){
   document.getElementById('perks').hidden=false;keys.clear();actHeld=false;
 }
 document.getElementById('perkList').addEventListener('click',e=>{
-  const rb=e.target.closest('[data-relic]');
-  if(rb){const k=rb.dataset.relic;S.meta.relics[k]=rl(k)+1;S.meta.relicPend--;sfx.buy();toast(`Реликвия: ${RELICS[k].name} (ранг ${rl(k)})`,'good');
-    if(k==='heart')S.p.hp+=15;if(k==='keyr')S.keys+=2;if(k==='hoard'){S.wood+=150;S.stone+=40}if(k==='flask')S.potions=Math.min(potMax(),S.potions+2);
-    if(k==='fort'&&S.base<2){S.base=2;S.fence.lvl=Math.max(1,S.fence.lvl);S.fence.hp=fenceHp(S.fence.lvl);S.hq=hqMax(2)}
-    if(k==='vet'){S.lvl+=2;S.perkPend+=2}
-    save();document.getElementById('perks').hidden=true;
-    if(S.meta.relicPend>0)setTimeout(showRelics,150);else if(S.perkPend>0)setTimeout(showPerks,150);return}
   const b=e.target.closest('[data-perk]');if(!b)return;const k=b.dataset.perk;
   const oldF=fenceHp(S.fence.lvl),oldH=hqMax(S.base);
   S.perks[k]=pr(k)+1;S.perkPend--;
@@ -1356,16 +816,14 @@ function update(dt){
   else if(m>0.1){const s=speedOf(S.up.boots)*(swamp?0.55:1)*Math.min(1,m)/m;P.x+=mx*s*dt;P.y+=my*s*dt;P.face=Math.atan2(my,mx)}
   for(const t of trees){if(!t.alive||Math.abs(t.x-P.x)>40)continue;const d=dist(P.x,P.y,t.x,t.y),min=t.r*0.55+12;if(d<min&&d>0){P.x=t.x+(P.x-t.x)/d*min;P.y=t.y+(P.y-t.y)/d*min}}
   for(const r of rocks){if(!r.alive||Math.abs(r.x-P.x)>40)continue;const d=dist(P.x,P.y,r.x,r.y),min=r.r+10;if(d<min&&d>0){P.x=r.x+(P.x-r.x)/d*min;P.y=r.y+(P.y-r.y)/d*min}}
-  if(DG)updateDungeon(dt);
-  else{P.x=Math.max(20,Math.min(W_SIZE-20,P.x));P.y=Math.max(20,Math.min(W_SIZE-20,P.y))}
+  P.x=Math.max(20,Math.min(W_SIZE-20,P.x));P.y=Math.max(20,Math.min(W_SIZE-20,P.y));
   p.x=P.x;p.y=P.y;
-  P.fell=Math.max(0,(P.fell||0)-dt);updateRoots(dt);updateRefugees(dt);
 
   // --- лагерь: сдача и лечение
   if(inCamp()){
     if(bagTotal()>0){
-      const parts=[];if(S.bag)parts.push(S.bag+' древесины');if(S.bagStone)parts.push(S.bagStone+' камня');if(S.bagIron)parts.push(S.bagIron+' железа');
-      S.wood+=S.bag;S.stone+=S.bagStone;S.iron+=S.bagIron||0;addFloat(CX,CY-30,'+'+parts.join(', '),'#e98b3d');sfx.deposit();S.bag=0;S.bagStone=0;S.bagIron=0;save();
+      const parts=[];if(S.bag)parts.push(S.bag+' древесины');if(S.bagStone)parts.push(S.bagStone+' камня');
+      S.wood+=S.bag;S.stone+=S.bagStone;addFloat(CX,CY-30,'+'+parts.join(', '),'#e98b3d');sfx.deposit();S.bag=0;S.bagStone=0;save();
     }
     p.hp=Math.min(maxHp(S.up.hp),p.hp+3*dt);
   }
@@ -1379,7 +837,7 @@ function update(dt){
 
   // --- отрастание
   for(const t of trees){t.shake=Math.max(0,t.shake-dt);if(!t.alive){t.t-=dt;if(t.t<=0&&dist(t.x,t.y,P.x,P.y)>60){t.alive=true;t.hp=CFG.trees[t.tier].hp}}}
-  for(const r of rocks){r.shake=Math.max(0,r.shake-dt);if(!r.alive){r.t-=dt;if(r.t<=0&&dist(r.x,r.y,P.x,P.y)>60){r.alive=true;r.hp=rockMax(r)}}}
+  for(const r of rocks){r.shake=Math.max(0,r.shake-dt);if(!r.alive){r.t-=dt;if(r.t<=0&&dist(r.x,r.y,P.x,P.y)>60){r.alive=true;r.hp=CFG.rocks.hp[r.zone]}}}
 
   updateZombies(dt);
   updateMounds(dt);
@@ -1398,55 +856,32 @@ function update(dt){
   for(const f of floats){f.t-=dt;f.y-=28*dt}floats=floats.filter(f=>f.t>0);
   for(const d of drops){
     d.t-=dt;if(dist(d.x,d.y,P.x,P.y)>26)continue;
-    if(d.kind==='item'){pickItem(d);continue}
-    if(d.kind==='chest'&&Math.random()<0.1){d.t=0;const z=makeZombie(Math.min(7,d.tier||1),d.x,d.y,false,null);z.mimic=true;z.skin='mimic';z.max=z.hp=z.hp*4;z.r=16;z.dmg=Math.ceil(z.dmg*1.5);zombies.push(z);sfx.roar(0.4);toast('Это мимик! Сундук кусается.','bad');continue}
-    if(d.kind==='chest'){if(Math.random()<0.25)giveItem(makeItem(d.tier||1,0),d.x+20,d.y);const w=chestWood(d.tier);S.wood+=w;S.stats.chests++;d.t=0;addFloat(d.x,d.y-20,'Сундук: +'+w+' древесины','#f4c766');sfx.chest();save()}
+    if(d.kind==='chest'){const w=chestWood(d.tier);S.wood+=w;S.stats.chests++;d.t=0;addFloat(d.x,d.y-20,'Сундук: +'+w+' древесины','#f4c766');sfx.chest();save()}
     else if(d.kind==='big'){S.wood+=d.w;S.stone+=d.s;S.stats.chests++;d.t=0;addFloat(d.x,d.y-20,`Добыча босса: +${d.w} древесины, +${d.s} камня`,'#f4c766');sfx.chest();save()}
-    else if(d.kind==='potatk'){if(S.potAtk<potMax()){S.potAtk++;d.t=0;addFloat(d.x,d.y-20,'+1 зелье силы','#f0a060');sfx.pickup()}else toast(`Зелий силы уже ${potMax()}, больше не унести`,'', 'atkfull')}
-    else if(S.potions<potMax()){S.potions++;d.t=0;addFloat(d.x,d.y-20,'+1 зелье лечения','#f2b8b0');sfx.pickup()}
-    else toast(`Зелий лечения уже ${potMax()}, больше не унести`,'', 'potfull');
+    else if(d.kind==='potatk'){if(S.potAtk<LOOT.potionMax){S.potAtk++;d.t=0;addFloat(d.x,d.y-20,'+1 зелье силы','#f0a060');sfx.pickup()}else toast(`Зелий силы уже ${LOOT.potionMax}, больше не унести`,'', 'atkfull')}
+    else if(S.potions<LOOT.potionMax){S.potions++;d.t=0;addFloat(d.x,d.y-20,'+1 зелье лечения','#f2b8b0');sfx.pickup()}
+    else toast(`Зелий лечения уже ${LOOT.potionMax}, больше не унести`,'', 'potfull');
   }
   drops=drops.filter(d=>d.t>0);
   for(const tr of tracers)tr.t-=dt;tracers=tracers.filter(t=>t.t>0);
-  for(const sp of spits){sp.t-=dt;sp.x+=sp.vx*dt;sp.y+=sp.vy*dt;if(sp.t>0&&dist(sp.x,sp.y,P.x,P.y)<14+(sp.r||0)*0.5){sp.t=0;damagePlayer(sp.dmg)}}
+  for(const sp of spits){sp.t-=dt;sp.x+=sp.vx*dt;sp.y+=sp.vy*dt;if(sp.t>0&&dist(sp.x,sp.y,P.x,P.y)<14){sp.t=0;damagePlayer(sp.dmg)}}
   spits=spits.filter(q=>q.t>0);
 
   if(p.hp<=0&&S.hq<=0){gameOver();return}
   if(p.hp<=0){
     if(phase().night&&S.night.active){S.night.died=true;if(S.streak>0)toast(`Серия из ${S.streak} ночей сгорела`,'bad');S.streak=0}
-    if(DG){for(let i=zombies.length-1;i>=0;i--)if(zombies[i].dun!=null)zombies.splice(i,1);DG=null;spits=[]}
-    const lw=S.bag,ls=S.bagStone;S.bag=0;S.bagStone=0;S.bagIron=0;p.hp=maxHp(S.up.hp);P.x=CX;P.y=CY+40;p.x=P.x;p.y=P.y;
+    const lw=S.bag,ls=S.bagStone;S.bag=0;S.bagStone=0;p.hp=maxHp(S.up.hp);P.x=CX;P.y=CY+40;p.x=P.x;p.y=P.y;
     toast(lw||ls?`Вас одолели. Сумка потеряна (${lw} древесины, ${ls} камня).`:'Вас одолели. Вы очнулись в лагере.','bad');save();
   }
   saveT+=dt;if(saveT>4){saveT=0;save()}
 }
 
-function specialTarget(){
-  const near=(o,r)=>o&&Math.abs(o.x-P.x)<r&&dist(o.x,o.y,P.x,P.y)<r;
-  if(DG){
-    if(near(DG.entry,60))return {k:'x',o:DG.entry,ok:true,lbl:'Выйти',msg:'Покинуть склеп (сокровища останутся непройденными)',fn:()=>leaveCrypt('Вы покинули склеп')};
-    if(DG.chest&&!DG.chest.open&&near(DG.chest,60))return {k:'x',o:DG.chest,ok:true,lbl:'Открыть',msg:'Открыть сундук хранителя',fn:openDunChest};
-    if(DG.exit&&near(DG.exit,60))return {k:'x',o:DG.exit,ok:true,lbl:'Выйти',msg:'Портал наружу',fn:()=>leaveCrypt('Склеп пройден!')};
-    return null;
-  }
-  for(const c of crypts){
-    if(!near(c,58))continue;
-    const cd=S.crypts[c.id]||0;
-    if(cd>S.day)return {k:'x',o:c,ok:false,msg:`Склеп запечатан до ${cd}-го дня`,fn:()=>{}};
-    if(S.keys<=0)return {k:'x',o:c,ok:false,msg:'Нужен ключ от склепа: падает с могильников, боссов и у торговца',fn:()=>{}};
-    return {k:'x',o:c,ok:true,lbl:'Войти',msg:`Войти в склеп (${zoneById(c.zone).name}): потратить ключ, их у вас ${S.keys}`,fn:()=>enterCrypt(c)};
-  }
-  const pp=portalPos();
-  if(pp&&allCleared()&&!S.final.killed&&near(pp,70)&&!zombies.some(z=>z.final))return {k:'x',o:pp,ok:true,lbl:'Призвать',msg:'Портал Мора. Призвать Владыку Мора — финальная битва',fn:summonFinal};
-  return null;
-}
 function findTarget(){
   const bow=S.weapon==='bow'&&S.bow>0, reach=bow?bowRange(S.bow):0;
   let best=null,bd=1e9;
   for(const z of zombies){const d=dist(P.x,P.y,z.x,z.y);if(d<(bow?reach:z.r+38)&&d<bd){bd=d;best={k:'z',o:z,ok:true}}}
   for(const m of mounds){if(m.dead)continue;const d=dist(P.x,P.y,m.x,m.y);if(d<(bow?reach:44)&&d<bd){bd=d;best={k:'m',o:m,ok:true}}}
   if(best)return best;
-  const xt=specialTarget();if(xt)return xt;
   const ft=farmTarget();if(ft)return ft;
   for(const t of trees){if(!t.alive||Math.abs(t.x-P.x)>60)continue;const d=dist(P.x,P.y,t.x,t.y);if(d<t.r+30&&d<bd){bd=d;best={k:'t',o:t}}}
   for(const r of rocks){if(!r.alive||Math.abs(r.x-P.x)>60)continue;const d=dist(P.x,P.y,r.x,r.y);if(d<r.r+28&&d<bd){bd=d;best={k:'r',o:r}}}
@@ -1463,33 +898,28 @@ function findTarget(){
 }
 const promptEl=document.getElementById('prompt');
 function showPrompt(t){
-  if(t&&(!t.ok||t.k==='f'||t.k==='x')){if(promptEl.textContent!==t.msg)promptEl.textContent=t.msg;promptEl.hidden=false}else promptEl.hidden=true;
-  const lbl=t&&(t.k==='f'||t.k==='x')?(t.lbl||'Рубить'):!t?(S.weapon==='bow'&&S.bow>0?'Стрелять':'Рубить'):(t.k==='z'||t.k==='m')?(S.weapon==='bow'&&S.bow>0?'Стрелять':'Бить'):t.k==='r'?'Копать':'Рубить';
+  if(t&&(!t.ok||t.k==='f')){if(promptEl.textContent!==t.msg)promptEl.textContent=t.msg;promptEl.hidden=false}else promptEl.hidden=true;
+  const lbl=t&&t.k==='f'?(t.lbl||'Рубить'):!t?(S.weapon==='bow'&&S.bow>0?'Стрелять':'Рубить'):(t.k==='z'||t.k==='m')?(S.weapon==='bow'&&S.bow>0?'Стрелять':'Бить'):t.k==='r'?'Копать':'Рубить';
   if(actBtn.textContent!==lbl)actBtn.textContent=lbl;
 }
 function doAction(t){
   if(t.k==='f'){farmAction(t);return}
-  if(t.k==='x'){P.cd=0.5;t.fn();return}
   P.face=Math.atan2(t.o.y-P.y,t.o.x-P.x);
   if(t.k==='z'||t.k==='m'){
     if(S.weapon==='bow'&&S.bow>0){
-      P.cd=bowCd(S.bow)/(1+gear('spd')/100);P.shot=0.2;sfx.shoot();
+      P.cd=bowCd(S.bow);P.shot=0.2;sfx.shoot();
       tracers.push({x1:P.x,y1:P.y,x2:t.o.x,y2:t.o.y,t:0.12,lvl:Math.min(6,1+Math.floor(S.bow/2))});
-      {const [d,cr]=heroHit(bowDmg(S.bow)*(1+0.12*pr('str'))*atkMul()*(1+0.2*S.forgeUp.bow));hitEnemy(t,d,'ranged',cr)}
-    }else{P.cd=axeCd(S.up.axe)/(1+gear('spd')/100);P.swing=0.18;sfx.hit();const [d,cr]=heroHit(axeDmg(S.up.axe)*(1+0.12*pr('str'))*atkMul()*(1+0.2*S.forgeUp.melee));hitEnemy(t,d,'melee',cr)}
-  }else{
-    const gm=(1+0.15*pr('hand'))*(1+gear('gather')/100)*(1+0.15*rl('gather'));
-    const fell=hasUq('felling')&&(P.fell||0)<=0;if(fell){P.fell=10;addFloat(P.x,P.y-30,'Удар Первого Лесоруба!','#f0a040')}
-    if(t.k==='t'){P.cd=axeCd(S.up.axe)/(1+gear('spd')/100);P.swing=0.18;chop(t.o,fell?1e6:axeDmg(S.up.axe)*gm)}
-    else{P.cd=pickCd(S.up.pick)/(1+gear('spd')/100);P.swing=0.18;mine(t.o,fell?1e6:pickDmg(S.up.pick)*gm)}
-  }
+      hitEnemy(t,bowDmg(S.bow)*(1+0.12*pr('str'))*atkMul());
+    }else{P.cd=axeCd(S.up.axe);P.swing=0.18;sfx.hit();hitEnemy(t,axeDmg(S.up.axe)*(1+0.12*pr('str'))*atkMul())}
+  }else if(t.k==='t'){P.cd=axeCd(S.up.axe);P.swing=0.18;chop(t.o,axeDmg(S.up.axe)*(1+0.15*pr('hand')))}
+  else{P.cd=pickCd(S.up.pick);P.swing=0.18;mine(t.o,pickDmg(S.up.pick)*(1+0.15*pr('hand')))}
 }
-function hitEnemy(t,dmg,src,crit){if(t.k==='z'){if(crit)addFloat(t.o.x,t.o.y-t.o.r-6,'крит!','#f4c766');if(canHit(t.o,src))maybeBurn(t.o,dmg);hitZombie(t.o,dmg,P.x,P.y,src)}else hitMound(t.o,dmg)}
+function hitEnemy(t,dmg){if(t.k==='z')hitZombie(t.o,dmg,P.x,P.y);else hitMound(t.o,dmg)}
 function chop(t,dmg){
   t.hp-=dmg;t.shake=0.15;sfx.chop();
   if(t.hp<=0){sfx.fall();
     const tt=CFG.trees[t.tier];
-    const dbl=Math.random()<0.2*pr('luck')+gear('dbl')/100, add=Math.min(tt.wood*(dbl?2:1),bagCap(S.up.bag)-bagTotal());gainXp(0.6*t.tier);
+    const dbl=Math.random()<0.2*pr('luck'), add=Math.min(tt.wood*(dbl?2:1),bagCap(S.up.bag)-bagTotal());gainXp(0.6*t.tier);
     S.bag+=add;S.stats.chopped++;t.alive=false;t.t=tt.respawn;if(t.claim){t.claim.tree=null;t.claim.state='idle';t.claim=null}
     addFloat(t.x,t.y-20,(dbl?'Двойная! ':'')+'+'+add+' древесины','#e9c46a');
     if(bagTotal()>=bagCap(S.up.bag))toast('Сумка полна. Идите в лагерь.','', 'bagfull');
@@ -1498,17 +928,16 @@ function chop(t,dmg){
 function mine(r,dmg){
   r.hp-=dmg;r.shake=0.15;sfx.mine();
   if(r.hp<=0){sfx.crumble();if(r.claim){r.claim.tree=null;r.claim.state='idle';r.claim=null}
-    const dbl=Math.random()<0.2*pr('luck')+gear('dbl')/100, add=Math.min((r.iron?ironOf(r):CFG.rocks.stone[r.zone])*(dbl?2:1),bagCap(S.up.bag)-bagTotal());gainXp(0.8*r.zone*(r.iron?2:1));
-    if(r.iron)S.bagIron=(S.bagIron||0)+add;else S.bagStone+=add;S.stats.mined++;r.alive=false;r.t=CFG.rocks.respawn;
-    addFloat(r.x,r.y-20,(dbl?'Двойная! ':'')+'+'+add+(r.iron?' железа':' камня'),r.iron?'#a9b2bf':'#c9c7bd');
+    const dbl=Math.random()<0.2*pr('luck'), add=Math.min(CFG.rocks.stone[r.zone]*(dbl?2:1),bagCap(S.up.bag)-bagTotal());gainXp(0.8*r.zone);
+    S.bagStone+=add;S.stats.mined++;r.alive=false;r.t=CFG.rocks.respawn;
+    addFloat(r.x,r.y-20,(dbl?'Двойная! ':'')+'+'+add+' камня','#c9c7bd');
     if(bagTotal()>=bagCap(S.up.bag))toast('Сумка полна. Идите в лагерь.','', 'bagfull');
   }
 }
-function hitZombie(z,dmg,fx,fy,src){
+function hitZombie(z,dmg,fx,fy){
   if(!zombies.includes(z))return;
-  if(!canHit(z,src)){if(!z.immT||performance.now()-z.immT>700){z.immT=performance.now();addFloat(z.x,z.y-z.r-20,z.fly?'неуязвим: бейте луком':'неуязвим: бейте топором','#9fc3d6')}return}
   z.hp-=dmg;z.hit=0.12;
-  if(!z.boss&&!z.guard){const d=dist(z.x,z.y,fx,fy)||1;z.x+=(z.x-fx)/d*10;z.y+=(z.y-fy)/d*10}
+  if(!z.boss){const d=dist(z.x,z.y,fx,fy)||1;z.x+=(z.x-fx)/d*10;z.y+=(z.y-fy)/d*10}
   if(z.hp<=0)killZombie(z);
 }
 function checkZone(zid){
@@ -1518,22 +947,17 @@ function checkZone(zid){
 function killZombie(z){
   zombies.splice(zombies.indexOf(z),1);S.stats.kills++;sfx.kill();
   if(phase().night){S.night.kills++;S.stats.nightKills++}
-  gainXp(z.final?500:z.boss?40*z.boss:z.guard?30*z.tier:1.5*z.tier*(z.kind==='ram'?1.5:1));
-  if(pr('vamp')||gear('vamp'))S.p.hp=Math.min(maxHp(S.up.hp),S.p.hp+pr('vamp')+gear('vamp'));
-  if(z.final){S.final.killed=true;S.meta.wins++;sfx.roar(0.8);drops.push({x:z.x,y:z.y,kind:'item',it:makeItem(7,3),t:600});save();setTimeout(showVictory,1500);return}
-  if(z.guard){S.stats.crypts++;return}
-  if(z.mimic){drops.push({x:z.x,y:z.y,kind:'item',it:makeItem(z.tier,2),t:120});toast('Мимик повержен, из него выпала ценная вещь','good');return}
+  gainXp(z.boss?40*z.boss:1.5*z.tier*(z.kind==='ram'?1.5:1));
+  if(pr('vamp'))S.p.hp=Math.min(maxHp(S.up.hp),S.p.hp+pr('vamp'));
   addFloat(z.x,z.y-16,'✕','#cf4b3f');
   if(z.boss){
     const zid=z.boss;S.bosses[zid]=true;S.stats.bosses++;sfx.roar(0.6);
     drops.push({x:z.x,y:z.y,kind:'big',w:Math.round(40*zid*1.6),s:15*zid,t:120});
     drops.push({x:z.x+24,y:z.y+10,kind:'potion',t:120});
-    drops.push({x:z.x,y:z.y-30,kind:'item',it:makeItem(zid,1),t:300});S.keys++;toast('С босса выпал ключ от склепа','good');
     drops.push({x:z.x-24,y:z.y+10,kind:'potatk',t:120});
     toast(`${z.name} повержен!`,'good');checkZone(zid);save();return;
   }
-  const r=Math.random()/(1+gear('loot')/100);
-  if(z.dun==null&&Math.random()<0.012*(1+gear('loot')/100)){S.keys++;addFloat(z.x,z.y-30,'+ключ','#f4c766')}
+  const r=Math.random();
   if(r<LOOT.potion)drops.push({x:z.x,y:z.y,kind:'potion',t:LOOT.lifetime});
   else if(r<LOOT.potion+LOOT.atk)drops.push({x:z.x,y:z.y,kind:'potatk',t:LOOT.lifetime});
   else if(r<LOOT.potion+LOOT.atk+LOOT.chest)drops.push({x:z.x,y:z.y,kind:'chest',tier:z.tier,t:LOOT.lifetime});
@@ -1547,12 +971,12 @@ function killZombie(z){
 function hitMound(m,dmg){
   m.hp-=dmg;m.hit=0.12;sfx.mine();
   if(m.hp<=0){
-    m.dead=true;S.mounds[m.id]=true;sfx.crumble();S.stats.moundsDone++;gainXp(10*m.zone);S.keys++;toast('В могильнике нашёлся ключ от склепа','good');if(Math.random()<0.4)drops.push({x:m.x+20,y:m.y,kind:'item',it:makeItem(m.zone,0),t:180});
+    m.dead=true;S.mounds[m.id]=true;sfx.crumble();S.stats.moundsDone++;gainXp(10*m.zone);
     drops.push({x:m.x,y:m.y,kind:'chest',tier:m.zone*2,t:LOOT.lifetime});
     toast('Могильник разрушен','good');checkZone(m.zone);save();
   }
 }
-function damagePlayer(n){if(P.inv>0){addFloat(P.x,P.y-24,'уклон','#9fc3d6');return}n*=1-Math.min(0.6,gear('armor')/100);S.p.hp-=n;P.hurt=0.2;sfx.hurt();addFloat(P.x,P.y-24,'−'+Math.round(n),'#cf4b3f')}
+function damagePlayer(n){if(P.inv>0){addFloat(P.x,P.y-24,'уклон','#9fc3d6');return}S.p.hp-=n;P.hurt=0.2;sfx.hurt();addFloat(P.x,P.y-24,'−'+Math.round(n),'#cf4b3f')}
 
 function updateZombies(dt){
   const fOn=fenceOn();
@@ -1567,24 +991,22 @@ function updateZombies(dt){
     z.hit=Math.max(0,z.hit-dt);z.atk-=dt;z.ph+=dt*6;
     const dP=dist(z.x,z.y,P.x,P.y), dC=dist(z.x,z.y,CX,CY);
     if(dC>CFG.fenceR+2)z.outside=true;else if(!fOn)z.outside=false;
-    let tx,ty,sp=z.speed*(inSwamp(z.x,z.y)?(z.skin==='croc'?1.5:0.6):1);
-    if(z.burn>0){z.burn-=dt;z.hp-=z.burnDps*dt;if(z.hp<=0){killZombie(z);continue}}
-    if(z.boss||z.guard){
+    let tx,ty,sp=z.speed*(inSwamp(z.x,z.y)?0.6:1);
+    if(z.boss){
       const home=dist(z.x,z.y,z.hx,z.hy);
-      const chase=z.final||z.guard?dP<700:dP<300&&home<420;
+      const chase=dP<300&&home<420;
       if(z.charge>0){
         z.charge-=dt;z.x+=z.cdx*z.speed*4*dt;z.y+=z.cdy*z.speed*4*dt;
         if(!z.chHit&&dist(z.x,z.y,P.x,P.y)<z.r+14){z.chHit=true;damagePlayer(z.dmg*1.5)}
         continue;
       }
       if(z.slam>0){z.slam-=dt;if(z.slam<=0){sfx.slam();if(dist(z.x,z.y,P.x,P.y)<95)damagePlayer(z.dmg*1.8)}continue}
-      if(bossAbility(z,dP,dt))continue;
       z.abT-=dt;
       if(chase&&z.abT<=0){
         const ab=z.ab==='all'?['summon','charge','slam'][Math.floor(Math.random()*3)]:z.ab;
         if(ab==='summon'){
           const n=zombies.filter(q=>q.owner===z).length;
-          if(n<6){for(let k=0;k<2;k++){const a=Math.random()*6.28,q=makeZombie(z.tier,z.x+Math.cos(a)*50,z.y+Math.sin(a)*50,false,null);q.owner=z;if(z.dun!=null)q.dun=z.dun;if(z.skin==='slime'){q.skin='slimelet';q.r*=0.8}zombies.push(q)}sfx.roar(0.35)}
+          if(n<6){for(let k=0;k<2;k++){const a=Math.random()*6.28,q=makeZombie(z.tier,z.x+Math.cos(a)*50,z.y+Math.sin(a)*50,false,null);q.owner=z;zombies.push(q)}sfx.roar(0.35)}
           z.abT=7;
         }else if(ab==='charge'){
           if(dP>70&&dP<320){z.charge=0.7;z.cdx=(P.x-z.x)/dP;z.cdy=(P.y-z.y)/dP;z.chHit=false;z.abT=5;sfx.roar(0.4)}else z.abT=1;
@@ -1601,10 +1023,8 @@ function updateZombies(dt){
       else{tx=z.x+(P.y-z.y)*0.5;ty=z.y-(P.x-z.x)*0.5;sp*=0.5}
       if(z.spitT<=0){z.spitT=2.5;const v=230;spits.push({x:z.x,y:z.y,vx:(P.x-z.x)/dP*v,vy:(P.y-z.y)/dP*v,t:1.6,dmg:z.dmg});sfx.spit()}
     }else{
-      const aggro=z.wave?160:z.dun!=null?700:180;
-      let rf=null;if(z.hunt&&refugees.length){let bd=600;for(const r of refugees){const d=dist(z.x,z.y,r.x,r.y);if(d<bd){bd=d;rf=r}}}
-      if(rf&&dP>120){tx=rf.x;ty=rf.y}
-      else if(dP<aggro){tx=P.x;ty=P.y}
+      const aggro=z.wave?160:180;
+      if(dP<aggro){tx=P.x;ty=P.y}
       else if(z.wave&&z.farm){
         const q=poiById(z.farm),f=q&&farmOf(q);
         if(!f||f.broken){z.farm=null;tx=CX;ty=CY}
@@ -1661,7 +1081,7 @@ const farmOf = q => S.farms[q.id];
 const poiById = id => pois.find(q=>q.id===id);
 const farmActive = q => {const f=farmOf(q);return f&&!f.broken};
 const zombiesNear = (x,y,r) => zombies.some(z=>Math.abs(z.x-x)<r&&dist(z.x,z.y,x,y)<r);
-function spendAny(c0){const c=disc(c0);if(S.wood<c.w||S.stone<(c.s||0)||S.iron<c.i||S.shards<c.sh)return false;S.wood-=c.w;S.stone-=(c.s||0);S.iron-=c.i;S.shards-=c.sh;return true}
+function spendAny(c0){const c=disc(c0);if(S.wood<c.w||S.stone<(c.s||0))return false;S.wood-=c.w;S.stone-=(c.s||0);return true}
 function buildPeasants(){
   peasants=[];carts={};FT={};
   for(const q of pois){const f=farmOf(q);if(!f)continue;
@@ -1683,7 +1103,7 @@ function updateFarms(dt){
       if(pe.tree){pe.tree.claim=null;pe.tree=null}
       let foe=null,fd=170;for(const z of zombies){if(Math.abs(z.x-q.x)>170)continue;const d=dist(z.x,z.y,q.x,q.y);if(d<fd){fd=d;foe=z}}
       if(foe){pe.state='fight';const a=Math.atan2(pe.y-foe.y,pe.x-foe.x),tx=foe.x+Math.cos(a)*(foe.r+10),ty=foe.y+Math.sin(a)*(foe.r+10);
-        if(goTo(tx,ty,90)&&pe.swing<=0){pe.swing=1;pe.foe=foe;hitZombie(foe,militiaDmg(q.zone),pe.x,pe.y,'melee')}}
+        if(goTo(tx,ty,90)&&pe.swing<=0){pe.swing=1;pe.foe=foe;hitZombie(foe,militiaDmg(q.zone),pe.x,pe.y)}}
       else{pe.state=goTo(homeX,homeY,70)?'guard':'walk_home'}
       continue;
     }
@@ -1697,7 +1117,7 @@ function updateFarms(dt){
       if(farmStored(f)+pe.carry>=cap){goTo(homeX,homeY,60);continue}
       const stone=f.mode==='stone',list=stone?rocks:trees,R=stone?FARM.stoneR:FARM.workR;
       let best=null,bd=R;
-      for(const t of list){if(!t.alive||t.claim||t.iron||Math.abs(t.x-q.x)>R)continue;const d=dist(t.x,t.y,q.x,q.y);if(d<bd){bd=d;best=t}}
+      for(const t of list){if(!t.alive||t.claim||Math.abs(t.x-q.x)>R)continue;const d=dist(t.x,t.y,q.x,q.y);if(d<bd){bd=d;best=t}}
       if(best){best.claim=pe;pe.tree=best;pe.res=stone?'stone':'wood';pe.state='walk'}else goTo(homeX,homeY,50);
     }else if(pe.state==='walk'){
       const t=pe.tree;if(!t||!t.alive){if(t)t.claim=null;pe.tree=null;pe.state='idle';continue}
@@ -1707,7 +1127,7 @@ function updateFarms(dt){
       const t=pe.tree;if(!t||!t.alive){if(t)t.claim=null;pe.tree=null;pe.state='idle';continue}
       const near=dist(t.x,t.y,P.x,P.y);
       if(pe.res==='stone'){
-        const mx=rockMax(t);t.hp-=mx/rockTime(t)*(1+0.1*pr('boss'))*dt;
+        const mx=CFG.rocks.hp[t.zone];t.hp-=mx/rockTime(t)*(1+0.1*pr('boss'))*dt;
         if(pe.swing<=0){pe.swing=0.7;t.shake=0.12;if(near<260)sfx.mine()}
         if(t.hp<=0){t.alive=false;t.t=CFG.rocks.respawn;t.claim=null;pe.tree=null;pe.carry=CFG.rocks.stone[t.zone];pe.state='back';if(near<300)sfx.crumble()}
       }else{
@@ -1726,7 +1146,7 @@ function updateFarms(dt){
     const tw=FT[q.id]||(FT[q.id]={cd:0,ang:-Math.PI/2,shot:0});tw.cd-=dt;tw.shot=Math.max(0,tw.shot-dt);if(tw.cd>0)continue;
     const tp=farmTowerPos(q),R=farmTowerRange(f.tower);let best=null,bd=R;
     for(const z of zombies){if(Math.abs(z.x-tp.x)>R)continue;const d=dist(tp.x,tp.y,z.x,z.y);if(d<bd){bd=d;best=z}}
-    if(best){tw.cd=1;tw.ang=Math.atan2(best.y-tp.y,best.x-tp.x);tw.shot=0.25;if(dist(tp.x,tp.y,P.x,P.y)<400)sfx.tower();tracers.push({x1:tp.x,y1:tp.y-towerTop(f.tower),x2:best.x,y2:best.y,t:0.12,lvl:f.tower});hitZombie(best,farmTowerDmg(q.zone,f.tower)*(1+0.12*pr('eng')),tp.x,tp.y,'ranged')}
+    if(best){tw.cd=1;tw.ang=Math.atan2(best.y-tp.y,best.x-tp.x);tw.shot=0.25;if(dist(tp.x,tp.y,P.x,P.y)<400)sfx.tower();tracers.push({x1:tp.x,y1:tp.y-towerTop(f.tower),x2:best.x,y2:best.y,t:0.12,lvl:f.tower});hitZombie(best,farmTowerDmg(q.zone,f.tower)*(1+0.12*pr('eng')),tp.x,tp.y)}
   }
   // вагончики по дорогам
   for(const q of pois){
@@ -1794,7 +1214,7 @@ function updateTowers(dt){
     const tp=towerPos(i),R=towerRange(l);
     let best=null,bd=R;
     for(const z of zombies){if(Math.abs(z.x-tp.x)>R)continue;const d=dist(tp.x,tp.y,z.x,z.y);if(d<bd){bd=d;best=z}}
-    if(best){tw.cd=TOWER_CD;tw.ang=Math.atan2(best.y-tp.y,best.x-tp.x);tw.shot=0.25;if(dist(tp.x,tp.y,P.x,P.y)<500)sfx.tower();tracers.push({x1:tp.x,y1:tp.y-towerTop(l),x2:best.x,y2:best.y,t:0.12,lvl:l});hitZombie(best,towerDmg(l)*(1+0.12*pr('eng')),tp.x,tp.y,'ranged')}
+    if(best){tw.cd=TOWER_CD;tw.ang=Math.atan2(best.y-tp.y,best.x-tp.x);tw.shot=0.25;if(dist(tp.x,tp.y,P.x,P.y)<500)sfx.tower();tracers.push({x1:tp.x,y1:tp.y-towerTop(l),x2:best.x,y2:best.y,t:0.12,lvl:l});hitZombie(best,towerDmg(l)*(1+0.12*pr('eng')),tp.x,tp.y)}
   }
 }
 function updateGuards(dt){
@@ -1803,7 +1223,7 @@ function updateGuards(dt){
     G[i]=(G[i]||0)-dt;if(G[i]>0)continue;
     const gp=guardPos(i);let best=null,bd=190;
     for(const z of zombies){if(Math.abs(z.x-gp.x)>190)continue;const d=dist(gp.x,gp.y,z.x,z.y);if(d<bd){bd=d;best=z}}
-    if(best){G[i]=1.3;tracers.push({x1:gp.x,y1:gp.y-6,x2:best.x,y2:best.y,t:0.12,lvl:2});hitZombie(best,guardDmg(),gp.x,gp.y,'ranged')}
+    if(best){G[i]=1.3;tracers.push({x1:gp.x,y1:gp.y-6,x2:best.x,y2:best.y,t:0.12,lvl:2});hitZombie(best,guardDmg(),gp.x,gp.y)}
   }
 }
 const T=[];
@@ -1819,14 +1239,11 @@ function updateClock(dt){
 }
 function startNight(){
   const blood=isBlood(S.day);
-  const fog=!blood&&S.day>=4&&Math.random()<0.15;
-  S.night={kills:0,breached:false,stolen:0,died:false,active:true,hqHit:false,blood,fog};
-  const side=!blood&&S.day>=5&&Math.random()<0.25?randOf(SIDES):null;
-  if(S.merchant===S.day){S.merchant=0;toast('Торговец ушёл до темноты','')}
+  S.night={kills:0,breached:false,stolen:0,died:false,active:true,hqHit:false,blood};
   const alive=zombies.filter(z=>z.wave).length;
   const tier=Math.min(7,1+Math.floor((S.day-1)/4)), base=Math.round(Math.min(30,2+S.day)*(blood?BLOOD_MULT:1)), n=Math.max(0,Math.min(base,(blood?BLOOD_CAP:WAVE_CAP)-alive));
   for(let i=0;i<n;i++){
-    const a=side?side[1]+(Math.random()-0.5)*1.1:Math.random()*6.28,r=620+Math.random()*120;
+    const a=Math.random()*6.28,r=620+Math.random()*120;
     let x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;x=Math.max(60,Math.min(W_SIZE-60,x));y=Math.max(60,Math.min(W_SIZE-60,y));
     const tr=(Math.random()<0.3&&tier>1)?tier-1:tier;
     zombies.push(makeZombie(tr,x,y,true,0,pickKind(S.day,blood)));
@@ -1834,8 +1251,6 @@ function startNight(){
   for(const q of pois){const f=farmOf(q);if(!f||f.broken||S.day<5||Math.random()>(blood?0.8:0.5))continue;
     const n=1,zn=zoneById(q.zone);
     for(let k=0;k<n;k++){const a=Math.random()*6.28,z=makeZombie(Math.max(1,zn.ztier-1),q.x+Math.cos(a)*340,q.y+Math.sin(a)*340,true,0);z.farm=q.id;zombies.push(z)}}
-  if(fog)toast('Туманная ночь: видно хуже, награда на рассвете ×1,3','bad');
-  if(side)toast(`Нашествие с ${side[0]}! Все мертвецы идут с одной стороны.`,'bad');
   sfx.night();if(blood){sfx.blood();toast(`КРОВАВАЯ ЛУНА! Мертвецов в полтора раза больше, награда на рассвете тоже ×1,5.`,'bad')}
   toast(alive?`Ночь ${S.day}. Из леса идут ещё ${n}, и ${alive} уже здесь.`:`Ночь ${S.day}. Из леса идут ${n} мертвецов к лагерю.`,'bad');
 }
@@ -1844,16 +1259,13 @@ function endNight(){
   const left=zombies.filter(z=>z.wave).length;
   const N=S.night, day=S.day;
   S.day++;sfx.dawn();
-  if(hasUq('heart')&&S.potions<potMax()){S.potions++;toast('Сердце Мора: +1 зелье лечения','good')}
-  if(S.day>=3&&S.day%3===0){S.merchant=S.day;S.merchBought=0;setTimeout(()=>toast('В лагерь пришёл торговец. Он уйдёт с наступлением ночи.','good'),1200)}
-  if(S.day>=4&&!refugees.length&&Math.random()<0.25)setTimeout(spawnCaravan,2500);
   if(left)toast(`Рассвет, но ${left} мертвецов всё ещё бродят. На солнце они слабеют.`,'bad');
   if(!N.active){toast(`Рассвет. День ${S.day}.`,'good');save();return}
   N.active=false;
   if(!N.died){S.streak++;S.bestStreak=Math.max(S.bestStreak,S.streak);S.stats.nights++;gainXp(4+day)}
   const clean=!N.died&&!N.breached&&N.stolen===0&&!N.hqHit;
   if(clean)S.stats.cleanNights++;
-  const base=dawnBase(day), mult=streakMult(S.streak), cleanMult=clean?1.5:1, bloodMult=(N.blood?BLOOD_MULT:1)*(N.fog?1.3:1);
+  const base=dawnBase(day), mult=streakMult(S.streak), cleanMult=clean?1.5:1, bloodMult=N.blood?BLOOD_MULT:1;
   const total=Math.round(base*mult*cleanMult*bloodMult);
   S.wood+=total;save();
   const rows=[
@@ -1864,7 +1276,6 @@ function endNight(){
     [clean?'Чистая ночь':'Ночь с потерями', clean?'×1.5':(N.died?'вас одолели':N.hqHit?'ратушу атаковали':N.breached?'забор пробит':'склад обворован')],
   ];
   if(N.blood)rows.splice(1,0,['Кровавая луна','×1.5']);
-  if(N.fog)rows.splice(1,0,['Туманная ночь','×1.3']);
   if(N.farmLost)rows.push(['Хуторов разрушено',String(N.farmLost)]);else if(N.farmHit)rows.push(['Хутора атаковали','устояли']);
   if(N.stolen)rows.push(['Украдено со склада','−'+N.stolen]);
   if(S.hq<hqMax(S.base))rows.push(['Ратуша',S.hq<=0?'разрушена!':`${Math.ceil(S.hq)}/${hqMax(S.base)}`]);
@@ -1915,10 +1326,6 @@ function render(now){
   for(const l of lairs){if(S.bosses[l.zone]||!vis(l.x,l.y))continue;
     ctx.strokeStyle='rgba(207,75,63,.25)';ctx.setLineDash([6,8]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(l.x,l.y,80,0,7);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle='rgba(220,210,190,.35)';for(let k=0;k<6;k++){const a=k*1.05+l.x;ctx.fillRect(l.x+Math.cos(a)*60-3,l.y+Math.sin(a)*60-1,7,2.5)}}
-  // склепы и портал
-  for(const c of crypts)if(vis(c.x,c.y))drawCrypt(c,now);
-  {const pp=portalPos();if(pp&&allCleared()&&!S.final.killed&&vis(pp.x,pp.y))drawPortal(pp,now)}
-  if(DG)drawDungeon(now);
   // хижины и руины
   for(const q of pois){const f=farmOf(q);if(f&&f.road)drawRoad(q)}
   for(const q of pois){if(vis(q.x,q.y))drawPoi(q,now)}
@@ -1942,7 +1349,6 @@ function render(now){
     if(!vis(d.x,d.y))continue;
     if(d.t<10&&Math.floor(d.t*6)%2===0)continue;
     const bob=Math.sin(now/250+d.x)*2,x=d.x,y=d.y+bob,big=d.kind==='big';
-    if(d.kind==='item'){const col=RAR[d.it.rar].col;ctx.globalAlpha=0.35+0.15*Math.sin(now/200);ctx.fillStyle=col;ctx.fillRect(x-2,y-60,4,56);ctx.globalAlpha=1;const g2=ctx.createRadialGradient(x,y,1,x,y,20);g2.addColorStop(0,col);g2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g2;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(x,y,20,0,7);ctx.fill();ctx.globalAlpha=1;ctx.fillStyle='#6b4a2c';ctx.beginPath();ctx.arc(x,y+2,7,0,7);ctx.fill();ctx.fillStyle=col;ctx.fillRect(x-5,y-6,10,4);continue}
     const flask=d.kind==='potion'||d.kind==='potatk';
     const g=ctx.createRadialGradient(x,y,1,x,y,big?30:18);g.addColorStop(0,d.kind==='potion'?'rgba(220,80,70,.45)':d.kind==='potatk'?'rgba(240,150,60,.5)':'rgba(244,199,102,.5)');g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,big?30:18,0,7);ctx.fill();
@@ -1964,16 +1370,13 @@ function render(now){
   for(const m of mounds)if(!m.dead&&vis(m.x,m.y))ents.push({y:m.y,f:()=>drawMound(m,now)});
   for(const z of zombies)if(vis(z.x,z.y))ents.push({y:z.y,f:()=>drawZombie(z)});
   for(const pe of peasants)if(vis(pe.x,pe.y))ents.push({y:pe.y,f:()=>drawPeasant(pe,now)});
-  for(const r of refugees)if(vis(r.x,r.y))ents.push({y:r.y,f:()=>drawRefugee(r)});
-  if(merchantHere()&&vis(CX,CY))ents.push({y:CY+56,f:()=>drawMerchant(now)});
   ents.push({y:P.y,f:drawPlayer});
   ents.sort((a,b)=>a.y-b.y);for(const e of ents)e.f();
 
   camX0=vx0;camX1=vx1;camY0=vy0;camY1=vy1;
   for(const q of pois){const f=farmOf(q);if(f&&f.road)drawCart(q,now)}
   // плевки
-  drawRoots();
-  for(const sp of spits){if(sp.col){ctx.fillStyle=sp.col;ctx.globalAlpha=0.35;ctx.beginPath();ctx.arc(sp.x-sp.vx*0.03,sp.y-sp.vy*0.03,(sp.r||5)+3,0,7);ctx.fill();ctx.globalAlpha=1;ctx.beginPath();ctx.arc(sp.x,sp.y,sp.r||5,0,7);ctx.fill();continue}ctx.fillStyle='rgba(120,200,90,.35)';ctx.beginPath();ctx.arc(sp.x-sp.vx*0.03,sp.y-sp.vy*0.03,6,0,7);ctx.fill();ctx.fillStyle='#8fd16a';ctx.beginPath();ctx.arc(sp.x,sp.y,4.5,0,7);ctx.fill()}
+  for(const sp of spits){ctx.fillStyle='rgba(120,200,90,.35)';ctx.beginPath();ctx.arc(sp.x-sp.vx*0.03,sp.y-sp.vy*0.03,6,0,7);ctx.fill();ctx.fillStyle='#8fd16a';ctx.beginPath();ctx.arc(sp.x,sp.y,4.5,0,7);ctx.fill()}
   // трассеры башен
   ctx.lineWidth=2;
   for(const tr of tracers){
@@ -1987,13 +1390,13 @@ function render(now){
   }
 
   // ночь
-  const dk=DG?0.55:Math.min(0.9,darkness()*(S.night.fog&&S.night.active?1.2:1));
+  const dk=darkness();
   if(dk>0){
     lctx.setTransform(1,0,0,1,0,0);lctx.globalCompositeOperation='source-over';
     lctx.clearRect(0,0,light.width,light.height);lctx.fillStyle=S.night.blood&&S.night.active?`rgba(40,3,6,${dk})`:`rgba(4,8,18,${dk})`;lctx.fillRect(0,0,light.width,light.height);
     lctx.globalCompositeOperation='destination-out';
     const hole=(wx,wy,r)=>{const sx=(wx-camX)*zoom*DPR,sy=(wy-camY)*zoom*DPR,R=r*zoom*DPR;const g=lctx.createRadialGradient(sx,sy,R*0.2,sx,sy,R);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');lctx.fillStyle=g;lctx.beginPath();lctx.arc(sx,sy,R,0,7);lctx.fill()};
-    hole(P.x,P.y,DG?230:S.night.fog&&S.night.active?120:190);if(DG){for(const r of DG.rooms){hole(r.x+30,r.y+30,90);hole(r.x+r.w-30,r.y+30,90)}if(DG.chest)hole(DG.chest.x,DG.chest.y,120)}for(const c of crypts)hole(c.x,c.y,60);for(const q of pois)if(farmActive(q))hole(q.x,q.y,90);for(const m of mounds)if(!m.dead)hole(m.x,m.y,50);for(const d of drops)hole(d.x,d.y,40);hole(CX,CY,CFG.baseR+40+S.base*14);
+    hole(P.x,P.y,190);for(const q of pois)if(farmActive(q))hole(q.x,q.y,90);for(const m of mounds)if(!m.dead)hole(m.x,m.y,50);for(const d of drops)hole(d.x,d.y,40);hole(CX,CY,CFG.baseR+40+S.base*14);
     for(let i=0;i<towerSlots(S.base);i++)if(S.towers[i]){const tp=towerPos(i);hole(tp.x,tp.y,110)}
     ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(light,0,0);
     ctx.setTransform(DPR*zoom,0,0,DPR*zoom,-camX*DPR*zoom,-camY*DPR*zoom);
@@ -2268,13 +1671,12 @@ function drawRock(r){
   const deep=Math.min(1,(r.zone-1)/6);
   const base=`rgb(${Math.round(128-48*deep)},${Math.round(126-50*deep)},${Math.round(118-38*deep)})`;
   ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x+3,y+s*0.55,s,s*0.45,0,0,7);ctx.fill();
-  ctx.fillStyle=r.iron?'#4c4a4e':base;ctx.beginPath();
+  ctx.fillStyle=base;ctx.beginPath();
   for(let k=0;k<7;k++){const a=k/7*6.283,rr=s*(0.8+((k*13+Math.floor(r.seed*10))%5)/12);const px=x+Math.cos(a)*rr,py=y-4+Math.sin(a)*rr*0.75;k?ctx.lineTo(px,py):ctx.moveTo(px,py)}
   ctx.closePath();ctx.fill();
   ctx.fillStyle='rgba(255,255,255,.14)';ctx.beginPath();ctx.ellipse(x-s*0.3,y-4-s*0.3,s*0.4,s*0.22,-0.4,0,7);ctx.fill();
-  if(r.iron){ctx.fillStyle='#b8682e';ctx.fillRect(x-s*0.4,y-6,4,2.5);ctx.fillRect(x+s*0.1,y-2,3,2);ctx.fillStyle='#c9d0da';ctx.fillRect(x-s*0.1,y-9,2.5,2.5);ctx.fillRect(x+s*0.3,y-4,2,2)}
-  else if(r.zone>=4){ctx.fillStyle=r.zone>=6?'rgba(233,110,50,.8)':'rgba(170,140,220,.7)';ctx.fillRect(x+s*0.2,y-6,2.5,2.5);ctx.fillRect(x-s*0.1,y-1,2,2)}
-  const mx=rockMax(r);
+  if(r.zone>=4){ctx.fillStyle=r.zone>=6?'rgba(233,110,50,.8)':'rgba(170,140,220,.7)';ctx.fillRect(x+s*0.2,y-6,2.5,2.5);ctx.fillRect(x-s*0.1,y-1,2,2)}
+  const mx=CFG.rocks.hp[r.zone];
   if(r.hp<mx){ctx.fillStyle='#000';ctx.fillRect(x-14,y+s*0.6,28,4);ctx.fillStyle='#c9c7bd';ctx.fillRect(x-14,y+s*0.6,28*r.hp/mx,4)}
 }
 function drawMound(m,now){
@@ -2388,17 +1790,6 @@ function drawZombie(z){
   if(z.boss&&z.slam>0){const k=1-z.slam/0.9;ctx.fillStyle=`rgba(207,75,63,${0.12+k*0.25})`;ctx.beginPath();ctx.arc(z.x,z.y,95,0,7);ctx.fill();ctx.strokeStyle='rgba(207,75,63,.7)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(z.x,z.y,95*k,0,7);ctx.stroke()}
   if(z.boss&&z.charge>0){ctx.strokeStyle='rgba(236,230,211,.25)';ctx.lineWidth=z.r;ctx.beginPath();ctx.moveTo(z.x,z.y);ctx.lineTo(z.x-z.cdx*60,z.y-z.cdy*60);ctx.stroke()}
   ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(z.x+2,z.y+z.r*0.8,z.r*0.9,z.r*0.4,0,0,7);ctx.fill();
-  if(z.burn>0){ctx.fillStyle='rgba(255,140,40,.8)';for(let k=0;k<3;k++){const t=(performance.now()/300+k*0.33+z.ph)%1;ctx.fillRect(z.x-6+k*6,z.y-z.r*0.5-t*14,3,3)}}
-  if(z.boss||z.guard||z.mimic){
-    drawBoss(z,bob);
-    if(!z.mimic){
-      ctx.font='700 13px Rubik, sans-serif';ctx.textAlign='center';const ny=z.y-z.r-(z.fly?52:18)-(z.skin==='treant'||z.skin==='lich'||z.skin==='lord'?z.r*0.6:0);
-      ctx.fillStyle='#000';ctx.fillText(z.name,z.x+1,ny+1);ctx.fillStyle=z.final?'#ff8a7a':'#f2b8b0';ctx.fillText(z.name,z.x,ny);
-      const w=Math.max(60,z.r*2.4);ctx.fillStyle='#000';ctx.fillRect(z.x-w/2,ny+5,w,6);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-w/2,ny+5,w*Math.max(0,z.hp/z.max),6);
-    }else if(z.hp<z.max){ctx.fillStyle='#000';ctx.fillRect(z.x-16,z.y-z.r-12,32,4);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-16,z.y-z.r-12,32*z.hp/z.max,4)}
-    return;
-  }
-  if(z.skin==='slimelet'){ctx.fillStyle=z.hit>0?'#f0e6d0':'rgba(110,190,80,.85)';ctx.beginPath();ctx.ellipse(z.x,z.y+bob,z.r*1.1,z.r*0.85,0,0,7);ctx.fill();ctx.fillStyle='#1d2a14';ctx.fillRect(z.x-4,z.y+bob-3,2.5,2.5);ctx.fillRect(z.x+2,z.y+bob-3,2.5,2.5);if(z.hp<z.max){ctx.fillStyle='#000';ctx.fillRect(z.x-12,z.y-z.r-8,24,3);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-12,z.y-z.r-8,24*z.hp/z.max,3)}return}
   ctx.fillStyle=z.hit>0?'#f0e6d0':(z.kind?ZTYPES[z.kind].col:c.col);ctx.beginPath();ctx.arc(z.x,z.y+bob,z.r,0,7);ctx.fill();
   ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=z.boss?6:3;ctx.beginPath();
   const a=Math.atan2(P.y-z.y,P.x-z.x);ctx.moveTo(z.x+Math.cos(a+0.6)*z.r*0.7,z.y+bob+Math.sin(a+0.6)*z.r*0.7);ctx.lineTo(z.x+Math.cos(a+0.3)*z.r*1.5,z.y+bob+Math.sin(a+0.3)*z.r*1.5);
@@ -2408,6 +1799,13 @@ function drawZombie(z){
   if(z.kind==='ram'){ctx.fillStyle='#4a3a2a';ctx.fillRect(z.x-z.r*0.8,z.y+bob-z.r*0.15,z.r*1.6,z.r*0.45);ctx.fillStyle='#8a8478';for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(z.x+s*z.r*0.5,z.y+bob-z.r*0.7);ctx.lineTo(z.x+s*z.r*1.05,z.y+bob-z.r*1.05);ctx.lineTo(z.x+s*z.r*0.3,z.y+bob-z.r*0.85);ctx.fill()}}
   if(z.kind==='spitter'){ctx.fillStyle='#8fd16a';ctx.beginPath();ctx.arc(z.x+z.r*0.45,z.y+bob+z.r*0.25,z.r*0.45,0,7);ctx.fill();ctx.fillStyle='rgba(143,209,106,.7)';ctx.fillRect(z.x-1,z.y+bob+z.r*0.3,2,4+Math.sin(z.ph)*2)}
   if(z.kind==='runner'){ctx.strokeStyle='rgba(236,230,211,.25)';ctx.lineWidth=1.5;for(let k=0;k<3;k++){ctx.beginPath();ctx.moveTo(z.x-Math.cos(a)*(z.r+4+k*4),z.y+bob-Math.sin(a)*(z.r+4+k*4)+(k-1)*4);ctx.lineTo(z.x-Math.cos(a)*(z.r+10+k*4),z.y+bob-Math.sin(a)*(z.r+10+k*4)+(k-1)*4);ctx.stroke()}}
+  if(z.boss){
+    ctx.fillStyle='#d8cfb8';
+    for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(z.x+s*z.r*0.45,z.y+bob-z.r*0.75);ctx.lineTo(z.x+s*z.r*0.85,z.y+bob-z.r*1.35);ctx.lineTo(z.x+s*z.r*0.2,z.y+bob-z.r*0.9);ctx.fill()}
+    ctx.font='700 13px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#000';ctx.fillText(z.name,z.x+1,z.y-z.r-17);ctx.fillStyle='#f2b8b0';ctx.fillText(z.name,z.x,z.y-z.r-18);
+    const w=z.r*2.4;ctx.fillStyle='#000';ctx.fillRect(z.x-w/2,z.y-z.r-12,w,6);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-w/2,z.y-z.r-12,w*z.hp/z.max,6);
+    return;
+  }
   if(z.sun){const t=(performance.now()/700+z.ph)%1;ctx.fillStyle=`rgba(180,175,160,${0.35*(1-t)})`;ctx.beginPath();ctx.arc(z.x+Math.sin(z.ph)*3,z.y-z.r-t*16,3+t*5,0,7);ctx.fill()}
   if(z.wave){ctx.strokeStyle='rgba(207,75,63,.6)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(z.x,z.y+bob,z.r+3,0,7);ctx.stroke()}
   if(z.hp<z.max){ctx.fillStyle='#000';ctx.fillRect(z.x-14,z.y-z.r-9,28,4);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-14,z.y-z.r-9,28*z.hp/z.max,4)}
@@ -2456,10 +1854,10 @@ const wpnBtn=$('wpnBtn'),campBtn=$('campBtn');
 function hud(){
   const mh=maxHp(S.up.hp),cap=bagCap(S.up.bag);
   $('hpTxt').textContent=`${Math.ceil(Math.max(0,S.p.hp))}/${mh}`;$('hpbar').firstChild.style.width=(100*Math.max(0,S.p.hp)/mh)+'%';
-  setHtml('bagVal',`${resHtml(S.bag)} ${resHtml(S.bagStone,'stone')}${S.bagIron?' '+resHtml(S.bagIron,'iron'):''} <span class="num" style="color:var(--muted)">/ ${cap}</span>`);
+  setHtml('bagVal',`${resHtml(S.bag)} ${resHtml(S.bagStone,'stone')} <span class="num" style="color:var(--muted)">/ ${cap}</span>`);
   $('bagbar').firstChild.style.width=(100*bagTotal()/cap)+'%';
   const wr=woodRate()*60,sr=stoneRate()*60;
-  setHtml('storeVal',`${resHtml(S.wood+(wr>0?` <small>+${wr.toFixed(0)}/м</small>`:''))} ${resHtml(S.stone+(sr>0?` <small>+${sr.toFixed(0)}/м</small>`:''),'stone')}${S.iron||S.forge?' '+resHtml(S.iron,'iron'):''}`);
+  setHtml('storeVal',`${resHtml(S.wood+(wr>0?` <small>+${wr.toFixed(0)}/м</small>`:''))} ${resHtml(S.stone+(sr>0?` <small>+${sr.toFixed(0)}/м</small>`:''),'stone')}`);
   const ph=phase(),m=Math.floor(ph.left/60),s=Math.floor(ph.left%60);
   $('lvlTxt').textContent=S.lvl;$('xpTxt').textContent=`${Math.floor(S.xp)}/${xpNeed(S.lvl)}`;$('xpbar').firstChild.style.width=(100*S.xp/xpNeed(S.lvl))+'%';
   $('dayTxt').textContent=ph.night?`Ночь ${S.day}`:`День ${S.day}`;
@@ -2476,7 +1874,7 @@ function hud(){
   if(bloodNext)$('phaseTxt').textContent='до кровавой луны '+m+':'+String(s).padStart(2,'0');
   $('hqWarn').hidden=S.hq>0;
   const dc=P.dashCd||0;setHtml('dashBtn',`Рывок<i style="width:${100*(1-dc/dashCd())}%"></i>`);
-  setHtml('mStore',`Склад: ${resHtml(S.wood)} ${resHtml(S.stone,'stone')} ${resHtml(S.iron,'iron')} ${resHtml(S.shards,'shard')} ${resHtml(S.keys,'key')}`);
+  setHtml('mStore',`Склад: ${resHtml(S.wood)} ${resHtml(S.stone,'stone')}`);
 }
 let dashReq=false;
 const dashBtn=$('dashBtn');dashBtn.addEventListener('pointerdown',e=>{dashReq=true;e.preventDefault()});
@@ -2495,20 +1893,17 @@ function drawMini(){
     if(f){mctx.fillStyle=f.broken?'#cf4b3f':'#86a85c';mctx.beginPath();mctx.arc(ox+q.x*sc,oy+q.y*sc,3,0,7);mctx.fill();continue}
     if(S.poi[q.id])continue;mctx.fillStyle='#f4c766';mctx.fillRect(ox+q.x*sc-1.5,oy+q.y*sc-1.5,3,3)}
   for(const m of mounds){if(m.dead)continue;mctx.fillStyle='#a06ad0';mctx.fillRect(ox+m.x*sc-2,oy+m.y*sc-2,4,4)}
-  for(const c of crypts){mctx.fillStyle=(S.crypts[c.id]||0)>S.day?'#5a4a6a':'#c08ae8';mctx.fillRect(ox+c.x*sc-2.5,oy+c.y*sc-2.5,5,5)}
-  {const pp=portalPos();if(pp&&allCleared()&&!S.final.killed){mctx.fillStyle='#ff4a3a';mctx.beginPath();mctx.arc(ox+pp.x*sc,oy+pp.y*sc,5+Math.sin(performance.now()/200),0,7);mctx.fill()}}
-  for(const r of refugees){mctx.fillStyle='#9fc3d6';mctx.fillRect(ox+r.x*sc-2,oy+r.y*sc-2,4,4)}
   mctx.fillStyle='#e98b3d';mctx.beginPath();mctx.arc(120,120,4,0,7);mctx.fill();
   for(const z of zombies){
     if(z.boss){mctx.fillStyle='#ff4a3a';mctx.beginPath();mctx.arc(ox+z.x*sc,oy+z.y*sc,4,0,7);mctx.fill();mctx.strokeStyle='#000';mctx.lineWidth=1;mctx.stroke()}
     else if(z.wave){mctx.fillStyle='#cf4b3f';mctx.fillRect(ox+z.x*sc-1.5,oy+z.y*sc-1.5,3,3)}
   }
-  if(!DG){mctx.fillStyle='#ece6d3';mctx.beginPath();mctx.arc(ox+P.x*sc,oy+P.y*sc,5,0,7);mctx.fill()}
+  mctx.fillStyle='#ece6d3';mctx.beginPath();mctx.arc(ox+P.x*sc,oy+P.y*sc,5,0,7);mctx.fill();
   mctx.restore();
 }
 
 /* ================= МЕНЮ ЛАГЕРЯ ================= */
-const TABS=[['hero','Герой'],['items','Вещи'],['gear','Снаряжение'],['camp','Лагерь'],['def','Оборона'],['vil','Деревня'],['farm','Хутора'],['save','Сохранение']];
+const TABS=[['hero','Герой'],['gear','Снаряжение'],['camp','Лагерь'],['def','Оборона'],['vil','Деревня'],['farm','Хутора'],['save','Сохранение']];
 let tab='hero', menuSig='';
 const menu=$('menu'),list=$('list'),tabsEl=$('tabs'),menuTitle=$('menuTitle');
 function toggleMenu(force,farmId){
@@ -2525,11 +1920,8 @@ list.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!
 function gateFor(c0){
   const c=disc(c0);
   if(!inCamp())return 'Вернитесь в лагерь';
-  return lackMsg(c);
-}
-function lackMsg(c){
-  const m=[];if(S.wood<c.w)m.push('древесины');if(S.stone<(c.s||0))m.push('камня');if(S.iron<(c.i||0))m.push('железа');if(S.shards<(c.sh||0))m.push('осколков');
-  return m.length?'Не хватает '+m.join(', '):'';
+  const nw=S.wood<c.w,ns=S.stone<(c.s||0);
+  return nw&&ns?'Не хватает древесины и камня':nw?'Не хватает древесины':ns?'Не хватает камня':'';
 }
 function rowsFor(t){
   const R=[],gate=gateFor;
@@ -2546,24 +1938,7 @@ function rowsFor(t){
     else if(b>=BOW_MAX)R.push({title:'Лук',lvl:`ур. ${b} · максимум`,desc:`Урон ${fmt1(bowDmg(b))}, дальность ${bowRange(b)}`});
     else{const c=bowCost(b);R.push({title:'Лук',lvl:`ур. ${b}`,desc:`Урон ${fmt1(bowDmg(b))} → ${fmt1(bowDmg(b+1))}, дальность ${bowRange(b)} → ${bowRange(b+1)}, выстрел раз в ${bowCd(b+1).toFixed(2)} с`,cost:c,why:gate(c),act:'bow'})}
   }
-  if(t==='items'){
-    R.push({note:`${resHtml(S.shards,'shard')} осколков · ${resHtml(S.iron,'iron')} железа · ${resHtml(S.keys,'key')} ключей. Вещи надеваются где угодно. ${S.forge?(inCamp()?'Кузница рядом: можно улучшать и перековывать.':'Улучшать и перековывать можно в лагере, у кузницы.'):'Постройте кузницу во вкладке «Лагерь», чтобы улучшать вещи.'}`});
-    for(const sl in SLOTS){const it=S.eq[sl];R.push(it?{itm:it,eqd:true}:{note:`<b>${SLOTS[sl]}</b>: пусто`})}
-    R.push({note:`<b>Сумка вещей</b> ${S.inv.length}/${INV_MAX}`});
-    for(const it of S.inv)R.push({itm:it,eqd:false});
-    if(S.forge){
-      R.push({note:'<b>Кузница: закалка</b>'});
-      for(const [k,nm] of [['melee','Окованный топор: +20% урона в ближнем бою'],['bow','Железные наконечники: +20% урона луком']]){const l=S.forgeUp[k];
-        if(l<3){const c=FORGE.temper(l);R.push({title:nm.split(':')[0],lvl:`${l}/3`,desc:nm.split(': ')[1]+' за уровень',cost:c,why:gateFor(c),act:'temper:'+k})}
-        else R.push({title:nm.split(':')[0],lvl:'3/3',desc:'максимум'})}
-    }
-  }
-  if(t==='shop'){
-    R.push({note:'Торговец пробудет в лагере до наступления ночи.'});
-    for(const m of MERCH){if(m.once&&S.merchBought)R.push({title:m.t,lvl:'куплено',desc:''});else{const c=C(m.c.w||0,m.c.s||0);c.i=m.c.i||0;R.push({title:m.t,lvl:'',desc:'',cost:c,why:gateFor(c),act:'buy:'+m.id})}}
-  }
   if(t==='camp'){
-    if(!S.forge){if(S.base>=FORGE.base){const c=FORGE.build;R.push({title:'Построить кузницу',lvl:'',desc:'Улучшение редкости вещей, перековка свойств, закалка оружия. Нужно железо с дальних колец.',cost:c,why:gateFor(c),act:'forge'})}else R.push({note:`Кузница откроется на ${FORGE.base} уровне главного дома.`})}
     const b=S.base;
     if(b>=BASE.max)R.push({title:`Главный дом: ${HQ_SKINS[b]}`,lvl:`ур. ${b} · максимум`,desc:'Все постройки открыты.'});
     else{const c=BASE.cost[b];R.push({title:`Главный дом: ${HQ_SKINS[b]}`,lvl:`ур. ${b}`,desc:`Станет «${HQ_SKINS[b+1]}». Откроет: ${BASE.unlocks[b+1]}`,cost:c,why:gate(c),act:'base'})}
@@ -2660,13 +2035,12 @@ function renderMenu(){
   const fq=menuFarm&&poiById(menuFarm);
   if(menuFarm&&(!fq||!farmOf(fq)||dist(fq.x,fq.y,P.x,P.y)>140)){toggleMenu(false);return}
   const rows=fq?farmRowsHead(fq).concat(farmRows(fq)):rowsFor(tab);
-  const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+merchantHere()+'|'+S.shards+'|'+S.iron+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc,r.itm&&r.itm.id,r.itm&&r.itm.rar,r.itm&&JSON.stringify(r.itm.mods),r.eqd]));
+  const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc]));
   if(sig===menuSig)return;menuSig=sig;
   menuTitle.textContent=fq?farmName(fq):'Лагерь';tabsEl.hidden=!!fq;
-  tabsEl.innerHTML=fq?'':TABS.concat(merchantHere()?[['shop','Торговец']]:[]).map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
+  tabsEl.innerHTML=fq?'':TABS.map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
   let h='';
-  if(tab==='shop'&&!merchantHere())tab='hero';
-  if(!fq&&!inCamp()&&tab!=='save'&&tab!=='vil'&&tab!=='farm'&&tab!=='hero'&&tab!=='items')h+=`<p class="warn">Строить и улучшать можно только в лагере.</p>`;
+  if(!fq&&!inCamp()&&tab!=='save'&&tab!=='vil'&&tab!=='farm'&&tab!=='hero')h+=`<p class="warn">Строить и улучшать можно только в лагере.</p>`;
   for(const r of rows){
     if(r.note){h+=`<p class="note">${r.note}</p>`;continue}
     if(r.job){
@@ -2678,10 +2052,6 @@ function renderMenu(){
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="buy" data-act="copy" type="button">Скопировать код</button></div>
       <textarea id="loadCode" placeholder="Вставьте код сохранения"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="buy" data-act="load" type="button">Загрузить код</button><button class="buy" data-act="reset" type="button" style="background:#5a2b26;color:#ece6d3">${resetArm?'Точно? Нажмите ещё раз':'Начать заново'}</button></div></div>`;continue}
-    if(r.itm){const it=r.itm,rc=RAR[it.rar],cmp=!r.eqd&&S.eq[it.slot]?` · сейчас надето: ${S.eq[it.slot].name}`:'';
-      let btns=r.eqd?`<button class="buy sec" data-act="unequip:${it.slot}" type="button">Снять</button>`:`<button class="buy" data-act="equip:${it.id}" type="button">Надеть</button><button class="buy sec" data-act="salvage:${it.id}" type="button">Разобрать +${rc.sh}</button>`;
-      if(S.forge&&inCamp()){if(it.rar<3){const c=FORGE.rar(it.rar);btns+=`<button class="buy" data-act="rarup:${it.id}" type="button" ${S.shards<c.sh||S.iron<c.i?'disabled':''}>Редкость ↑ ${costHtml(c)}</button>`}const c2=FORGE.reroll(it.rar);btns+=`<button class="buy sec" data-act="reroll:${it.id}" type="button" ${S.shards<c2.sh||S.iron<c2.i?'disabled':''}>Перековать ${costHtml(c2)}</button>`}
-      h+=`<div class="item itm" style="--rc:${rc.col}"><div><h3>${it.name}<small>${rc.n} · ${SLOTS[it.slot]} · ур. ${it.tier}${r.eqd?' · надето':''}</small></h3><p>${modText(it)}${cmp}</p></div><div class="itm-b">${btns}</div></div>`;continue}
     if(r.mode){h+=`<div class="item"><div><h3>${r.title}</h3><p>${r.desc}</p></div><button class="buy" data-act="${r.act}" type="button">Сменить</button></div>`;continue}
     if(r.heroPick){h+=`<div class="item"><div><h3>${r.title}<small>${r.lvl}</small></h3><p>${r.desc}</p></div><button class="buy" data-act="perkpick" type="button">Выбрать</button></div>`;continue}
     const btn=r.cost!=null?`<button class="buy" data-act="${r.act}" type="button" ${r.why?'disabled title="'+r.why+'"':''}>${costHtml(r.cost)}</button>`:'';
@@ -2692,7 +2062,7 @@ function renderMenu(){
 }
 let resetArm=false;
 function encodeSave(){try{save();return btoa(unescape(encodeURIComponent(JSON.stringify(S))))}catch(e){return ''}}
-function spend(c0){const c=disc(c0);if(!inCamp()||S.wood<c.w||S.stone<(c.s||0)||S.iron<c.i||S.shards<c.sh)return false;S.wood-=c.w;S.stone-=(c.s||0);S.iron-=c.i;S.shards-=c.sh;if(c.w>=10)S.stats.upgrades++;return true}
+function spend(c0){const c=disc(c0);if(!inCamp()||S.wood<c.w||S.stone<(c.s||0))return false;S.wood-=c.w;S.stone-=(c.s||0);if(c.w>=10)S.stats.upgrades++;return true}
 function doAct(a){
   const [k,arg,arg2]=a.split(':');
   if(k==='up'){const u=UP[arg],l=S.up[arg];if(l<u.max&&spend(u.cost(l))){S.up[arg]++;if(arg==='hp')S.p.hp=maxHp(S.up.hp);toast(`${u.name}: уровень ${S.up[arg]}`,'good')}}
@@ -2703,18 +2073,6 @@ function doAct(a){
   if(k==='farmtower'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.tower||0)<FARM_TOWER_MAX&&spendFarm(farmTowerCost(q.zone,f.tower||0))){f.tower=(f.tower||0)+1;toast(f.tower===1?`${farmName(q)}: вышка с лучником построена`:`${farmName(q)}: вышка ур. ${f.tower}`,'good')}}
   if(k==='road'){const q=poiById(arg),f=q&&farmOf(q);if(f&&!f.road&&S.base>=FARM.roadBase&&spendFarm(farmRoadCost(q.zone))){f.road=true;toast('Дорога проложена. Вагончик повезёт древесину, когда поленница наполнится на треть.','good')}}
   if(k==='farmmode'){const q=poiById(arg),f=q&&farmOf(q);if(f){f.mode=f.mode==='stone'?'wood':'stone';for(const pe of peasants)if(pe.farm===q.id){if(pe.tree)pe.tree.claim=null;pe.tree=null;pe.carry=0;pe.state='idle'}toast(`${farmName(q)}: теперь добывают ${f.mode==='stone'?'камень':'древесину'}`,'good')}}
-  if(k==='forge'&&!S.forge&&spend(FORGE.build)){S.forge=true;toast('Кузница построена. Вещи улучшаются во вкладке «Вещи».','good')}
-  if(k==='equip'){const i=S.inv.findIndex(x=>x.id===+arg);if(i>=0){const it=S.inv.splice(i,1)[0],old=S.eq[it.slot];S.eq[it.slot]=it;if(old)S.inv.push(old);const mh=maxHp(S.up.hp);if(S.p.hp>mh)S.p.hp=mh;toast(`Надето: ${it.name}`,'good')}}
-  if(k==='unequip'){const it=S.eq[arg];if(it){if(S.inv.length>=INV_MAX)toast('Сумка вещей полна','bad');else{S.eq[arg]=null;S.inv.push(it);const mh=maxHp(S.up.hp);if(S.p.hp>mh)S.p.hp=mh}}}
-  if(k==='salvage'){const i=S.inv.findIndex(x=>x.id===+arg);if(i>=0){const it=S.inv.splice(i,1)[0];S.shards+=RAR[it.rar].sh;toast(`Разобрано: +${RAR[it.rar].sh} осколков`,'good')}}
-  if(k==='rarup'||k==='reroll'){const it=S.inv.find(x=>x.id===+arg)||Object.values(S.eq).find(x=>x&&x.id===+arg);
-    if(it&&S.forge&&inCamp()){const c=k==='rarup'?FORGE.rar(it.rar):FORGE.reroll(it.rar);
-      if(c&&S.shards>=c.sh&&S.iron>=c.i&&(k==='reroll'||it.rar<3)){S.shards-=c.sh;S.iron-=c.i;
-        if(k==='rarup'){it.rar++;const extra=rollMods(it.slot,it.tier,it.rar).filter(([mk])=>!it.mods.some(([q])=>q===mk));while(it.mods.length<RAR[it.rar].mods&&extra.length)it.mods.push(extra.shift());it.mods=it.mods.map(([mk,v])=>[mk,Math.max(v,modVal(mk,it.tier,it.rar))]);if(it.rar===3){it.uq=UNIQUES[it.slot].id;it.name=UNIQUES[it.slot].name}toast(`${it.name}: теперь ${RAR[it.rar].n.toLowerCase()}`,'good')}
-        else{it.mods=rollMods(it.slot,it.tier,it.rar);toast(`${it.name}: свойства перекованы`,'good')}
-        sfx.buy()}}}
-  if(k==='temper'){const l=S.forgeUp[arg];if(S.forge&&l<3&&spend(FORGE.temper(l))){S.forgeUp[arg]++;toast('Закалка: +20% урона','good')}}
-  if(k==='buy'){const m=MERCH.find(x=>x.id===arg);if(m&&merchantHere()&&!(m.once&&S.merchBought)){const c=C(m.c.w||0,m.c.s||0);c.i=m.c.i||0;if(spend(c)){if(m.give()===false){S.wood+=disc(c).w;S.stone+=disc(c).s;S.iron+=c.i}else{if(m.once)S.merchBought=1;toast(`Куплено: ${m.t.split(',')[0]}`,'good')}}}}
   if(k==='perkpick'){toggleMenu(false);showPerks();return}
   if(k==='hqfix'){const miss=hqMax(S.base)-S.hq;if(miss>0&&spend(C(Math.ceil(miss/8)))){S.hq=hqMax(S.base);toast('Ратуша восстановлена','good')}}
   if(k==='base'&&S.base<BASE.max&&spend(BASE.cost[S.base])){S.base++;S.hq+=hqMax(S.base)-hqMax(S.base-1);toast(`Главный дом: ${HQ_SKINS[S.base]} (ур. ${S.base}). Открыто: ${BASE.unlocks[S.base]}`,'good')}
@@ -2756,12 +2114,6 @@ function migrate(src){
     st.p.x=CX;st.p.y=CY+40;st.v=3;
   }
   if(st.weapon!=='bow'&&st.weapon!=='axe')st.weapon='axe';
-  st.inv=Array.isArray(src&&src.inv)?src.inv.filter(it=>it&&SLOTS[it.slot]&&Array.isArray(it.mods)):[];
-  st.crypts=(src&&src.crypts&&typeof src.crypts==='object')?{...src.crypts}:{};
-  st.meta.relics={};if(src&&src.meta&&src.meta.relics)for(const k in src.meta.relics)if(RELICS[k])st.meta.relics[k]=Math.min(RELICS[k].max,src.meta.relics[k]|0);
-  for(const sl in st.eq){const it=st.eq[sl];if(it&&!(SLOTS[it.slot]&&Array.isArray(it.mods)))st.eq[sl]=null}
-  st.v=9;
-  if(!st.itemSeq||st.itemSeq<2)st.itemSeq=1+Math.max(0,...st.inv.map(i=>i.id||0),...Object.values(st.eq).map(i=>i?i.id:0));
   if(src&&!(typeof src.seed==='number'&&src.seed>0))st.seed=4242; // старые сохранения — прежняя карта
   if(src&&ver<4){st.hq=hqMax(st.base);st.v=4}
   if(src&&ver<6){st.hq=Math.min(hqMax(st.base),st.hq*2);st.fence.hp=Math.min(fenceHp(st.fence.lvl),st.fence.hp*2);st.v=6}
@@ -2769,7 +2121,7 @@ function migrate(src){
   return st;
 }
 function applyState(){
-  zombies=[];spits=[];DG=null;refugees=[];roots=[];
+  zombies=[];spits=[];
   for(const w of S.waveZ){const z=makeZombie(w.t,+w.x||CX+700,+w.y||CY,true,0,ZTYPES[w.k]?w.k:undefined);if(w.f)z.farm=w.f;z.hp=Math.min(z.max,+w.hp||z.max);zombies.push(z)}
   for(const m of mounds){m.dead=!!S.mounds[m.id];m.hp=m.max;m.cd=3+Math.random()*5}
   P.x=S.p.x;P.y=S.p.y;if(S.p.hp<=0)S.p.hp=maxHp(S.up.hp);lastNight=null;
@@ -2787,16 +2139,13 @@ function gameOver(){
   for(const [k,v] of rows){const li=document.createElement('li');const a=document.createElement('span');a.textContent=k;const b=document.createElement('b');b.textContent=v;li.append(a,b);ul.append(li)}
   $('over').hidden=false;keys.clear();actHeld=false;sfx.blood();save();
 }
-$('overBtn').addEventListener('click',()=>{newGame(true);$('over').hidden=true;save();toast('Новый лагерь на новой карте. Рубите берёзы и готовьтесь к первой ночи.','good')});
-
-$('stayBtn').addEventListener('click',()=>{$('win').hidden=true;toast('Вы остались на очищенной карте. Склепы и вещи ждут.','good')});
-$('ngBtn').addEventListener('click',()=>{S.meta.ng++;S.meta.relicPend+=2;$('win').hidden=true;newGame(true);save();toast(`Великое переселение ${S.meta.ng}: новая карта, враги сильнее.`,'good');setTimeout(showRelics,400)});
+$('overBtn').addEventListener('click',()=>{S=newState();buildWorld();applyState();fillQuests();$('over').hidden=true;save();toast('Новый лагерь на новой карте. Рубите берёзы и готовьтесь к первой ночи.','good')});
 
 /* ================= LOOP ================= */
 let last=performance.now(),hudT=0,miniT=0;
 function frame(now){
   const dt=Math.min(0.05,(now-last)/1000);last=now;
-  if(!menuOpen&&!S.over&&!perksOpen()&&$('win').hidden)update(dt);
+  if(!menuOpen&&!S.over&&!perksOpen())update(dt);
   render(now);
   hudT+=dt;if(hudT>0.1){hudT=0;hud();if(menuOpen)renderMenu()}
   miniT+=dt;if(miniT>0.25){miniT=0;drawMini()}
@@ -2807,7 +2156,7 @@ function start(data){
   S=migrate(saved);
   buildWorld();applyState();resize();hud();
   if(S.over)gameOver();
-  else{applyOffline();fillQuests();renderQuests();if(S.meta.relicPend>0)setTimeout(showRelics,400);else if(S.perkPend>0)setTimeout(showPerks,400)}
+  else{applyOffline();fillQuests();renderQuests();if(S.perkPend>0)setTimeout(showPerks,400)}
   if(!saved)toast('Рубите берёзы рядом с лагерем и носите древесину домой. Серые пятна — скалы с камнем. Первая ночь через 2,5 минуты.');
   requestAnimationFrame(t=>{last=t;frame(t)});
 }
@@ -2817,6 +2166,3 @@ try{window.claude?.hot?.snapshot?.(()=>({state:S}))}catch(e){}
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 })();
 </script>
-
-</body>
-</html>
