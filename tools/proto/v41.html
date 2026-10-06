@@ -25,10 +25,27 @@ if(mode==='water'){cv.width=10+4*(TW+12);cv.height=10+3*(TH+52);c.fillStyle='#0b
  ];
  W.forEach(([n,s,base,f],i)=>tile(i%4,Math.floor(i/4),n,s,(r,nz)=>{ground(nz,base,24);f(r)},11+i));
 }
+function drawWolf(x,y,a){c.save();c.translate(x,y);c.rotate(a);c.lineJoin='round';
+  c.fillStyle='rgba(126,200,255,.16)';c.beginPath();c.ellipse(2,0,32,18,0,0,7);c.fill();
+  c.strokeStyle='#4c6178';c.lineWidth=1.2;
+  // хвост
+  c.fillStyle='#8fa6bb';c.beginPath();c.moveTo(-13,-3);c.quadraticCurveTo(-28,-9,-35,-1);c.quadraticCurveTo(-28,6,-13,3);c.closePath();c.fill();c.stroke();
+  // тело
+  c.fillStyle='#9fb4c8';c.beginPath();c.ellipse(-2,0,14,7.5,0,0,7);c.fill();c.stroke();
+  c.fillStyle='#b9cad9';c.beginPath();c.ellipse(-3,0,8,3.4,0,0,7);c.fill();
+  // голова и вытянутая морда
+  c.fillStyle='#a9bdd0';c.beginPath();c.moveTo(7,-5);c.quadraticCurveTo(13,-6.5,17,-4);c.lineTo(27,-1.6);c.quadraticCurveTo(29,0,27,1.6);c.lineTo(17,4);c.quadraticCurveTo(13,6.5,7,5);c.quadraticCurveTo(5,0,7,-5);c.closePath();c.fill();c.stroke();
+  c.fillStyle='#d6e2ec';c.beginPath();c.moveTo(18,-2);c.lineTo(26,-0.8);c.lineTo(26,0.8);c.lineTo(18,2);c.closePath();c.fill();
+  c.fillStyle='#22303c';c.beginPath();c.arc(28,0,1.6,0,7);c.fill();
+  c.fillStyle='#7ec8ff';c.fillRect(15,-3,2.2,1.4);c.fillRect(15,1.6,2.2,1.4);
+  // уши: острые, прижаты назад
+  for(const sd of [-1,1]){c.fillStyle='#7f96ab';c.beginPath();c.moveTo(13,sd*1.2);c.lineTo(11.5,sd*4.6);c.lineTo(1.5,sd*7.5);c.closePath();c.fill();c.stroke();c.fillStyle='#5a6f84';c.beginPath();c.moveTo(11.5,sd*2);c.lineTo(10.5,sd*4);c.lineTo(5,sd*5.6);c.closePath();c.fill()}
+  c.restore()}
+if(mode==='wolf'){cv.width=520;cv.height=260;c.fillStyle='#567a3a';c.fillRect(0,0,520,260);c.save();c.translate(270,130);c.scale(5,5);drawWolf(0,0,0);c.restore();c.fillStyle='#ece6d3';c.font='700 14px sans-serif';c.fillText('Дух волка крупно: острые уши назад, длинная морда',14,248)}
 if(mode==='pets'){cv.width=1060;cv.height=330;c.fillStyle='#0b0f0c';c.fillRect(0,0,cv.width,cv.height);
  const hero=(x,y,col)=>{c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(x+2,y+11,13,5,0,0,7);c.fill();c.fillStyle=col;c.beginPath();c.arc(x,y,12,0,7);c.fill()};
  const zom=(x,y,col='#5d6e63')=>{c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(x+2,y+10,12,5,0,0,7);c.fill();c.fillStyle=col;c.beginPath();c.arc(x,y,13,0,7);c.fill();c.fillStyle='#ff5a44';c.fillRect(x-4,y-5,2.5,2.5);c.fillRect(x+2,y-5,2.5,2.5)};
- const T=[['Воин: Дух волка','бегает рядом и кусает (как сейчас)',(cx,cy)=>{hero(cx-80,cy,'#a8452a');zom(cx+60,cy-10);c.save();c.translate(cx+30,cy);c.fillStyle='rgba(126,200,255,.18)';c.beginPath();c.arc(0,0,22,0,7);c.fill();c.fillStyle='#9fb4c8';c.beginPath();c.ellipse(-3,0,15,8,0,0,7);c.fill();c.beginPath();c.ellipse(12,0,7,6,0,0,7);c.fill();c.beginPath();c.moveTo(11,-4);c.lineTo(14,-10);c.lineTo(15,-3);c.moveTo(11,4);c.lineTo(14,10);c.lineTo(15,3);c.fill();c.strokeStyle='#9fb4c8';c.lineWidth=3;c.lineCap='round';c.beginPath();c.moveTo(-16,0);c.quadraticCurveTo(-22,5,-26,0);c.stroke();c.fillStyle='#7ec8ff';c.fillRect(14,-3,2,2);c.fillRect(14,1,2,2);c.restore()}],
+ const T=[['Воин: Дух волка','бегает рядом и кусает, раны кровоточат',(cx,cy)=>{hero(cx-80,cy,'#a8452a');zom(cx+60,cy-10);drawWolf(cx+28,cy,0);c.fillStyle='rgba(180,20,20,.55)';for(const [dx,dy] of [[52,2],[58,-6],[48,-12]]){c.beginPath();c.ellipse(cx+dx,cy+dy+6,2,3.2,0,0,7);c.fill()}c.fillStyle='#e05050';c.font='700 13px sans-serif';c.textAlign='center';c.fillText('кровотечение −2/с',cx+30,cy-32)}],
   ['Маг: Огненный элементаль','парит рядом, бросает огненные шары и поджигает',(cx,cy)=>{hero(cx-80,cy,'#5a3a8a');zom(cx+90,cy-20,'#6a5a6e');const ex=cx-30,ey=cy-36;const g=c.createRadialGradient(ex,ey,2,ex,ey,30);g.addColorStop(0,'rgba(255,240,160,.9)');g.addColorStop(0.5,'rgba(255,140,40,.6)');g.addColorStop(1,'rgba(255,60,20,0)');c.fillStyle=g;c.beginPath();c.arc(ex,ey,30,0,7);c.fill();c.fillStyle='#ff7a2a';c.beginPath();c.moveTo(ex,ey-22);c.quadraticCurveTo(ex+14,ey-4,ex+8,ey+12);c.quadraticCurveTo(ex,ey+6,ex-8,ey+12);c.quadraticCurveTo(ex-14,ey-4,ex,ey-22);c.fill();c.fillStyle='#ffe08a';c.beginPath();c.ellipse(ex,ey,6,9,0,0,7);c.fill();c.fillStyle='#3a1a0a';c.fillRect(ex-4,ey-3,2.5,3);c.fillRect(ex+1.5,ey-3,2.5,3);
     const fx=cx+45,fy=cy-26,g2=c.createRadialGradient(fx,fy,1,fx,fy,10);g2.addColorStop(0,'#fff5c0');g2.addColorStop(0.5,'rgba(255,140,40,.9)');g2.addColorStop(1,'rgba(255,60,20,0)');c.fillStyle=g2;c.beginPath();c.arc(fx,fy,10,0,7);c.fill();c.fillStyle='rgba(255,120,40,.35)';for(let i=1;i<4;i++){c.beginPath();c.arc(fx-i*10,fy+i*-2,7-i*1.5,0,7);c.fill()}}],
   ['Лучник: Дух змеи','быстрая, кусает ядом: урон со временем и замедление',(cx,cy)=>{hero(cx-80,cy,'#3e6a3a');zom(cx+60,cy-6,'#4a3f55');c.fillStyle='rgba(120,230,120,.25)';c.beginPath();c.arc(cx+60,cy-6,18,0,7);c.fill();c.strokeStyle='#5fc98a';c.lineWidth=7;c.lineCap='round';c.beginPath();c.moveTo(cx-40,cy+20);c.bezierCurveTo(cx-20,cy-10,cx,cy+30,cx+20,cy+5);c.bezierCurveTo(cx+30,cy-5,cx+35,cy,cx+42,cy-2);c.stroke();c.strokeStyle='#2f8a5a';c.lineWidth=2;c.setLineDash([3,4]);c.beginPath();c.moveTo(cx-40,cy+20);c.bezierCurveTo(cx-20,cy-10,cx,cy+30,cx+20,cy+5);c.stroke();c.setLineDash([]);c.fillStyle='#5fc98a';c.beginPath();c.ellipse(cx+46,cy-3,8,5,-0.2,0,7);c.fill();c.fillStyle='#ffd34d';c.fillRect(cx+48,cy-6,2,2);c.strokeStyle='#cf4b3f';c.lineWidth=1.2;c.beginPath();c.moveTo(cx+54,cy-4);c.lineTo(cx+58,cy-6);c.moveTo(cx+54,cy-4);c.lineTo(cx+58,cy-2);c.stroke();c.fillStyle='#7ee07e';c.font='700 13px sans-serif';c.textAlign='center';c.fillText('яд −2/с',cx+60,cy-32)}]];
