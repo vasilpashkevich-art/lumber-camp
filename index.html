@@ -284,7 +284,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 if(matchMedia('(pointer:coarse)').matches||('ontouchstart' in window))document.documentElement.classList.add('touch');
 
 /* ================= CONFIG — всё игровое описано данными ================= */
-const W_SIZE = 4400, CX = 2200, CY = 2200;
+let W_SIZE = 4400, CX = 2200, CY = 2200;
 const CFG = {
   baseR: 150, fenceR: 205, dayLen: 150, nightLen: 45,
   trees: {
@@ -322,6 +322,7 @@ const CFG = {
     5:{name:'Крылатый змей',      ability:'dragon', skin:'dragon'},
     6:{name:'Пепельный голем',    ability:'slam',   skin:'golem'},
     7:{name:'Царь Мор',           ability:'all',    skin:'lich'},
+    9:{name:'Ледяной великан',    ability:'slam',   skin:'yeti'},
   },
   // валуны по зонам: нужная кирка, камня за валун, прочность
   rocks: {pick:[0,1,1,3,5,7,9,12], stone:[0,1,2,3,4,6,8,11], hp:[0,4,8,14,22,34,50,70], respawn:60},
@@ -463,7 +464,7 @@ function fmt1(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
 
 /* ================= STATE (сохраняется) ================= */
 const randSeed=()=>1+Math.floor(Math.random()*2147483646);
-function newState(){return {v:11,rested:0,meta:{ng:0,relics:{},wins:0,relicPend:0,comp31:0,relicFix32:0,codex:{},ach:{},best:{day:1,zone:1,axe:1,bow:0,base:1,fence:0,tower:0},life:{kills:0,chopped:0,mined:0}},inv:[],eq:{weapon:null,armor:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
+function newState(){return {v:12,worldV:12,rested:0,meta:{ng:0,relics:{},wins:0,relicPend:0,comp31:0,relicFix32:0,codex:{},ach:{},best:{day:1,zone:1,axe:1,bow:0,base:1,fence:0,tower:0},life:{kills:0,chopped:0,mined:0}},inv:[],eq:{weapon:null,armor:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
   fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
   day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0,fog:false},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0,crypts:0},p:{x:CX,y:CY+40,hp:10}};}
 function merge(def,src){
@@ -485,57 +486,202 @@ function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a
 let trees=[], rocks=[], patches=[], mounds=[], pois=[], lairs=[], zombies=[], decor=[], floats=[], tracers=[], drops=[];
 const P = {x:CX,y:CY+40,face:0,swing:0,shot:0,cd:0,hurt:0};
 function dist(a,b,c,d){return Math.hypot(a-c,b-d)}
-function zoneAt(x,y){const d=dist(x,y,CX,CY);for(const z of CFG.zones)if(d>=z.r0&&d<z.r1)return z;return null}
+function zoneAt(x,y){if(!WG.zone)return null;const k=gIdx(x,y);if(k<0||!WG.zone[k])return null;return CFG.zones[WG.zone[k]-1]}
 function inBounds(x,y,m){return x>m&&y>m&&x<W_SIZE-m&&y<W_SIZE-m}
 const zoneById = id => CFG.zones.find(z=>z.id===id);
 
+/* ================= МАТЕРИК: генерация, сетка зон, земля, биомы ================= */
+// размер мира: мир 1 — базовый, мир 2 — площадь +30%, мир 3 и дальше — площадь ×2
+const SIDE_BIOMES=[
+  {id:'snow', name:'Снежный край',     from:4,to:7,w:0.95,col:[214,226,236],world:1,boss:9},
+  {id:'marsh',name:'Болотный край',    from:2,to:4,w:0.8, col:[66,90,64],  world:2},
+  {id:'shroom',name:'Грибной лес',     from:3,to:5,w:0.75,col:[78,58,92],  world:2},
+  {id:'waste',name:'Красная пустошь',  from:5,to:7,w:0.85,col:[150,80,52], world:3},
+  {id:'high', name:'Скалистое нагорье',from:4,to:6,w:0.8, col:[118,114,104],world:3},
+  {id:'mist', name:'Туманная топь',    from:6,to:7,w:0.75,col:[70,86,90],  world:3},
+];
+const ZONE_COL=[[118,150,70],[40,86,64],[120,104,50],[74,60,78],[36,40,58],[108,90,76],[60,72,70]];
+const ZONE_FRAC=[560,860,1160,1450,1750,2050].map(r=>r/2480);
+const WG={cell:20,texK:5};
+function vnoise(seed){const r=mulberry(seed),T=new Float32Array(1024);for(let i=0;i<1024;i++)T[i]=r();
+  const h=(x,y)=>T[(((x*73856093)^(y*19349663))>>>0)&1023],sm=t=>t*t*(3-2*t);
+  return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=sm(x-xi),yf=sm(y-yi),a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1);return a+(b-a)*xf+(c-a)*yf+(a-b-c+d)*xf*yf}}
+function angNoise(rng,harm,amp){const ph=[],am=[];for(let k=1;k<=harm;k++){ph.push(rng()*6.283);am.push((rng()*2-1)*amp/Math.pow(k,0.85))}return a=>{let s=0;for(let k=1;k<=harm;k++)s+=am[k-1]*Math.sin(k*a+ph[k-1]);return s}}
+const worldNg=()=>(S&&S.meta&&S.meta.ng)||0;
+function genWorld(){
+  const ng=worldNg(),seed=(S.seed||4242)|0,scale=ng>=2?Math.SQRT2:ng>=1?Math.sqrt(1.3):1;
+  const rng=mulberry(seed*13+7),R=2480*scale,W=Math.ceil(R*2.5/100)*100,C=W/2;
+  W_SIZE=W;CX=C;CY=C;
+  const coast=angNoise(rng,9,0.2),coast2=angNoise(rng,26,0.06);
+  const zb=ZONE_COL.map(()=>angNoise(rng,5,0.2)),ov=ZONE_COL.map(()=>[0.12+rng()*0.14,rng()*3.14]);
+  const NA=1440,coastT=new Float32Array(NA),zT=ZONE_COL.map(()=>new Float32Array(NA));
+  for(let k=0;k<NA;k++){const a=k/NA*Math.PI*2-Math.PI,cr=R*(1+coast(a)+coast2(a));coastT[k]=cr;
+    for(let i=0;i<6;i++){const r=cr*ZONE_FRAC[i]*(1+zb[i](a)*0.6+ov[i][0]*0.5*Math.cos(2*(a-ov[i][1])));const lo=(i?zT[i-1][k]:230*scale)+Math.max(110*scale,cr*0.07);zT[i][k]=Math.max(lo,Math.min(r,cr-(6-i)*110*scale))}
+    zT[6][k]=cr}
+  const tab=(T,a)=>{const f=(a+Math.PI)/(Math.PI*2)*NA,i=Math.floor(f),t=f-i;return T[((i%NA)+NA)%NA]*(1-t)+T[(((i+1)%NA)+NA)%NA]*t};
+  const sides=SIDE_BIOMES.filter(b=>b.world<=ng+1).map(b=>({...b})),used=[],diag=[Math.PI/4,3*Math.PI/4,-3*Math.PI/4,-Math.PI/4];
+  for(const b of sides){let a,tries=0;
+    do{a=b.id==='snow'?diag[Math.floor(rng()*4)]+(rng()-0.5)*0.2:rng()*6.283-Math.PI;tries++}
+    while(tries<300&&used.some(u=>Math.abs(Math.atan2(Math.sin(a-u.a),Math.cos(a-u.a)))<(u.w+b.w)/2+0.25));
+    b.a=a;used.push(b);b.edge=angNoise(rng,5,0.25);b.inner=angNoise(rng,5,0.1)}
+  const wn1=vnoise(seed+5),wn2=vnoise(seed+6),nE=vnoise(seed+33),WA=360*scale;
+  function region(x0,y0){const dc=Math.hypot(x0-C,y0-C),kw=Math.min(1,Math.max(0,(dc-260*scale)/(500*scale)));
+    const x=x0+((wn1(x0/1100,y0/1100)-0.5)*2*WA+(wn1(x0/380,y0/380)-0.5)*WA*0.35)*kw,y=y0+((wn2(x0/1100,y0/1100)-0.5)*2*WA+(wn2(x0/380,y0/380)-0.5)*WA*0.35)*kw;
+    const dx=x-C,dy=y-C,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
+    if(d>tab(coastT,a))return [0,-1];
+    let zi=0;while(zi<6&&d>tab(zT[zi],a))zi++;
+    for(let s=0;s<sides.length;s++){const b=sides[s],da=Math.abs(Math.atan2(Math.sin(a-b.a),Math.cos(a-b.a)));const ww=b.w/2*(1+b.edge(a*3)+(nE(x/520,y/520)-0.5)*0.9)*Math.min(1,0.6+0.4*d/(R*0.7));
+      if(da<ww&&zi+1>=b.from&&zi+1<=b.to){const rin=b.from>1?tab(zT[b.from-2],a)*(1+b.inner(a)):0;if(d>rin)return [zi+1,s]}}
+    return [zi+1,-1]}
+  const cs=WG.cell,gw=Math.ceil(W/cs),N=gw*gw,zone=new Int8Array(N),side=new Int8Array(N).fill(-1);
+  for(let j=0;j<gw;j++)for(let i=0;i<gw;i++){const [z,s]=region(i*cs+cs/2,j*cs+cs/2);zone[j*gw+i]=z;side[j*gw+i]=s}
+  // расстояние до берега в клетках (и для суши, и для моря)
+  const cd=new Uint8Array(N).fill(255),q=new Int32Array(N);let qh=0,qt=0;
+  for(let k=0;k<N;k++){const i=k%gw,j=(k/gw)|0;const sea=zone[k]===0;for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=gw||jj>=gw)continue;if((zone[jj*gw+ii]===0)!==sea){cd[k]=0;q[qt++]=k;break}}}
+  while(qh<qt){const k=q[qh++],i=k%gw,j=(k/gw)|0;if(cd[k]>=60)continue;for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=gw||jj>=gw)continue;const kk=jj*gw+ii;if(cd[kk]>cd[k]+1){cd[kk]=cd[k]+1;q[qt++]=kk}}}
+  const area=new Float64Array(8),sideArea=new Float64Array(sides.length);for(let k=0;k<N;k++){area[zone[k]]+=cs*cs;if(side[k]>=0)sideArea[side[k]]+=cs*cs}
+  Object.assign(WG,{ng,scale,R,W,C,gw,zone,side,cd,sides,area,sideArea,region,noise:vnoise(seed+99),noise2:vnoise(seed+77)});
+}
+const gIdx=(x,y)=>{const i=Math.floor(x/WG.cell),j=Math.floor(y/WG.cell);if(i<0||j<0||i>=WG.gw||j>=WG.gw)return -1;return j*WG.gw+i};
+const isSea=(x,y)=>{const k=gIdx(x,y);return k<0||WG.zone[k]===0};
+const sideAt=(x,y)=>{const k=gIdx(x,y);return k<0||WG.side[k]<0?null:WG.sides[WG.side[k]]};
+const coastDist=(x,y)=>{const k=gIdx(x,y);return k<0?0:WG.cd[k]*WG.cell};
+function toLand(x,y){let g=0;while(isSea(x,y)&&g<200){const d=dist(x,y,CX,CY)||1;x+=(CX-x)/d*30;y+=(CY-y)/d*30;g++}return {x,y}}
+// случайная точка в зоне: pad — отступ от моря, noSide — не в боковом биоме, onlySide — только в этом биоме
+function randInZone(zid,rf,pad=40,opt={}){const R=rf||Math.random;
+  for(let g=0;g<4000;g++){const x=R()*WG.W,y=R()*WG.W,k=gIdx(x,y);if(k<0||WG.zone[k]!==zid&&!(opt.onlySide!=null))continue;
+    if(opt.onlySide!=null){if(WG.side[k]!==opt.onlySide)continue}else if(opt.noSide&&WG.side[k]>=0)continue;
+    if(WG.cd[k]*WG.cell<pad)continue;if(opt.minD&&dist(x,y,CX,CY)<opt.minD)continue;if(opt.ok&&!opt.ok(x,y))continue;return {x,y}}
+  return null}
+// --- текстура земли
+function buildTerrain(){
+  const K=WG.texK,tw=Math.ceil(WG.W/K),cv=document.createElement('canvas');cv.width=tw;cv.height=tw;WG.tex=cv;
+  const c2=cv.getContext&&cv.getContext('2d');if(!c2||!c2.createImageData)return;
+  const img=c2.createImageData(tw,tw);if(!img||!img.data){WG.tex=null;return}const D=img.data,cs=WG.cell,gw=WG.gw,n1=WG.noise,n2=WG.noise2;
+  const colOf=k=>{if(k<0)return [20,48,70];const z=WG.zone[k];if(!z){const t=Math.min(1,WG.cd[k]/22);return [70-52*Math.sqrt(t),130-90*Math.sqrt(t),150-88*Math.sqrt(t)]}
+    let col=WG.side[k]>=0?WG.sides[WG.side[k]].col:ZONE_COL[z-1];if(WG.cd[k]<=1){const sand=WG.side[k]>=0&&WG.sides[WG.side[k]].id==='snow'?[226,234,240]:[188,170,122];col=WG.cd[k]===0?sand:[(col[0]+sand[0])/2,(col[1]+sand[1])/2,(col[2]+sand[2])/2]}return col};
+  const cache=new Array(gw*gw);const cc=k=>cache[k]||(cache[k]=colOf(k));
+  const jn=vnoise((S.seed|0)+404),JA=34;
+  for(let py=0;py<tw;py++){for(let px=0;px<tw;px++){const wx=px*K,wy=py*K,jx=wx+(jn(wx/70,wy/70)-0.5)*JA*2+(jn(wx/23+9,wy/23)-0.5)*JA*0.6,jy=wy+(jn(wx/70+40,wy/70)-0.5)*JA*2+(jn(wx/23,wy/23+9)-0.5)*JA*0.6;
+      const fy=jy/cs-0.5,j0=Math.max(0,Math.min(gw-2,Math.floor(fy))),ty=Math.max(0,Math.min(1,fy-j0)),fx=jx/cs-0.5,i0=Math.max(0,Math.min(gw-2,Math.floor(fx))),tx=Math.max(0,Math.min(1,fx-i0));
+      const a=cc(j0*gw+i0),b=cc(j0*gw+i0+1),c=cc((j0+1)*gw+i0),d=cc((j0+1)*gw+i0+1);
+      const sh=(n1(wx/180,wy/180)-0.5)*24+(n2(wx/38,wy/38)-0.5)*12;const o=(py*tw+px)*4;
+      for(let ch=0;ch<3;ch++){let v=(a[ch]*(1-tx)+b[ch]*tx)*(1-ty)+(c[ch]*(1-tx)+d[ch]*tx)*ty;D[o+ch]=v+sh}
+      const dc=Math.hypot(wx-CX,wy-CY);if(dc<CFG.baseR+30){const t=Math.max(0,Math.min(1,(CFG.baseR+30-dc)/50))*0.85;D[o]=D[o]*(1-t)+(84+sh*0.5)*t;D[o+1]=D[o+1]*(1-t)+(74+sh*0.5)*t;D[o+2]=D[o+2]*(1-t)+(50+sh*0.5)*t}
+      D[o+3]=255}}
+  c2.putImageData(img,0,0);
+}
+function drawTerrain(vx0,vy0,vx1,vy1){
+  if(DG)return;
+  ctx.fillStyle='#14324a';ctx.fillRect(vx0,vy0,vx1-vx0,vy1-vy0);
+  if(!WG.tex)return;const K=WG.texK,sx=Math.max(0,vx0/K),sy=Math.max(0,vy0/K),ex=Math.min(WG.tex.width,vx1/K),ey=Math.min(WG.tex.height,vy1/K);
+  if(ex>sx&&ey>sy){ctx.imageSmoothingEnabled=true;ctx.drawImage(WG.tex,sx,sy,ex-sx,ey-sy,sx*K,sy*K,(ex-sx)*K,(ey-sy)*K)}
+}
+// --- декор по биомам
+function buildDecor(rng){
+  decor=[];const n=Math.round(3200*WG.scale*WG.scale);
+  for(let i=0;i<n;i++){const x=rng()*WG.W,y=rng()*WG.W,k=gIdx(x,y);if(k<0||!WG.zone[k]||WG.cd[k]<1||dist(x,y,CX,CY)<CFG.fenceR+30)continue;
+    const sd=WG.side[k]>=0?WG.sides[WG.side[k]].id:null;decor.push({x,y,b:sd||'z'+WG.zone[k],v:rng(),s:0.7+rng()*0.8})}
+}
+function drawDecor(d,now){const x=d.x,y=d.y,s=d.s,v=d.v;
+  switch(d.b){
+    case 'z1':if(v<0.6){ctx.strokeStyle=v<0.3?'#6f9a48':'#9cbf68';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-2*s,y-5*s);ctx.moveTo(x,y);ctx.lineTo(x+2*s,y-5*s);ctx.stroke()}else{ctx.fillStyle=['#f4e27a','#ffffff','#c9a0e0','#f2a0a0'][Math.floor(v*40)%4];ctx.beginPath();ctx.arc(x,y,1.8*s,0,7);ctx.fill()}break;
+    case 'z2':ctx.fillStyle=v<0.5?'#6b4a2c':'#2f5a3a';ctx.beginPath();ctx.ellipse(x,y,2.5*s,1.6*s,v*6,0,7);ctx.fill();break;
+    case 'z3':ctx.fillStyle=['#c9822e','#a8642a','#d8a040'][Math.floor(v*30)%3];ctx.beginPath();ctx.ellipse(x,y,3*s,1.8*s,v*6,0,7);ctx.fill();break;
+    case 'z4':if(v<0.5){ctx.fillStyle='rgba(40,30,30,.45)';ctx.beginPath();ctx.ellipse(x,y,6*s,3.5*s,v*3,0,7);ctx.fill()}else{ctx.strokeStyle='#3c3240';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-5*s,y);ctx.lineTo(x+5*s,y-2*s);ctx.stroke()}break;
+    case 'z5':ctx.strokeStyle='#26304a';ctx.lineWidth=1.2;for(let i=0;i<3;i++){const a=v*6+i*2.1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*6*s,y+Math.sin(a)*6*s);ctx.stroke()}break;
+    case 'z6':ctx.fillStyle=v<0.7?'rgba(160,150,140,.5)':`rgba(255,${120+Math.sin(now/300+v*20)*50},40,.8)`;ctx.beginPath();ctx.arc(x,y,v<0.7?3.5*s:1.2,0,7);ctx.fill();break;
+    case 'z7':ctx.fillStyle='#d9d2bd';ctx.fillRect(x-4*s,y,8*s,1.6*s);ctx.beginPath();ctx.arc(x-4*s,y+0.8*s,1.5*s,0,7);ctx.arc(x+4*s,y+0.8*s,1.5*s,0,7);ctx.fill();break;
+    case 'snow':ctx.fillStyle=v<0.6?'rgba(255,255,255,.75)':'rgba(170,200,230,.5)';ctx.beginPath();ctx.ellipse(x,y,7*s,2.5*s,0.2,0,7);ctx.fill();break;
+    case 'marsh':ctx.strokeStyle='#8a8a50';ctx.lineWidth=1.3;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(x+i*3,y);ctx.lineTo(x+i*3+(v-0.5)*4,y-9*s);ctx.stroke()}break;
+    case 'shroom':if(v<0.5){ctx.fillStyle=`rgba(210,160,255,${0.35+0.3*Math.sin(now/400+v*30)})`;ctx.beginPath();ctx.arc(x,y,1.6,0,7);ctx.fill()}else{ctx.fillStyle='#d8cfc0';ctx.fillRect(x-1,y,2,4);ctx.fillStyle='#b05aa0';ctx.beginPath();ctx.arc(x,y,3.2*s,Math.PI,0);ctx.fill()}break;
+    case 'waste':if(v<0.6){ctx.strokeStyle='rgba(70,30,20,.5)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+8*s,y+3);ctx.lineTo(x+12*s,y-4);ctx.stroke()}else{ctx.fillStyle='#e0d8c4';ctx.fillRect(x,y,7*s,2)}break;
+    case 'high':ctx.fillStyle=v<0.5?'#8f8b82':'#6e6a62';ctx.beginPath();ctx.arc(x,y,2.5*s,0,7);ctx.fill();break;
+    case 'mist':ctx.fillStyle=`rgba(180,255,220,${0.25+0.25*Math.sin(now/500+v*40)})`;ctx.beginPath();ctx.arc(x+Math.sin(now/900+v*9)*4,y,2.2,0,7);ctx.fill();break;
+  }
+}
+// --- деревья биомов (статы — от зоны, облик — от биома)
+function drawBiomeTree(t,x,y,r){
+  const sk=t.skin;
+  if(sk==='snow'){for(const [rr,col] of [[1,'#1f4436'],[0.74,'#2c5a48'],[0.5,'#3a6e58'],[0.28,'#4f8a6e']]){ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<18;i++){const a=i/18*6.283,q=i%2?rr*r*0.7:rr*r;ctx.lineTo(x+Math.cos(a)*q,y-8+Math.sin(a)*q)}ctx.fill()}
+    ctx.fillStyle='rgba(250,253,255,.95)';ctx.beginPath();ctx.ellipse(x-r*0.25,y-8-r*0.3,r*0.55,r*0.32,-0.4,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(x+r*0.35,y-8+r*0.1,r*0.3,r*0.2,0.3,0,7);ctx.fill();ctx.beginPath();ctx.arc(x,y-8,r*0.14,0,7);ctx.fill();return}
+  if(sk==='marsh'){ctx.fillStyle='#3e5a3a';ctx.beginPath();ctx.arc(x,y-8,r*0.95,0,7);ctx.fill();ctx.strokeStyle='#5d7a48';ctx.lineWidth=1.5;for(let i=0;i<16;i++){const a=i/16*6.283;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*r*0.3,y-8+Math.sin(a)*r*0.3);ctx.quadraticCurveTo(x+Math.cos(a)*r*0.9,y-8+Math.sin(a)*r*0.7,x+Math.cos(a)*r*1.05,y-3+Math.sin(a)*r*1.05);ctx.stroke()}return}
+  if(sk==='shroom'){ctx.fillStyle='#d8cfc0';ctx.fillRect(x-3,y-6,6,10);const col=['#8a3a8a','#6a3aa0','#a04a6a'][Math.floor(t.seed*3)];ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-10,r,0,7);ctx.fill();ctx.fillStyle='rgba(232,160,216,.55)';ctx.beginPath();ctx.arc(x-r*0.3,y-10-r*0.3,r*0.5,0,7);ctx.fill();
+    ctx.fillStyle='rgba(255,255,240,.85)';for(let i=0;i<5;i++){const a=t.seed*30+i*1.3;ctx.beginPath();ctx.arc(x+Math.cos(a)*r*0.55,y-10+Math.sin(a)*r*0.55,1.5+(i%3),0,7);ctx.fill()}return}
+  if(sk==='waste'){ctx.strokeStyle='#3a2018';ctx.lineWidth=3;ctx.lineCap='round';for(let i=0;i<6;i++){const a=t.seed*20+i*1.05,l=r*(0.7+((i*37)%10)/25);ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+Math.cos(a)*l*0.5,y-4+Math.sin(a)*l*0.5);ctx.lineTo(x+Math.cos(a+0.4)*l,y-4+Math.sin(a+0.4)*l);ctx.stroke()}ctx.fillStyle='#5a2a1c';ctx.beginPath();ctx.arc(x,y-4,4,0,7);ctx.fill();return}
+  if(sk==='high'){for(const [rr,col] of [[1,'#2d4a34'],[0.68,'#3b5f42'],[0.38,'#4f7a52']]){ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<14;i++){const a=i/14*6.283,q=i%2?rr*r*0.65:rr*r;ctx.lineTo(x+Math.cos(a)*q,y-8+Math.sin(a)*q)}ctx.fill()}return}
+  if(sk==='mist'){ctx.strokeStyle='#1e2622';ctx.lineWidth=2;for(let i=0;i<7;i++){const a=i/7*6.283;ctx.beginPath();ctx.moveTo(x,y-4);ctx.quadraticCurveTo(x+Math.cos(a)*r*0.6,y-6+Math.sin(a)*r*0.2,x+Math.cos(a)*r*0.9,y+Math.sin(a)*r*0.6);ctx.stroke()}ctx.fillStyle='#24302c';ctx.beginPath();ctx.arc(x,y-10,r*0.75,0,7);ctx.fill();ctx.fillStyle='#2f3e38';ctx.beginPath();ctx.arc(x-r*0.2,y-13,r*0.45,0,7);ctx.fill();return}
+}
+// --- облик мертвецов в биомах
+function drawBiomeZ(z,bob){const x=z.x,y=z.y+bob,r=z.r;
+  if(z.biome==='snow'){ctx.fillStyle='rgba(230,245,255,.7)';ctx.beginPath();ctx.arc(x,y,r*0.98,Math.PI+0.5,2*Math.PI-0.5);ctx.fill();ctx.fillStyle='#bfe6ff';for(const dx of [-0.45,0,0.45]){ctx.beginPath();ctx.moveTo(x+dx*r-2,y-r*0.85);ctx.lineTo(x+dx*r,y-r*1.3);ctx.lineTo(x+dx*r+2,y-r*0.85);ctx.fill()}}
+  else if(z.biome==='marsh'){ctx.strokeStyle='#5d7a48';ctx.lineWidth=1.5;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(x-r*0.55+i*r*0.36,y-r*0.7);ctx.lineTo(x-r*0.6+i*r*0.36,y+r*0.3);ctx.stroke()}}
+  else if(z.biome==='shroom'){ctx.fillStyle='#c76fb0';ctx.beginPath();ctx.arc(x+r*0.35,y-r*0.6,r*0.42,Math.PI,0);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+r*0.3,y-r*0.75,1.4,0,7);ctx.fill()}
+  else if(z.biome==='waste'){ctx.fillStyle='rgba(224,216,196,.85)';ctx.beginPath();ctx.arc(x,y,r*0.9,Math.PI+0.4,2*Math.PI-0.4);ctx.fill()}
+  else if(z.biome==='mist'){ctx.fillStyle='rgba(200,215,220,.18)';ctx.beginPath();ctx.arc(x,y,r+6,0,7);ctx.fill()}
+}
+// --- особенности биомов: шипы спор, туман, утёсы
+function updWorld(dt){
+  if(DG||!WG.zone)return;const sd=sideAt(P.x,P.y);
+  if(sd&&sd.id==='shroom'){for(const p of patches){if(p.kind!=='spore'||Math.abs(p.x-P.x)>p.r||dist(p.x,p.y,P.x,P.y)>p.r)continue;P.sporeT=(P.sporeT||0)+dt;if(P.sporeT>0.6){P.sporeT=0;damagePlayer(Math.max(1,maxHp(S.up.hp)*0.03));addFloat(P.x,P.y-30,'споры','#c9a0ff')}}}
+}
+function mistFog(){const sd=!DG&&sideAt(P.x,P.y);if(!sd||sd.id!=='mist')return;ctx.setTransform(DPR,0,0,DPR,0,0);const g=ctx.createRadialGradient(VW/2,VH/2,90,VW/2,VH/2,Math.max(VW,VH)*0.55);g.addColorStop(0,'rgba(190,205,210,0)');g.addColorStop(1,'rgba(190,205,210,.86)');ctx.fillStyle=g;ctx.fillRect(0,0,VW,VH)}
+// --- подписи зон и биомов на земле и на картах
+function buildLabels(rng){
+  WG.labels=[];const pick=(test,pref)=>{let best=null,bs=-1e9;for(let t=0;t<1500;t++){const x=rng()*WG.W,y=rng()*WG.W;if(!test(x,y))continue;let ok=0;for(const [dx,dy] of [[110,0],[-110,0],[0,60],[0,-60],[200,0],[-200,0]])if(test(x+dx*WG.scale,y+dy*WG.scale))ok++;const sc=ok*10+pref(x,y);if(sc>bs){bs=sc;best={x,y}}}return best};
+  for(const z of CFG.zones){const pa=-Math.PI/2+(z.id-4)*0.42;const p=pick((x,y)=>{const k=gIdx(x,y);return k>=0&&WG.zone[k]===z.id&&WG.side[k]<0},(x,y)=>-Math.abs(Math.atan2(Math.sin(Math.atan2(y-CY,x-CX)-pa),Math.cos(Math.atan2(y-CY,x-CX)-pa)))*12);if(p)WG.labels.push({x:p.x,y:p.y,zone:z.id,name:z.name})}
+  WG.sides.forEach((s,i)=>{const p=pick((x,y)=>{const k=gIdx(x,y);return k>=0&&WG.side[k]===i},()=>0);if(p)WG.labels.push({x:p.x,y:p.y,side:s.id,name:s.name})});
+}
+
 function buildWorld(){
+  genWorld();
   const rng=mulberry(S.seed||4242);
   trees=[];rocks=[];patches=[];mounds=[];pois=[];lairs=[];
   const spots=[];
   const free=(x,y,r)=>spots.every(s=>dist(s.x,s.y,x,y)>s.r+r+20);
-  const ringPoint=(z,pad)=>{
-    const outer=Math.min(z.r1,3000);
-    for(let g=0;g<60;g++){
-      const a=rng()*6.283,r=z.r0+pad+rng()*Math.max(1,outer-z.r0-2*pad);
-      const x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;
-      if(inBounds(x,y,pad+30)&&free(x,y,pad))return {x,y};
-    }
-    return null;
-  };
+  const zp=(z,pad,opt={})=>randInZone(z.id,rng,pad+30,{...opt,ok:(x,y)=>free(x,y,pad)&&dist(x,y,CX,CY)>CFG.fenceR+pad+60&&(!opt.ok||opt.ok(x,y))});
+  const oldArea=z=>Math.PI*(Math.min(z.r1,2480)**2-z.r0**2),zoneOf=(x,y)=>{const k=gIdx(x,y);return k<0?1:Math.max(1,WG.zone[k])};
+  const rockCluster=(x,y,r,zid,iron)=>{patches.push({kind:'rocks',x,y,r,zone:zid,seed:rng()});spots.push({x,y,r});const n=4+Math.floor(rng()*3);
+    for(let k=0;k<n;k++){const a=rng()*6.283,rr=rng()*(r-20);rocks.push({x:x+Math.cos(a)*rr,y:y+Math.sin(a)*rr,zone:zid,hp:CFG.rocks.hp[zid],alive:true,t:0,shake:0,r:11+rng()*5,seed:rng(),iron:iron&&zid>=4?rng()<0.6:undefined})}};
   for(const z of CFG.zones){
-    let p=ringPoint(z,90);
+    const ar=Math.max(0.6,WG.area[z.id]/oldArea(z));
+    let p=zp(z,90,{noSide:true,minD:CFG.fenceR+ARENA_R+80});
     if(p){lairs.push({zone:z.id,x:p.x,y:p.y});spots.push({x:p.x,y:p.y,r:90})}
     const nsw=z.id===1?1:2;
-    for(let i=0;i<nsw;i++){const r=60+rng()*45;p=ringPoint(z,r+10);if(p){patches.push({kind:'swamp',x:p.x,y:p.y,r,zone:z.id,seed:rng()});spots.push({x:p.x,y:p.y,r})}}
-    for(let i=0;i<2;i++){
-      const r=55+rng()*30;p=ringPoint(z,r+10);if(!p)continue;
-      patches.push({kind:'rocks',x:p.x,y:p.y,r,zone:z.id,seed:rng()});spots.push({x:p.x,y:p.y,r});
-      const n=4+Math.floor(rng()*3);
-      for(let k=0;k<n;k++){const a=rng()*6.283,rr=rng()*(r-20);rocks.push({x:p.x+Math.cos(a)*rr,y:p.y+Math.sin(a)*rr,zone:z.id,hp:CFG.rocks.hp[z.id],alive:true,t:0,shake:0,r:11+rng()*5,seed:rng()})}
-    }
-    for(let i=0;i<z.mounds;i++){p=ringPoint(z,45);if(p){const hp=moundHp(z.id);mounds.push({id:z.id+'-'+i,zone:z.id,x:p.x,y:p.y,hp,max:hp,cd:3+rng()*5,hit:0,dead:false,seed:rng()});spots.push({x:p.x,y:p.y,r:45})}}
-    for(let i=0;i<2;i++){p=ringPoint(z,40);if(p){pois.push({id:z.id+'-'+i,zone:z.id,x:p.x,y:p.y,kind:z.id<=3?'hut':'ruins',seed:rng()});spots.push({x:p.x,y:p.y,r:40})}}
+    for(let i=0;i<nsw;i++){const r=60+rng()*45;p=zp(z,r+10,{noSide:true});if(p){patches.push({kind:'swamp',x:p.x,y:p.y,r,zone:z.id,seed:rng()});spots.push({x:p.x,y:p.y,r})}}
+    for(let i=0;i<Math.max(2,Math.round(2*ar));i++){const r=55+rng()*30;p=zp(z,r+10);if(p)rockCluster(p.x,p.y,r,z.id)}
+    for(let i=0;i<z.mounds;i++){p=zp(z,45);if(p){const hp=moundHp(z.id);mounds.push({id:z.id+'-'+i,zone:z.id,x:p.x,y:p.y,hp,max:hp,cd:3+rng()*5,hit:0,dead:false,seed:rng()});spots.push({x:p.x,y:p.y,r:45})}}
+    for(let i=0;i<2;i++){p=zp(z,40,{noSide:true});if(p){pois.push({id:z.id+'-'+i,zone:z.id,x:p.x,y:p.y,kind:z.id<=3?'hut':'ruins',seed:rng()});spots.push({x:p.x,y:p.y,r:40})}}
   }
+  // особенности боковых биомов
+  WG.sides.forEach((sd,si)=>{const ar=WG.sideArea[si]/1e6,sp=(pad,ok)=>randInZone(0,rng,pad+30,{onlySide:si,ok:(x,y)=>free(x,y,pad)&&(!ok||ok(x,y))});
+    if(sd.id==='snow'){for(let i=0;i<Math.round(9*ar);i++){const r=50+rng()*45,p=sp(r);if(p){patches.push({kind:'drift',x:p.x,y:p.y,r,zone:zoneOf(p.x,p.y),seed:rng()});spots.push({x:p.x,y:p.y,r})}}
+      const p=sp(110,(x,y)=>dist(x,y,CX,CY)>WG.R*0.55);if(p){lairs.push({zone:9,x:p.x,y:p.y,side:'snow'});spots.push({x:p.x,y:p.y,r:110})}}
+    if(sd.id==='marsh')for(let i=0;i<Math.round(7*ar);i++){const r=50+rng()*50,p=sp(r);if(p){patches.push({kind:'swamp',x:p.x,y:p.y,r,zone:zoneOf(p.x,p.y),seed:rng()});spots.push({x:p.x,y:p.y,r})}}
+    if(sd.id==='shroom')for(let i=0;i<Math.round(5*ar);i++){const r=45+rng()*35,p=sp(r);if(p){patches.push({kind:'spore',x:p.x,y:p.y,r,zone:zoneOf(p.x,p.y),seed:rng()});spots.push({x:p.x,y:p.y,r})}}
+    if(sd.id==='high'){for(let i=0;i<Math.round(8*ar);i++){const r=35+rng()*40,p=sp(r);if(p){patches.push({kind:'cliff',x:p.x,y:p.y,r,zone:zoneOf(p.x,p.y),seed:rng()});spots.push({x:p.x,y:p.y,r})}}
+      for(let i=0;i<Math.max(2,Math.round(3*ar));i++){const r=55+rng()*25,p=sp(r);if(p)rockCluster(p.x,p.y,r,zoneOf(p.x,p.y),true)}}
+    if(sd.id==='waste')for(let i=0;i<Math.max(2,Math.round(3*ar));i++){const r=55+rng()*25,p=sp(r);if(p)rockCluster(p.x,p.y,r,zoneOf(p.x,p.y))}
+    if(sd.id==='mist')for(let i=0;i<Math.round(5*ar);i++){const r=50+rng()*50,p=sp(r);if(p){patches.push({kind:'swamp',x:p.x,y:p.y,r,zone:zoneOf(p.x,p.y),seed:rng()});spots.push({x:p.x,y:p.y,r})}}
+  });
+  // деревья: на 10% больше, число — по площади зоны
   for(const z of CFG.zones){
-    let placed=0,tries=0;const outer=Math.min(z.r1,3000);
-    while(placed<z.trees&&tries<z.trees*40){
-      tries++;
-      const a=rng()*Math.PI*2, r=z.r0+30+rng()*(outer-z.r0-50);
-      const x=CX+Math.cos(a)*r, y=CY+Math.sin(a)*r;
-      if(!inBounds(x,y,50))continue;
+    const target=Math.round(z.trees*1.1*Math.max(0.6,WG.area[z.id]/oldArea(z)));let placed=0,tries=0;
+    while(placed<target&&tries<target*6){tries++;
+      const p=randInZone(z.id,rng,50);if(!p)break;const x=p.x,y=p.y;
+      if(dist(x,y,CX,CY)<CFG.fenceR+60)continue;
       if(!spots.every(s=>dist(s.x,s.y,x,y)>s.r+14))continue;
       if(trees.some(t=>Math.abs(t.x-x)<46&&dist(t.x,t.y,x,y)<46))continue;
+      const sd=sideAt(x,y);if(sd&&((sd.id==='waste'&&rng()<0.6)||(sd.id==='high'&&rng()<0.3)))continue;
       const tt=CFG.trees[z.tree];
-      trees.push({x,y,tier:z.tree,hp:tt.hp,alive:true,t:0,shake:0,r:tt.r,seed:rng()});
+      trees.push({x,y,tier:z.tree,hp:tt.hp,alive:true,t:0,shake:0,r:tt.r,seed:rng(),skin:sd?sd.id:undefined});
       placed++;
     }
   }
-  decor=[];
-  for(let i=0;i<1300;i++)decor.push({x:rng()*W_SIZE,y:rng()*W_SIZE,s:1+rng()*2.5,k:rng()});
+  buildDecor(rng);buildLabels(rng);
   // эндгейм: отдельный генератор, чтобы не сдвигать старые карты
   const rng2=mulberry(((S.seed||4242)*7+13)|0);
-  for(const r of rocks){if(r.zone>=4&&rng2()<0.3){r.iron=true;r.hp=rockMax(r)}}
+  for(const r of rocks){if(r.iron===undefined&&r.zone>=4&&rng2()<0.3)r.iron=true;if(r.iron)r.hp=rockMax(r)}
   const sw=patches.find(p=>p.kind==='swamp'&&p.zone===4),l4=lairs.find(l=>l.zone===4);
   if(sw&&l4){l4.x=sw.x;l4.y=sw.y}
   buildCrypts(spots,rng2);
@@ -543,24 +689,23 @@ function buildWorld(){
   for(const l of lairs){const d=dist(l.x,l.y,CX,CY),minD=CFG.fenceR+ARENA_R+80;if(d<minD){l.x=CX+(l.x-CX)/d*minD;l.y=CY+(l.y-CY)/d*minD}}
   trees=trees.filter(t=>lairs.every(l=>Math.abs(t.x-l.x)>ARENA_R*0.75||dist(t.x,t.y,l.x,l.y)>ARENA_R*0.75));
   decorateArenas();
+  buildTerrain();
 }
 const rockMax = r => CFG.rocks.hp[r.zone]*(r.iron?1.5:1);
-function randInRing(zn){
-  let x,y,g=0;
-  do{const a=Math.random()*Math.PI*2,r=zn.r0+40+Math.random()*(Math.min(zn.r1,3000)-zn.r0-60);x=CX+Math.cos(a)*r;y=CY+Math.sin(a)*r;g++;}while(!inBounds(x,y,60)&&g<50);
-  return {x,y};
-}
+function randInRing(zn){return randInZone(zn.id,Math.random,60,{minD:CFG.fenceR+120})||{x:CX+300,y:CY}}
 function spawnZoneZombies(){
   for(const zn of CFG.zones){
     const alive=Math.max(0,zn.zcount-(S.killed[zn.id]||0));
     for(let i=0;i<alive;i++){const p=randInRing(zn);let k;if(zn.id>=2&&Math.random()<0.25){const opts=zn.id>=3?['runner','ram','spitter']:['runner','ram'];k=opts[Math.floor(Math.random()*opts.length)]}zombies.push(makeZombie(zn.ztier,p.x,p.y,false,zn.id,k))}
     if(!S.bosses[zn.id])zombies.push(makeBoss(zn.id));
   }
+  if(lairs.some(l=>l.zone===9)&&!S.bosses[9])zombies.push(makeBoss(9));
 }
 function makeZombie(tier,x,y,wave,zone,kind){
   const c=CFG.zombies[tier],k=ZTYPES[kind];
   const ng=ngMul();
   const z={tier,x,y,hp:c.hp*ng,max:c.hp*ng,r:c.r,dmg:Math.ceil(c.dmg*ng),speed:c.speed,wave,zone,hx:x,hy:y,wx:x,wy:y,atk:0,hit:0,outside:true,ph:Math.random()*6,fenceMul:1,spitT:1+Math.random()*2};
+  if(zone&&WG.zone){const sd=sideAt(x,y);if(sd)z.biome=sd.id}
   if(k){z.kind=kind;z.max=z.hp=Math.max(1,c.hp*k.hp*ng);z.speed=c.speed*k.speed;z.r=c.r*k.r;z.dmg=Math.max(1,Math.round(c.dmg*k.dmg));z.fenceMul=k.fence}
   return z;
 }
@@ -572,7 +717,7 @@ function pickKind(day,blood){
   return undefined;
 }
 function makeBoss(zid){
-  const zn=zoneById(zid),l=lairs.find(q=>q.zone===zid)||randInRing(zn),c=CFG.zombies[zn.ztier];
+  const zn=zoneById(zid)||{id:zid,ztier:6},l=lairs.find(q=>q.zone===zid)||randInRing(zn),c=CFG.zombies[zn.ztier];
   const z=makeZombie(zn.ztier,l.x,l.y,false,null);
   z.boss=zid;z.max=z.hp=c.hp*6*ngMul();z.r=c.r*2;z.dmg=Math.ceil(c.dmg*1.6*ngMul());z.speed=c.speed*0.72;z.skin=CFG.bosses[zid].skin;
   z.ab=CFG.bosses[zid].ability;z.abT=3;z.name=CFG.bosses[zid].name;z.charge=0;z.slam=0;
@@ -588,7 +733,7 @@ const bestCleared = () => {let b=0;for(const z of CFG.zones)if(zoneCleared(z))b=
 const maxHouses = () => S.base>=4 ? 1+2*clearedCount() : 0;
 const residents = () => S.houses*2+(S.extraRes||0);
 const bagTotal = () => S.bag+S.bagStone+(S.bagIron||0);
-const inSwamp = (x,y) => patches.some(p=>p.kind==='swamp'&&Math.abs(p.x-x)<p.r&&dist(p.x,p.y,x,y)<p.r*0.9);
+const inSwamp = (x,y) => patches.some(p=>(p.kind==='swamp'||p.kind==='drift')&&Math.abs(p.x-x)<p.r&&dist(p.x,p.y,x,y)<p.r*0.9);
 function fixJobs(){
   const r=residents();let sum=S.jobs.wood+S.jobs.stone+S.jobs.guard;
   for(const k of ['guard','stone','wood']){while(sum>r&&S.jobs[k]>0){S.jobs[k]--;sum--}}
@@ -875,16 +1020,15 @@ const ironOf = r => 1+Math.floor(r.zone/2);
 // ---------- СКЛЕПЫ ----------
 let crypts=[], DG=null;
 const CRYPT_CD = 3; // дней до повторного открытия
-const DUN = {RW:560, RH:420, CW:190, CH:150, X:W_SIZE+900, Y:CY};
+const DUN = {RW:560, RH:420, CW:190, CH:150, get X(){return W_SIZE+900}, get Y(){return CY}};
 const inDun = () => !!DG;
 function buildCrypts(spots,rng2){
   crypts=[];
   const free=(x,y,r)=>spots.every(s=>dist(s.x,s.y,x,y)>s.r+r+20)&&trees.every(t=>Math.abs(t.x-x)>r+20||dist(t.x,t.y,x,y)>r+20);
   for(const z of CFG.zones){
     for(let g=0;g<80;g++){
-      const a=rng2()*6.283,outer=Math.min(z.r1,3000),r=z.r0+70+rng2()*Math.max(1,outer-z.r0-140);
-      const x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;
-      if(!inBounds(x,y,100)||!free(x,y,40))continue;
+      const p=randInZone(z.id,rng2,110,{noSide:true});if(!p)break;const x=p.x,y=p.y;
+      if(!free(x,y,40))continue;
       crypts.push({id:'c'+z.id,zone:z.id,x,y});spots.push({x,y,r:40});break;
     }
   }
@@ -992,7 +1136,7 @@ const MERCH = [
   {id:'item', t:'Случайная вещь (редкая или лучше), одна за визит', c:{w:350,s:100,i:10}, once:true, give:()=>giveItem(makeItem(Math.max(1,bestCleared()+1),1))},
 ];
 function spawnCaravan(){
-  const a=Math.random()*6.283,r=780+Math.random()*120,x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;
+  const a=Math.random()*6.283,r=780+Math.random()*120,q0=toLand(CX+Math.cos(a)*r,CY+Math.sin(a)*r),x=q0.x,y=q0.y;
   refugees=[];for(let i=0;i<3;i++)refugees.push({x:x+i*16,y:y+(i%2)*14,hp:40,max:40,i});
   const zn=zoneById(2);
   for(let k=0;k<3+Math.floor(S.day/5);k++){const b=Math.random()*6.283,z=makeZombie(Math.min(5,1+Math.floor(S.day/5)),x+Math.cos(b)*260,y+Math.sin(b)*260,false,null);z.hunt=true;zombies.push(z)}
@@ -1019,7 +1163,7 @@ function drawRefugee(r){
   ctx.fillStyle='#6b4a2c';ctx.fillRect(x-8,y-1+b,5,6);
   ctx.fillStyle='#000';ctx.fillRect(x-10,y-14,20,3);ctx.fillStyle='#9fc3d6';ctx.fillRect(x-10,y-14,20*r.hp/r.max,3);
 }
-const MERCH_POS={x:CX+92,y:CY+56};
+const MERCH_POS={get x(){return CX+92},get y(){return CY+56}};
 function openShop(){if(!merchantHere())return;tab='shop';menuSig='';toggleMenu(true)}
 function drawMerchant(now){
   drawMerchant0(now);const x=MERCH_POS.x,y=MERCH_POS.y,b=Math.sin(now/250)*3,near=dist(P.x,P.y,x,y)<70;
@@ -1326,7 +1470,7 @@ function decorateArenas(){
 }
 function drawArena(l,now){
   const b=CFG.bosses[l.zone],sk=b.skin,alive=!S.bosses[l.zone],x=l.x,y=l.y,R=ARENA_R,t=now/1000;
-  const ground={slime:'rgba(60,90,40,.55)',treant:'rgba(40,52,28,.6)',hydra:'rgba(40,52,52,.6)',croc:'rgba(30,44,34,.5)',dragon:'rgba(52,34,28,.7)',golem:'rgba(48,46,44,.7)',lich:'rgba(28,34,32,.7)'}[sk];
+  const ground={slime:'rgba(60,90,40,.55)',treant:'rgba(40,52,28,.6)',hydra:'rgba(40,52,52,.6)',croc:'rgba(30,44,34,.5)',dragon:'rgba(52,34,28,.7)',golem:'rgba(48,46,44,.7)',lich:'rgba(28,34,32,.7)',yeti:'rgba(190,215,235,.55)'}[sk];
   const g=ctx.createRadialGradient(x,y,R*0.3,x,y,R);g.addColorStop(0,ground);g.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,R,0,7);ctx.fill();
   const D=l.deco||[];
@@ -1368,6 +1512,10 @@ function drawArena(l,now){
     for(const p of D.slice(0,10)){ctx.fillStyle='#141218';ctx.beginPath();ctx.moveTo(p.x,p.y-10-p.s*8);ctx.lineTo(p.x+5,p.y+3);ctx.lineTo(p.x-4,p.y+3);ctx.fill();ctx.fillStyle='rgba(120,110,160,.35)';ctx.beginPath();ctx.moveTo(p.x,p.y-10-p.s*8);ctx.lineTo(p.x+2,p.y);ctx.lineTo(p.x-1,p.y);ctx.fill()}
     for(const p of D.slice(10,14)){ctx.fillStyle='#3a3632';ctx.beginPath();ctx.arc(p.x,p.y,8,0,7);ctx.fill();drawFire(p.x,p.y+2,0.35,now)}
     for(const p of D.slice(14,26)){ctx.fillStyle=`rgba(255,${130+Math.sin(t*5+p.a*9)*60},40,${0.5+0.4*Math.sin(t*3+p.a*7)})`;ctx.fillRect(p.x,p.y,2,2)}
+  }else if(sk==='yeti'){
+    for(const p of D.slice(0,12)){ctx.fillStyle='rgba(150,200,235,.6)';ctx.beginPath();ctx.moveTo(p.x,p.y-12-p.s*10);ctx.lineTo(p.x+6,p.y+3);ctx.lineTo(p.x-6,p.y+3);ctx.fill();ctx.fillStyle='rgba(255,255,255,.8)';ctx.beginPath();ctx.moveTo(p.x,p.y-12-p.s*10);ctx.lineTo(p.x+2,p.y);ctx.lineTo(p.x-2,p.y);ctx.fill()}
+    for(const p of D.slice(12,18)){ctx.fillStyle='#f6faff';ctx.beginPath();ctx.ellipse(p.x,p.y,18,7,0.2,0,7);ctx.fill()}
+    for(const p of D.slice(18,26)){ctx.fillStyle=`rgba(255,255,255,${0.4+0.4*Math.sin(t*3+p.a*9)})`;ctx.fillRect(p.x,p.y+((t*12+p.a*50)%14),2,2)}
   }else if(sk==='lich'){
     for(const p of D.slice(0,10)){const cross=p.s>0.6;ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(p.x-6,p.y+2,14,4);
       if(cross){ctx.fillStyle='#6a6862';ctx.fillRect(p.x-1.5,p.y-14,3,16);ctx.fillRect(p.x-6,p.y-10,12,3)}
@@ -1502,6 +1650,13 @@ function drawBoss(z,bob){
     if(big){ctx.fillStyle='#4a2a30';for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(x+s*r*0.3,y-r*1.0);ctx.quadraticCurveTo(x+s*r*0.9,y-r*1.4,x+s*r*0.8,y-r*1.9);ctx.lineTo(x+s*r*0.45,y-r*1.1);ctx.fill()}}
     const sx=x+r*0.85,sy=y-r*0.3;ctx.strokeStyle='#6b4a2c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy+r*1.1);ctx.lineTo(sx,sy-r*0.4);ctx.stroke();
     ctx.fillStyle=big?'#ff6a5a':'#8cf0a0';ctx.beginPath();ctx.arc(sx,sy-r*0.5,5+Math.sin(t*4)*1.5,0,7);ctx.fill();
+  }else if(sk==='yeti'){
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x+4,y+r*0.8,r,r*0.4,0,0,7);ctx.fill();
+    ctx.fillStyle=W||'#e8eef4';for(let i=0;i<14;i++){const aa=i/14*6.283;ctx.beginPath();ctx.arc(x+Math.cos(aa)*r*0.75,y+Math.sin(aa)*r*0.75,r*0.38,0,7);ctx.fill()}ctx.beginPath();ctx.arc(x,y,r*0.85,0,7);ctx.fill();
+    ctx.fillStyle=W||'#cfdbe6';for(const sd of [-1,1]){ctx.beginPath();ctx.arc(x+Math.cos(a+sd*1.1)*r*1.05,y+Math.sin(a+sd*1.1)*r*1.05,r*0.42,0,7);ctx.fill()}
+    ctx.fillStyle='#7aa6c8';ctx.beginPath();ctx.ellipse(x+Math.cos(a)*r*0.35,y-r*0.15+Math.sin(a)*r*0.2,r*0.42,r*0.32,0,0,7);ctx.fill();
+    ctx.fillStyle='#1d3a52';ctx.fillRect(x+Math.cos(a)*r*0.35-r*0.22,y-r*0.25,r*0.12,r*0.1);ctx.fillRect(x+Math.cos(a)*r*0.35+r*0.1,y-r*0.25,r*0.12,r*0.1);
+    ctx.fillStyle='#bfe6ff';for(const dx of [-0.5,-0.15,0.2,0.55]){ctx.beginPath();ctx.moveTo(x+dx*r-4,y-r*0.7);ctx.lineTo(x+dx*r,y-r*1.25);ctx.lineTo(x+dx*r+4,y-r*0.7);ctx.fill()}
   }else if(sk==='mimic'){
     const o=Math.abs(Math.sin(t*6))*r*0.35;
     ctx.fillStyle=W||'#6b4a2c';ctx.fillRect(x-r,y-r*0.2,r*2,r*0.9);ctx.fillStyle='#8a6240';ctx.fillRect(x-r,y-r*0.6-o,r*2,r*0.45);
@@ -1614,7 +1769,7 @@ const mmss=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 
 /* ================= ЛЕТОПИСЬ: бестиарий, достижения, альбом ================= */
 const LORE_T={1:'Медленный и слабый. Хорош, чтобы набить руку.',2:'Ходят по бору группами. Не давайте себя окружить.',3:'Крепче и быстрее. Нужен топор посерьёзнее.',4:'Житель Мёртвого леса. Бьёт больно, держите зелья.',5:'Опасен вблизи. Лучше встречать луком издалека.',6:'Пепельный лес кишит ими. Без брони не соваться.',7:'Порождение Костяной пущи, слуга Царя Мора.'};
-const LORE_B={1:'Плодит слизней. Сперва мелочь, потом королеву.',2:'Бьёт по земле корнями. Отходите, когда он замахивается.',3:'Две головы, удар по площади. Не стойте вплотную.',4:'Резко бросается вперёд. Уходите рывком вбок.',5:'В воздухе берёт только лук, на земле только топор.',6:'Медленный, но удар оземь сносит половину здоровья.',7:'Владеет приёмами всех своих слуг.'};
+const LORE_B={9:'Хозяин Снежного края. Тяжёлые удары оземь — держите дистанцию.',1:'Плодит слизней. Сперва мелочь, потом королеву.',2:'Бьёт по земле корнями. Отходите, когда он замахивается.',3:'Две головы, удар по площади. Не стойте вплотную.',4:'Резко бросается вперёд. Уходите рывком вбок.',5:'В воздухе берёт только лук, на земле только топор.',6:'Медленный, но удар оземь сносит половину здоровья.',7:'Владеет приёмами всех своих слуг.'};
 function bestiary(){
   const E=[];
   for(const t in CFG.zombies)E.push({key:'t'+t,name:CFG.zombies[t].name,col:CFG.zombies[t].col,lore:LORE_T[t],grp:'Мертвецы'});
@@ -1623,7 +1778,7 @@ function bestiary(){
   E.push({key:'kspitter',name:'Плевун',col:ZTYPES.spitter.col,lore:'Плюётся издалека. Сокращайте расстояние рывком.',grp:'Мертвецы'});
   E.push({key:'mimic',name:'Мимик',col:'#8a6a3a',lore:'Притворяется сундуком в склепах. Внутри ценная вещь.',grp:'Склепы'});
   E.push({key:'guard',name:'Хранитель склепа',col:'#5a5f6a',lore:'Сторожит последний зал склепа.',grp:'Склепы'});
-  for(const b in CFG.bosses)E.push({key:'b'+b,name:CFG.bosses[b].name,col:CFG.zombies[zoneById(+b).ztier].col,lore:LORE_B[b],grp:'Боссы',boss:true});
+  for(const b in CFG.bosses)E.push({key:'b'+b,name:CFG.bosses[b].name,col:b==='9'?'#cfe6f4':CFG.zombies[zoneById(+b).ztier].col,lore:LORE_B[b],grp:'Боссы',boss:true});
   E.push({key:'final',name:'Владыка Мора',col:'#2a3a34',lore:'Хозяин портала. Победа над ним завершает поход.',grp:'Боссы',boss:true});
   return E;
 }
@@ -1833,6 +1988,7 @@ function update(dt){
     const dm=Math.hypot(mx,my);P.ddx=dm>0.1?mx/dm:Math.cos(P.face);P.ddy=dm>0.1?my/dm:Math.sin(P.face);sfx.dash();
   }
   dashReq=false;
+  const ox0=P.x,oy0=P.y;
   if(P.dash>0){P.dash-=dt;P.x+=P.ddx*DASH.speed*dt;P.y+=P.ddy*DASH.speed*dt;
     if(!DG&&mast('whirl')&&P.dhit){const room=()=>bagTotal()<bagCap(S.up.bag);
       for(const t of trees){if(!t.alive||P.dhit.has(t)||Math.abs(t.x-P.x)>60)continue;if(dist(t.x,t.y,P.x,P.y)<t.r+24&&S.up.axe>=CFG.trees[t.tier].axe&&room()){P.dhit.add(t);chop(t,axeDmg(S.up.axe)*gatherMul()*3)}}
@@ -1842,6 +1998,8 @@ function update(dt){
   else if(m>0.1){const s=speedOf(S.up.boots)*(swamp&&!rl('boots')?0.55:1)*Math.min(1,m)/m;P.x+=mx*s*dt;P.y+=my*s*dt;P.face=Math.atan2(my,mx)}
   for(const t of trees){if(!t.alive||Math.abs(t.x-P.x)>40)continue;const d=dist(P.x,P.y,t.x,t.y),min=t.r*0.55+12;if(d<min&&d>0){P.x=t.x+(P.x-t.x)/d*min;P.y=t.y+(P.y-t.y)/d*min}}
   for(const r of rocks){if(!r.alive||Math.abs(r.x-P.x)>40)continue;const d=dist(P.x,P.y,r.x,r.y),min=r.r+10;if(d<min&&d>0){P.x=r.x+(P.x-r.x)/d*min;P.y=r.y+(P.y-r.y)/d*min}}
+  if(!DG){for(const c of patches){if(c.kind!=='cliff'||Math.abs(c.x-P.x)>c.r+20)continue;const d=dist(P.x,P.y,c.x,c.y),min=c.r+10;if(d<min&&d>0){P.x=c.x+(P.x-c.x)/d*min;P.y=c.y+(P.y-c.y)/d*min}}
+    if(isSea(P.x,P.y)){if(!isSea(ox0,P.y))P.x=ox0;else if(!isSea(P.x,oy0))P.y=oy0;else{P.x=ox0;P.y=oy0}if(isSea(P.x,P.y)){const q=toLand(P.x,P.y);P.x=q.x;P.y=q.y}}}
   if(DG)updateDungeon(dt);
   else{P.x=Math.max(20,Math.min(W_SIZE-20,P.x));P.y=Math.max(20,Math.min(W_SIZE-20,P.y))}
   p.x=P.x;p.y=P.y;
@@ -1871,7 +2029,10 @@ function update(dt){
   for(const t of trees){t.shake=Math.max(0,t.shake-dt);if(!t.alive){t.t-=dt;if(t.t<=0&&dist(t.x,t.y,P.x,P.y)>60){t.alive=true;t.hp=CFG.trees[t.tier].hp}}}
   for(const r of rocks){r.shake=Math.max(0,r.shake-dt);if(!r.alive){r.t-=dt;if(r.t<=0&&dist(r.x,r.y,P.x,P.y)>60){r.alive=true;r.hp=rockMax(r)}}}
 
+  for(const z of zombies){z.lx=z.x;z.ly=z.y}
   updateZombies(dt);
+  if(!DG)for(const z of zombies){if(z.fly)continue;if(isSea(z.x,z.y)){z.x=z.lx;z.y=z.ly;if(isSea(z.x,z.y)){const q=toLand(z.x,z.y);z.x=q.x;z.y=q.y}}for(const c of patches){if(c.kind!=='cliff'||Math.abs(c.x-z.x)>c.r+z.r)continue;const d=dist(z.x,z.y,c.x,c.y),min=c.r+z.r*0.7;if(d<min&&d>0){z.x=c.x+(z.x-c.x)/d*min;z.y=c.y+(z.y-c.y)/d*min}}}
+  updWorld(dt);
   if(zombies.some(q=>q.despawn))zombies=zombies.filter(q=>!q.despawn);
   for(const z of zombies){if(!z.boss||z.final)continue;const L=lairOf(z);if(!L)continue;const d=dist(z.x,z.y,L.x,L.y),m=ARENA_R-z.r*0.6;if(d>m){z.x=L.x+(z.x-L.x)/d*m;z.y=L.y+(z.y-L.y)/d*m;z.charge=0}}
   updateMounds(dt);
@@ -2077,7 +2238,7 @@ function leashBack(z,dt){
   // обычные мертвецы не уходят далеко от своего места и своего кольца
   if(z.boss||z.guard||z.wave||z.dun!=null||z.hunt){z.canChase=true;return false}
   const hz=zoneAt(z.hx,z.hy)||zoneById(z.zone),pr=dist(P.x,P.y,CX,CY);
-  const inBand=!hz||(pr>Math.max(CFG.fenceR+40,hz.r0-80)&&pr<hz.r1+80);
+  const pz=zoneAt(P.x,P.y),inBand=!hz||(pr>CFG.fenceR+40&&(pz===hz||dist(P.x,P.y,z.hx,z.hy)<220));
   z.canChase=!DG&&inBand&&dist(P.x,P.y,z.hx,z.hy)<LEASH;
   if(z.owner&&typeof z.owner==='object'&&z.owner.boss){const L=lairOf(z.owner);if(L&&dist(P.x,P.y,L.x,L.y)>ARENA_R+10)z.canChase=false}
   const hd=dist(z.x,z.y,z.hx,z.hy);
@@ -2376,7 +2537,7 @@ function startNight(){
   const tier=Math.min(7,1+Math.floor((S.day-1)/4)), base=Math.round(Math.min(30,2+S.day)*(blood?BLOOD_MULT:1)), n=Math.max(0,Math.min(base,(blood?BLOOD_CAP:WAVE_CAP)-alive));
   for(let i=0;i<n;i++){
     const a=side?side[1]+(Math.random()-0.5)*1.1:Math.random()*6.28,r=620+Math.random()*120;
-    let x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;x=Math.max(60,Math.min(W_SIZE-60,x));y=Math.max(60,Math.min(W_SIZE-60,y));
+    let x=CX+Math.cos(a)*r,y=CY+Math.sin(a)*r;x=Math.max(60,Math.min(W_SIZE-60,x));y=Math.max(60,Math.min(W_SIZE-60,y));{const q=toLand(x,y);x=q.x;y=q.y}
     const tr=(Math.random()<0.3&&tier>1)?tier-1:tier;
     zombies.push(makeZombie(tr,x,y,true,0,pickKind(S.day,blood)));
   }
@@ -2447,17 +2608,9 @@ function render(now){
   const vx0=camX-60,vy0=camY-60,vx1=camX+VW/zoom+60,vy1=camY+VH/zoom+60;
   const vis=(x,y)=>x>vx0&&x<vx1&&y>vy0&&y<vy1;
 
-  // земля зонами
-  ctx.save();ctx.beginPath();ctx.rect(0,0,W_SIZE,W_SIZE);ctx.clip();
-  for(let i=CFG.zones.length-1;i>=0;i--){const z=CFG.zones[i];ctx.fillStyle=z.tint;ctx.beginPath();ctx.arc(CX,CY,z.r1,0,7);ctx.fill()}
-  ctx.fillStyle='#2a2a1f';ctx.beginPath();ctx.arc(CX,CY,CFG.zones[0].r0,0,7);ctx.fill();
-  ctx.fillStyle='#34301f';ctx.beginPath();ctx.arc(CX,CY,CFG.baseR,0,7);ctx.fill();
-  ctx.restore();
-  // границы зон
-  ctx.setLineDash([10,14]);ctx.lineWidth=2;ctx.strokeStyle='rgba(236,230,211,.08)';
-  for(const z of CFG.zones){ctx.beginPath();ctx.arc(CX,CY,z.r0,0,7);ctx.stroke()}
-  ctx.setLineDash([]);
-  for(const d of decor){if(!vis(d.x,d.y))continue;ctx.fillStyle=d.k<.5?'rgba(134,168,92,.12)':'rgba(0,0,0,.18)';ctx.fillRect(d.x,d.y,d.s,d.s)}
+  // земля: текстура материка + декор биомов
+  drawTerrain(vx0,vy0,vx1,vy1);
+  for(const d of decor){if(d.x<vx0||d.x>vx1||d.y<vy0||d.y>vy1)continue;drawDecor(d,now)}
   // пятна: болота и скалы
   for(const p of patches){if(!vis(p.x,p.y)&&!vis(p.x+p.r,p.y)&&!vis(p.x-p.r,p.y))continue;drawPatch(p,now)}
   // дороги — самый нижний слой построек
@@ -2473,14 +2626,10 @@ function render(now){
     for(const c of crypts)if(vis(c.x,c.y))st.push({sz:1,y:c.y,f:()=>drawCrypt(c,now)});
     for(const q of pois)if(vis(q.x,q.y)){const f=farmOf(q);st.push({sz:f&&!f.broken?2+(f.pal?1:0)+(f.tower?1:0):1,y:q.y,f:()=>drawPoi(q,now)})}
     st.sort((a,b)=>a.sz-b.sz||a.y-b.y);for(const o of st)o.f();}
-  // подписи зон
+  // подписи зон и биомов
   ctx.font='600 15px Rubik, sans-serif';ctx.textAlign='center';
-  for(const z of CFG.zones){
-    const lx=CX,ly=CY-(z.r0+20);
-    if(!vis(lx,ly))continue;
-    ctx.fillStyle='rgba(236,230,211,.35)';
-    ctx.fillText(`${z.name} · топор ${CFG.trees[z.tree].axe}+ · кирка ${CFG.rocks.pick[z.id]}+${zoneCleared(z)?' · очищена':''}`,lx,ly);
-  }
+  for(const L of (WG.labels||[])){if(!vis(L.x,L.y))continue;const z=L.zone?zoneById(L.zone):zoneById(zoneAt(L.x,L.y)?zoneAt(L.x,L.y).id:1);
+    ctx.fillStyle=L.side==='snow'?'rgba(20,50,80,.45)':'rgba(236,230,211,.38)';ctx.fillText(L.zone?`${z.name} · топор ${CFG.trees[z.tree].axe}+ · кирка ${CFG.rocks.pick[z.id]}+${zoneCleared(z)?' · очищена':''}`:L.name,L.x,L.y)}
 
   drawCamp(now);
 
@@ -2563,6 +2712,7 @@ function render(now){
   for(const f of floats){ctx.font=`700 ${f.sz||14}px Rubik, sans-serif`;ctx.globalAlpha=Math.min(1,f.t*1.5);ctx.fillStyle='#000';ctx.fillText(f.text,f.x+1,f.y+1);ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,f.y)}
   ctx.globalAlpha=1;
 
+  mistFog();
   // джойстик
   ctx.setTransform(DPR,0,0,DPR,0,0);
   if(joy){ctx.strokeStyle='rgba(236,230,211,.3)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(joy.ox,joy.oy,50,0,7);ctx.stroke();ctx.fillStyle='rgba(233,139,61,.6)';ctx.beginPath();ctx.arc(joy.ox+joy.dx*50,joy.oy+joy.dy*50,20,0,7);ctx.fill()}
@@ -2757,6 +2907,7 @@ function drawTree(t){
   if(t.hp<mx0){ctx.fillStyle='#000';ctx.fillRect(x-14,y+10,28,4);ctx.fillStyle='#e9c46a';ctx.fillRect(x-14,y+10,28*t.hp/mx0,4)}
 }
 function drawTreeBody(t,x,y,r){
+  if(t.skin){drawBiomeTree(t,x,y,r);return}
   if(t.tier===1){
     ctx.fillStyle='#e8e2d2';ctx.fillRect(x-3,y-8,6,14);ctx.fillStyle='#2d2a25';ctx.fillRect(x-3,y-2,6,2);
     ctx.fillStyle='#8fae5e';ctx.beginPath();ctx.arc(x,y-14,r*0.85,0,7);ctx.fill();ctx.fillStyle='#a9c472';ctx.beginPath();ctx.arc(x-4,y-17,r*0.45,0,7);ctx.fill();
@@ -2806,6 +2957,11 @@ function drawTreeBody(t,x,y,r){
 }
 function drawPatch(p,now){
   const rot=p.seed*3;
+  if(p.kind==='drift'){ctx.fillStyle='rgba(150,180,210,.35)';ctx.beginPath();ctx.ellipse(p.x+6,p.y+8,p.r,p.r*0.55,rot*0.2,0,7);ctx.fill();ctx.fillStyle='#f6faff';ctx.beginPath();ctx.ellipse(p.x,p.y,p.r,p.r*0.55,rot*0.2,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.9)';ctx.beginPath();ctx.ellipse(p.x-p.r*0.3,p.y-p.r*0.15,p.r*0.45,p.r*0.2,rot*0.2,0,7);ctx.fill();return}
+  if(p.kind==='spore'){const t=now/1000;for(let i=0;i<3;i++){const a=t*0.3+i*2.1+p.seed*9;ctx.fillStyle=`rgba(170,230,120,${0.13+0.05*Math.sin(t*2+i)})`;ctx.beginPath();ctx.arc(p.x+Math.cos(a)*p.r*0.25,p.y+Math.sin(a)*p.r*0.25,p.r*(0.7+0.1*i),0,7);ctx.fill()}
+    for(let i=0;i<8;i++){const a=t*0.7+i*0.8+p.seed*20,rr=p.r*((i*37%10)/10);ctx.fillStyle='rgba(220,255,170,.7)';ctx.fillRect(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr-((t*20+i*7)%20),2,2)}return}
+  if(p.kind==='cliff'){ctx.fillStyle='rgba(0,0,0,.38)';ctx.beginPath();ctx.ellipse(p.x+8,p.y+10,p.r,p.r*0.75,0,0,7);ctx.fill();ctx.fillStyle='#625e57';ctx.beginPath();for(let k=0;k<9;k++){const a=k/9*6.283,q=p.r*(0.8+((k*53+p.seed*97)%10)/40);ctx.lineTo(p.x+Math.cos(a)*q,p.y+Math.sin(a)*q*0.78)}ctx.fill();
+    ctx.fillStyle='#8a867d';ctx.beginPath();ctx.ellipse(p.x-p.r*0.2,p.y-p.r*0.22,p.r*0.5,p.r*0.32,0,0,7);ctx.fill();ctx.strokeStyle='#4a4741';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x-p.r*0.5,p.y+p.r*0.1);ctx.lineTo(p.x+p.r*0.1,p.y-p.r*0.05);ctx.lineTo(p.x+p.r*0.45,p.y+p.r*0.25);ctx.stroke();return}
   if(p.kind==='swamp'){
     ctx.fillStyle='#16282a';ctx.beginPath();ctx.ellipse(p.x,p.y,p.r,p.r*0.8,rot,0,7);ctx.fill();
     ctx.fillStyle='#1d3636';ctx.beginPath();ctx.ellipse(p.x+p.r*0.1,p.y-p.r*0.05,p.r*0.7,p.r*0.52,rot+0.4,0,7);ctx.fill();
@@ -3007,7 +3163,7 @@ function drawZombie(z){
   if(z.kind==='ram'){ctx.fillStyle='#4a3a2a';ctx.fillRect(z.x-z.r*0.8,z.y+bob-z.r*0.15,z.r*1.6,z.r*0.45);ctx.fillStyle='#8a8478';for(const s of [-1,1]){ctx.beginPath();ctx.moveTo(z.x+s*z.r*0.5,z.y+bob-z.r*0.7);ctx.lineTo(z.x+s*z.r*1.05,z.y+bob-z.r*1.05);ctx.lineTo(z.x+s*z.r*0.3,z.y+bob-z.r*0.85);ctx.fill()}}
   if(z.kind==='spitter'){ctx.fillStyle='#8fd16a';ctx.beginPath();ctx.arc(z.x+z.r*0.45,z.y+bob+z.r*0.25,z.r*0.45,0,7);ctx.fill();ctx.fillStyle='rgba(143,209,106,.7)';ctx.fillRect(z.x-1,z.y+bob+z.r*0.3,2,4+Math.sin(z.ph)*2)}
   if(z.kind==='runner'){ctx.strokeStyle='rgba(236,230,211,.25)';ctx.lineWidth=1.5;for(let k=0;k<3;k++){ctx.beginPath();ctx.moveTo(z.x-Math.cos(a)*(z.r+4+k*4),z.y+bob-Math.sin(a)*(z.r+4+k*4)+(k-1)*4);ctx.lineTo(z.x-Math.cos(a)*(z.r+10+k*4),z.y+bob-Math.sin(a)*(z.r+10+k*4)+(k-1)*4);ctx.stroke()}}
-  if(z.skin!=='slimelet')drawZGear(z,bob,a);
+  if(z.skin!=='slimelet'){if(z.biome)drawBiomeZ(z,bob);drawZGear(z,bob,a)}
   if(z.sun){const t=(performance.now()/700+z.ph)%1;ctx.fillStyle=`rgba(180,175,160,${0.35*(1-t)})`;ctx.beginPath();ctx.arc(z.x+Math.sin(z.ph)*3,z.y-z.r-t*16,3+t*5,0,7);ctx.fill()}
   if(z.wave){ctx.strokeStyle='rgba(207,75,63,.6)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(z.x,z.y+bob,z.r+3,0,7);ctx.stroke()}
   if(z.hp<z.max){ctx.fillStyle='#000';ctx.fillRect(z.x-14,z.y-z.r-9,28,4);ctx.fillStyle='#cf4b3f';ctx.fillRect(z.x-14,z.y-z.r-9,28*z.hp/z.max,4)}
@@ -3147,11 +3303,9 @@ wpnBtn.addEventListener('click',toggleWeapon);
 function drawMini(){
   mctx.setTransform(1,0,0,1,0,0);mctx.clearRect(0,0,240,240);
   mctx.save();mctx.beginPath();mctx.arc(120,120,120,0,7);mctx.clip();
-  const sc=240/(3150*2),ox=120-CX*sc,oy=120-CY*sc;
-  for(let i=CFG.zones.length-1;i>=0;i--){const z=CFG.zones[i];mctx.fillStyle=zoneCleared(z)?'#2e3d22':z.tint;mctx.beginPath();mctx.arc(120,120,z.r1*sc,0,7);mctx.fill();mctx.strokeStyle='rgba(236,230,211,.15)';mctx.stroke()}
-  mctx.fillStyle='#34301f';mctx.beginPath();mctx.arc(120,120,CFG.zones[0].r0*sc,0,7);mctx.fill();
-  mctx.strokeStyle='rgba(236,230,211,.25)';mctx.strokeRect(ox,oy,W_SIZE*sc,W_SIZE*sc);
-  for(const p of patches){mctx.fillStyle=p.kind==='swamp'?'#2a5550':'#77746b';mctx.beginPath();mctx.arc(ox+p.x*sc,oy+p.y*sc,Math.max(2,p.r*sc),0,7);mctx.fill()}
+  const sc=240/(WG.R*2.3),ox=120-CX*sc,oy=120-CY*sc;
+  mctx.fillStyle='#14324a';mctx.fillRect(0,0,240,240);
+  if(WG.tex)mctx.drawImage(WG.tex,ox,oy,WG.W*sc,WG.W*sc);
   for(const q of pois){const f=farmOf(q);if(f&&f.road){mctx.strokeStyle='rgba(180,150,100,.6)';mctx.lineWidth=1.5;mctx.beginPath();mctx.moveTo(120,120);mctx.lineTo(ox+q.x*sc,oy+q.y*sc);mctx.stroke()}}
   for(const q of pois){const f=farmOf(q);
     if(f){mctx.fillStyle=f.broken?'#cf4b3f':'#86a85c';mctx.beginPath();mctx.arc(ox+q.x*sc,oy+q.y*sc,3,0,7);mctx.fill();continue}
@@ -3188,7 +3342,7 @@ function bmEnsure(){
   document.getElementById('bmOut').addEventListener('click',()=>bmZoom(1/1.4));
   document.getElementById('bmMe').addEventListener('click',()=>{const me=bmMe();BM.cx=me.x;BM.cy=me.y;BM.s=Math.max(BM.s,bmFit()*2.2);bmClamp()});
 }
-const bmFit=()=>Math.min(BM.w,BM.h)/W_SIZE*1.02;
+const bmFit=()=>Math.min(BM.w,BM.h)/(WG.R*2.35||W_SIZE);
 function bmZoom(k){BM.s=Math.max(bmFit(),Math.min(bmFit()*8,BM.s*k));bmClamp()}
 function bmClamp(){const hw=BM.w/2/BM.s,hh=BM.h/2/BM.s;BM.cx=Math.max(Math.min(hw,W_SIZE/2),Math.min(W_SIZE-Math.min(hw,W_SIZE/2),BM.cx));BM.cy=Math.max(Math.min(hh,W_SIZE/2),Math.min(W_SIZE-Math.min(hh,W_SIZE/2),BM.cy))}
 const bmMe=()=>DG?{x:DG.ex,y:DG.ey}:{x:P.x,y:P.y};
@@ -3203,10 +3357,10 @@ function drawBigMap(now){
   c.setTransform(BM.d,0,0,BM.d,0,0);c.fillStyle='#070a08';c.fillRect(0,0,W,H);
   // кольца
   c.save();c.beginPath();c.rect(X(0),Y(0),W_SIZE*s,W_SIZE*s);c.clip();
-  for(let i=CFG.zones.length-1;i>=0;i--){const z=CFG.zones[i];c.fillStyle=zoneCleared(z)?'#25331d':z.tint;c.beginPath();c.arc(X(CX),Y(CY),z.r1*s,0,7);c.fill();c.strokeStyle='rgba(236,230,211,.18)';c.lineWidth=1;c.stroke()}
-  c.fillStyle='#2c2819';c.beginPath();c.arc(X(CX),Y(CY),CFG.zones[0].r0*s,0,7);c.fill();
+  c.fillStyle='#14324a';c.fillRect(X(0),Y(0),W_SIZE*s,W_SIZE*s);
+  if(WG.tex){c.imageSmoothingEnabled=true;c.drawImage(WG.tex,X(0),Y(0),W_SIZE*s,W_SIZE*s)}
   // болота и скалы
-  for(const p of patches){c.fillStyle=p.kind==='swamp'?'rgba(42,85,80,.85)':'rgba(119,116,107,.6)';c.beginPath();c.arc(X(p.x),Y(p.y),Math.max(2,p.r*s),0,7);c.fill()}
+  for(const p of patches){c.fillStyle=p.kind==='swamp'?'rgba(42,85,80,.85)':p.kind==='drift'?'rgba(255,255,255,.7)':p.kind==='spore'?'rgba(170,230,120,.4)':p.kind==='cliff'?'rgba(80,76,70,.9)':'rgba(119,116,107,.6)';c.beginPath();c.arc(X(p.x),Y(p.y),Math.max(2,p.r*s),0,7);c.fill()}
   // деревья и валуны
   const ts=Math.max(1,Math.min(4,s*9));
   for(const t of trees){if(!t.alive)continue;c.fillStyle=t.tier<=2?'rgba(110,150,80,.55)':t.tier<=4?'rgba(90,110,70,.5)':'rgba(120,110,100,.45)';c.fillRect(X(t.x)-ts/2,Y(t.y)-ts/2,ts,ts)}
@@ -3226,7 +3380,7 @@ function drawBigMap(now){
     if(sh==='sq')c.rect(sx-sz/2,sy-sz/2,sz,sz);else if(sh==='di'){c.moveTo(sx,sy-sz*0.75);c.lineTo(sx+sz*0.75,sy);c.lineTo(sx,sy+sz*0.75);c.lineTo(sx-sz*0.75,sy)}
     else if(sh==='house'){c.moveTo(sx-sz/2,sy+sz/2);c.lineTo(sx-sz/2,sy-sz*0.1);c.lineTo(sx,sy-sz*0.7);c.lineTo(sx+sz/2,sy-sz*0.1);c.lineTo(sx+sz/2,sy+sz/2)}
     else c.arc(sx,sy,sz/2,0,7);c.closePath();c.stroke();c.fill()};
-  for(const z of CFG.zones){const r=(z.r0+Math.min(z.r1,2200))/2,a=-Math.PI/2;lab(CX+Math.cos(a)*r,CY+Math.sin(a)*r,z.name,zoneCleared(z)?'#9fc07a':'rgba(236,230,211,.75)',`${CFG.trees[z.tree].name} · топор ${CFG.trees[z.tree].axe}+${zoneCleared(z)?' · очищена':''}`,true,0)}
+  for(const L of (WG.labels||[])){if(L.zone){const z=zoneById(L.zone);lab(L.x,L.y,z.name,zoneCleared(z)?'#9fc07a':'rgba(236,230,211,.85)',`${CFG.trees[z.tree].name} · топор ${CFG.trees[z.tree].axe}+${zoneCleared(z)?' · очищена':''}`,true,2.5)}else lab(L.x,L.y,L.name,L.side==='snow'?'#bfe6ff':'#fff2d8','',true,2.5)}
   lab(CX,CY+CFG.fenceR+16,'Лагерь','#e98b3d',HQ_SKINS[S.base],false,3);
   if(merchantHere()){icon(MERCH_POS.x,MERCH_POS.y,'#f4c766','ci',10);lab(MERCH_POS.x+40,MERCH_POS.y-24,'Торговец','#f4c766','до ночи',false,4)}
   for(const l of lairs){const dead=!!S.bosses[l.zone];icon(l.x,l.y,dead?'#86a85c':'#ff4a3a','di',11);lab(l.x,l.y+16,CFG.bosses[l.zone].name,dead?'#9fc07a':'#ff7a6a',dead?'повержен':'логово босса',false,2)}
@@ -3524,7 +3678,8 @@ function migrate(src){
   for(const sl in st.eq){const it=st.eq[sl];if(it&&!(SLOTS[it.slot]&&Array.isArray(it.mods)))st.eq[sl]=null}
   if(src&&ver<10&&src.crypts&&Object.keys(src.crypts).length){st.crypts={};st.keys+=Object.keys(src.crypts).length}
   st.meta.codex={};st.meta.ach={};if(src&&src.meta){for(const k in src.meta.codex||{})st.meta.codex[k]=+src.meta.codex[k]||0;for(const k in src.meta.ach||{})st.meta.ach[k]=+src.meta.ach[k]||1}
-  st.v=11;
+  if(src&&ver<12)st.worldV=0;
+  st.v=12;
   if(!st.itemSeq||st.itemSeq<2)st.itemSeq=1+Math.max(0,...st.inv.map(i=>i.id||0),...Object.values(st.eq).map(i=>i?i.id:0));
   if(src&&!(typeof src.seed==='number'&&src.seed>0))st.seed=4242; // старые сохранения — прежняя карта
   if(src&&ver<4){st.hq=hqMax(st.base);st.v=4}
@@ -3536,6 +3691,7 @@ function applyState(){
   zombies=[];spits=[];DG=null;refugees=[];roots=[];
   for(const w of S.waveZ){const z=makeZombie(w.t,+w.x||CX+700,+w.y||CY,true,0,ZTYPES[w.k]?w.k:undefined);if(w.f)z.farm=w.f;z.hp=Math.min(z.max,+w.hp||z.max);zombies.push(z)}
   for(const m of mounds){m.dead=!!S.mounds[m.id];m.hp=m.max;m.cd=3+Math.random()*5}
+  if(!(S.p.x>0)||isSea(S.p.x,S.p.y)||S.worldV!==12){S.p.x=CX;S.p.y=CY+40;S.waveZ=[];zombies=zombies.filter(z=>!z.wave);S.worldV=12}
   P.x=S.p.x;P.y=S.p.y;if(S.p.hp<=0)S.p.hp=maxHp(S.up.hp);lastNight=null;
   spawnZoneZombies();fixJobs();buildPeasants();
   for(const q of pois){const f=farmOf(q);if(f)f.hp=Math.max(0,Math.min(fHp(q,f),+f.hp||0))}
