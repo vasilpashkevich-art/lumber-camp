@@ -148,6 +148,11 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .rlc b{position:absolute;left:3px;top:1px;font-size:10px;color:#ece6d3}.rlc em{position:absolute;right:3px;bottom:1px;font-size:9px;font-style:normal;color:#f4c766}.rlc i{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(0,0,0,.6);display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:700;color:#fff}
 .perk-ico{display:block;margin-bottom:2px}
 @media (max-width:700px){#relicBar{top:auto;bottom:calc(210px + env(safe-area-inset-bottom,0px));left:auto;right:10px;transform:none;flex-direction:column}}
+#clsPick{position:fixed;inset:0;z-index:45;background:rgba(5,8,6,.92);display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto}
+.cls-wrap{max-width:1100px;width:100%;text-align:center}.cls-wrap h2{margin:0 0 6px;font-size:26px}.cls-wrap p{margin:0 0 16px;color:var(--muted);font-size:13px}
+#clsList{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.cls-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;background:#141a15;border:2px solid var(--cc);border-radius:14px;padding:14px;color:var(--ink);font:inherit;cursor:pointer}.cls-card:hover{background:#1b231c}
+.cls-card img{align-self:center;border-radius:10px;width:120px;height:120px}.cls-card b{font-size:22px}.cls-card small{color:var(--muted);margin-top:-6px}.cls-card span{font-size:12px;line-height:1.4}.cls-card em{display:block;font-style:normal;color:var(--muted);font-size:11px;font-weight:700}.cls-card i{align-self:stretch;margin-top:6px;text-align:center;font-style:normal;font-weight:800;background:var(--cc);color:#14110e;border-radius:8px;padding:9px}
 .note{font-size:12px;color:var(--muted);line-height:1.5;margin:0}
 .warn{color:var(--blood);font-size:12px;margin:0}
 textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;color:var(--ink);border:1px solid var(--line);border-radius:8px;font:12px ui-monospace,Menlo,monospace;padding:8px;resize:vertical}
@@ -239,6 +244,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
   <div class="bar" id="xpbar"><i></i></div>
 </div>
 <div id="relicBar" hidden></div>
+<div id="clsPick" hidden><div class="cls-wrap"><h2>Выберите класс героя</h2><p>Топор и рывок (Shift) есть у всех. Класс определяет второе оружие, способность (C) и свою ветку умений. Прокачка второго оружия сохраняется.</p><div id="clsList"></div></div></div>
 <div class="hud" id="clock"><b id="dayTxt">День 1</b><span id="phaseTxt">до ночи 2:30</span><span id="streakTxt" style="display:block">Серия ночей: 0</span></div>
 <div id="dawn" hidden><div class="dawn-card"><h3 id="dawnTitle">Рассвет</h3><ul id="dawnList"></ul><button class="gbtn" id="dawnOk" type="button">Дальше</button></div></div>
 <canvas class="hud" id="mini" width="240" height="240" title="Открыть карту (K)"></canvas>
@@ -464,9 +470,9 @@ function fmt1(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
 
 /* ================= STATE (сохраняется) ================= */
 const randSeed=()=>1+Math.floor(Math.random()*2147483646);
-function newState(){return {v:12,worldV:12,rested:0,cryptRuns:0,setPity:0,meta:{ng:0,relics:{},wins:0,relicPend:0,comp31:0,relicFix32:0,codex:{},ach:{},best:{day:1,zone:1,axe:1,bow:0,base:1,fence:0,tower:0},life:{kills:0,chopped:0,mined:0}},inv:[],eq:{weapon:null,head:null,armor:null,legs:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
+function newState(){return {v:12,worldV:12,cls:null,rested:0,cryptRuns:0,setPity:0,meta:{ng:0,relics:{},wins:0,relicPend:0,comp31:0,relicFix32:0,codex:{},ach:{},best:{day:1,zone:1,axe:1,bow:0,base:1,fence:0,tower:0},life:{kills:0,chopped:0,mined:0}},inv:[],eq:{weapon:null,head:null,armor:null,legs:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
   fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
-  day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0,fog:false},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0,crypts:0},p:{x:CX,y:CY+40,hp:10}};}
+  day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0,fog:false},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0,crypts:0},p:{x:-1,y:-1,hp:10}};}
 function merge(def,src){
   if(!src||typeof src!=='object')return def;
   for(const k in def){
@@ -763,6 +769,7 @@ addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='TEXTAREA')return;
   if(e.code==='KeyK'||(e.code==='Escape'&&mapOpen)){if(e.code==='Escape'||!S.over)toggleMap(e.code==='Escape'?false:undefined);e.preventDefault();return}
   if(mapOpen)return;
+  if(e.code==='KeyC'){useAbility();return}
   {const rk=RELIC_ACT.find(q=>RELIC2[q].key===e.code||(e.code==='Numpad'+RELIC2[q].kl));if(rk){if(rl(rk))useRelic(rk);return}}
   if(e.code==='KeyB'){openMenuHere();e.preventDefault();return}
   if(e.code==='KeyM'){setSound(!Snd.on);return}
@@ -1005,7 +1012,7 @@ function pickItem(d){
 // урон героя с учётом вещей; возвращает [урон, крит]
 function heroHit(base){
   let d=base*(1+gear('dmg')/100)*(1+0.10*rl('steel'))*(hasUq('berserk')&&S.p.hp<maxHp(S.up.hp)*0.5?1.3:1);
-  const crit=Math.random()<gear('crit')/100;if(crit)d*=2;
+  const crit=Math.random()<(gear('crit')+6*pr('eagle'))/100;if(crit)d*=2;
   return [d,crit];
 }
 function maybeBurn(z,d){
@@ -1053,7 +1060,7 @@ function roomPieces(r){const {x,y,w,h}=r;
   if(r.shape==='round')return [{c:1,x:x+w/2,y:y+h/2,r:w/2}];
   if(r.shape==='oct')return [{o:1,x:x+w/2,y:y+h/2,hw:w/2,hh:h/2,k:w*0.29}];
   if(r.shape==='cross')return [{x:x+w/3,y,w:w/3,h},{x,y:y+h/3,w,h:h/3}];
-  if(r.shape==='L')return [{x,y,w:w*0.45,h},{x:x+w*0.45,y:y+h*0.35,w:w*0.55,h:h*0.65}];
+  if(r.shape==='L')return [{x,y,w:w*0.45,h},{x:x+w*0.45-40,y:y+h*0.35,w:w*0.55+40,h:h*0.65}]; // части перекрываются, чтобы на стыке не было щели
   return [{x,y,w,h}]}
 function inPiece(p,x,y,rad){if(p.c)return dist(x,y,p.x,p.y)<=p.r-rad;if(p.o){const u=Math.abs(x-p.x),v=Math.abs(y-p.y);return u<=p.hw-rad&&v<=p.hh-rad&&u+v<=p.hw+p.hh-p.k-rad*1.42}
   return x>=p.x+rad&&x<=p.x+p.w-rad&&y>=p.y+rad&&y<=p.y+p.h-rad}
@@ -1256,7 +1263,7 @@ const RELIC2 = {
   totem:  {name:'Тотем предков',     max:2, key:'Digit3', kl:'3', act:true, cd:r=>r>1?30:40, desc:r=>`Ставит тотем, который ${r>1?40:25} с сам стреляет по нечисти рядом`},
   mirror: {name:'Зеркало возврата',  max:2, key:'Digit4', kl:'4', act:true, cd:r=>r>1?50:90, desc:r=>`Мгновенно переносит в лагерь (не из склепа). Перезарядка ${r>1?50:90} с`},
   storm:  {name:'Венец бури',        max:2, desc:r=>`Каждые ${r>1?3.5:5} с молния бьёт до ${r>1?5:3} ближайших врагов цепью`},
-  twin:   {name:'Двойная тетива',    max:2, desc:r=>`Лук выпускает две стрелы сразу: вторая летит в соседнего врага, урон ${r>1?100:60}%`},
+  twin:   {name:'Двойная тетива',    max:2, desc:r=>`Второе оружие бьёт дважды: второй удар — по соседнему врагу, урон ${r>1?100:60}%`},
   boots:  {name:'Сапоги-скороходы',  max:2, desc:r=>`+${r>1?25:15}% к скорости, болото не замедляет, два рывка подряд`},
   phoenix:{name:'Перо феникса',      max:2, desc:r=>`Раз в день спасает от гибели: воскрешение с ${r>1?100:50}% здоровья и огненный взрыв вокруг`},
   wolf:   {name:'Дух волка',         max:2, desc:r=>`Призрачный волк бегает рядом и рвёт нечисть. Урон ×${r>1?1.8:1} от удара в секунду`},
@@ -1289,7 +1296,7 @@ const relicName=k=>(RELIC2[k]||RELICS[k]).name;
 const relicDesc=(k,r)=>{const R=RELIC2[k];return R?R.desc(Math.max(1,r)):RELICS[k].desc};
 const ownedRelics=()=>Object.keys(S.meta.relics).filter(k=>rl(k)>0);
 // --- состояние умений
-const RX={cd:{},hammers:[],totems:[],bolts:[],rings:[],wolf:null,stormT:2,sackT:0};
+const RX={fb:[],whirl:0,volley:0,cd:{},hammers:[],totems:[],bolts:[],rings:[],wolf:null,stormT:2,sackT:0};
 const relDmg=m=>heroHit(Math.max(axeDmg(S.up.axe),S.bow?bowDmg(S.bow):0)*(1+0.12*pr('str'))*atkMul()*m)[0];
 function useRelic(k){
   const R=RELIC2[k],r=rl(k);if(!R||!R.act||!r||S.over)return;
@@ -1341,10 +1348,10 @@ function updRelics(dt){
       toast(`Котомка улетела на склад: +${S.bag} древесины${S.bagStone?', +'+S.bagStone+' камня':''}${S.bagIron?', +'+S.bagIron+' железа':''}`,'good');burst(P.x,P.y,20,['#c9a06a','#f4c766'],220,0.6,3);S.bag=0;S.bagStone=0;S.bagIron=0;save()}}
 }
 // второй выстрел двойной тетивы
-function twinShot(t,d,cr){const r=rl('twin');if(!r||t.k!=='z')return;
-  let o=null,bd=bowRange(S.bow);for(const z of zombies){if(z===t.o)continue;const dd=dist(z.x,z.y,P.x,P.y);if(dd<bd&&canHit(z,'ranged')){bd=dd;o=z}}
+function twinShot(t,d,cr){const r=rl('twin');if(!r||t.k!=='z')return;const mel=cls()==='warrior';
+  let o=null,bd=mel?90:bowRange(S.bow);for(const z of zombies){if(z===t.o)continue;const dd=mel?dist(z.x,z.y,t.o.x,t.o.y):dist(z.x,z.y,P.x,P.y);if(dd<bd&&canHit(z,mel?'melee':'ranged')){bd=dd;o=z}}if(mel&&!o)return;
   const tg=o||t.o;tracers.push({x1:P.x,y1:P.y,x2:tg.x,y2:tg.y,t:0.12,lvl:Math.min(6,1+Math.floor(S.bow/2))});
-  if(zombies.includes(tg))hitEnemy({k:'z',o:tg},d*(r>1?1:0.6),'ranged',cr)}
+  if(zombies.includes(tg))hitEnemy({k:'z',o:tg},d*(r>1?1:0.6),mel?'melee':'ranged',cr)}
 // феникс: возвращает true, если спас
 function phoenixSave(){
   const r=rl('phoenix');if(!r||S.phoenixDay===S.day)return false;
@@ -1375,11 +1382,13 @@ function drawRelicFx(now){
 // панель реликвий на экране
 let relicBarSig='';
 function updRelicBar(){
-  const el=document.getElementById('relicBar');if(!el)return;const own=ownedRelics();
-  const sig=own.map(k=>k+rl(k)).join(',');
-  if(sig!==relicBarSig){relicBarSig=sig;el.hidden=!own.length;
+  const el=document.getElementById('relicBar');if(!el)return;const own=ownedRelics(),cl=cls();
+  const sig=(cl||'')+'|'+own.map(k=>k+rl(k)).join(',');
+  if(sig!==relicBarSig){relicBarSig=sig;el.hidden=!own.length&&!cl;
     const ord=own.sort((a,b)=>(RELIC2[b]&&RELIC2[b].act?2:RELIC2[b]?1:0)-(RELIC2[a]&&RELIC2[a].act?2:RELIC2[a]?1:0));
-    el.innerHTML=ord.map(k=>{const A=RELIC2[k]&&RELIC2[k].act;return `<button type="button" class="rlc${A?' act':''}${RELIC2[k]?'':' old'}" data-relic-use="${k}" title="${relicName(k)} (ранг ${rl(k)}): ${relicDesc(k,rl(k))}">${relicSvg(k,A?28:22)}${A?`<b>${RELIC2[k].kl}</b><i data-cd="${k}"></i>`:''}${rl(k)>1?`<em>${rl(k)}</em>`:''}</button>`}).join('')}
+    el.innerHTML=ord.map(k=>{const A=RELIC2[k]&&RELIC2[k].act;return `<button type="button" class="rlc${A?' act':''}${RELIC2[k]?'':' old'}" data-relic-use="${k}" title="${relicName(k)} (ранг ${rl(k)}): ${relicDesc(k,rl(k))}">${relicSvg(k,A?28:22)}${A?`<b>${RELIC2[k].kl}</b><i data-cd="${k}"></i>`:''}${rl(k)>1?`<em>${rl(k)}</em>`:''}</button>`}).join('');
+    if(cl)el.innerHTML=`<button type="button" class="rlc act" data-relic-use="_cls" title="${CLASSES[cl].abil}: ${CLASSES[cl].abilD}" style="border-color:${CLASSES[cl].col}"><svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">${ABIL_ICO[cl]}</svg><b>C</b><i data-cd="_cls"></i></button>`+el.innerHTML}
+  if(cl){const i=el.querySelector('[data-cd="_cls"]');if(i){const c2=P.abCd||0;i.style.height=(c2>0?100*c2/CLASSES[cl].cd:0)+'%';i.textContent=c2>0?Math.ceil(c2):''}}
   for(const k of RELIC_ACT){const i=el.querySelector(`[data-cd="${k}"]`);if(!i)continue;const c=RX.cd[k]||0,m=RELIC2[k].cd(rl(k));i.style.height=(c>0?100*c/m:0)+'%';i.textContent=c>0?Math.ceil(c):''}
 }
 function summonFinal(){
@@ -1505,8 +1514,8 @@ function heroStats(){
   return [
     ['Уровень героя',`${S.lvl} · опыт ${Math.floor(S.xp)}/${xpNeed(S.lvl)}`],
     ['Урон топором',`${f1(axeHit)} за удар · ${f1(axeHit*critMul/axeCdv)} в секунду${buff}`],
-    ['Урон луком',S.bow?`${f1(bowHit)} за выстрел · ${f1(bowHit*critMul/bowCdv)} в секунду · дальность ${bowRange(S.bow)}`:'лука нет'],
-    ['Скорость удара',`топор раз в ${f1(axeCdv)} с${S.bow?` · лук раз в ${f1(bowCdv)} с`:''}${gear('spd')?` (+${gear('spd')}%)`:''}`],
+    [`Урон: ${secName().toLowerCase()}`,S.bow?`${f1(bowHit)} за выстрел · ${f1(bowHit*critMul/bowCdv)} в секунду · дальность ${bowRange(S.bow)}`:'лука нет'],
+    ['Скорость удара',`топор раз в ${f1(axeCdv)} с${S.bow?` · ${secName().toLowerCase()} раз в ${f1(bowCdv)} с`:''}${gear('spd')?` (+${gear('spd')}%)`:''}`],
     ['Шанс крита (×2)',`${crit}%`],
     ['Поджог',hasUq('flame')?'каждый удар':`${Math.min(100,gear('burn'))}% ударов`],
     ['Здоровье',`${Math.ceil(S.p.hp)} / ${maxHp(S.up.hp)}`],
@@ -1845,14 +1854,14 @@ const MASTERY={
     {at:12,id:'whirl',    name:'Вихрь',     desc:'Рывок сквозь деревья и валуны бьёт их тройным ударом'}],
   'Воин':[
     {at:4, id:'rage',     name:'Раж',        desc:'Каждое убийство: +6% скорости удара на 4 с, до 5 раз подряд'},
-    {at:8, id:'cleave',   name:'Рассечение', desc:'Топор задевает врагов рядом с целью (половина урона), каждая 4-я стрела бьёт критом'},
+    {at:8, id:'cleave',   name:'Рассечение', desc:'Топор задевает врагов рядом с целью (половина урона), каждый 4-й удар вторым оружием — крит'},
     {at:12,id:'exec',     name:'Казнь',      desc:'Обычный мертвец, у которого осталось меньше 15% здоровья, гибнет от удара. По боссам при меньше 30% здоровья +25% урона'}],
   'Строитель':[
     {at:4, id:'watch',    name:'Сторожа',        desc:'Без вас лагерь работает до 12 часов (было 8) и на 70% (было 50%)'},
     {at:8, id:'repair',   name:'Починка',        desc:'Днём забор, ратуша и хутора сами чинятся на 1% в секунду'},
     {at:12,id:'fire',     name:'Огненные стрелы',desc:'Башни лагеря и хуторов поджигают врагов'}],
 };
-const brPts=br=>Object.keys(PERKS).filter(k=>PERKS[k].br===br).reduce((s,k)=>s+pr(k),0);
+const brPts=br=>Object.keys(PERKS).filter(k=>PERKS[k].br===br&&(!PERKS[k].cls||PERKS[k].cls===(S.cls||null))).reduce((s,k)=>s+pr(k),0);
 const mastInfo=id=>{for(const br in MASTERY)for(const m of MASTERY[br])if(m.id===id)return [br,m];return [null,null]};
 const mast=id=>{const [br,m]=mastInfo(id);return !!m&&brPts(br)>=m.at};
 const COMBOS=[
@@ -1929,7 +1938,7 @@ const ACH=[
   {id:'master', name:'Мастер',            d:'Открыть третье мастерство в любой ветке', p:()=>[Math.max(...Object.keys(MASTERY).map(brPts)),12], r:{sh:20}},
   {id:'combo',  name:'Сочетание',         d:'Собрать любое сочетание',           p:()=>[COMBOS.some(c=>c.ok())?1:0,1], r:{sh:15}},
   {id:'axe20',  name:'Пламенный топор',   d:'Топор 20-го уровня',                p:()=>[S.up.axe,20],            r:{sh:15}},
-  {id:'bow12',  name:'Драконий лук',      d:'Лук 12-го уровня',                  p:()=>[S.bow,12],               r:{sh:15}},
+  {id:'bow12',  name:'Мастер оружия',     d:'Второе оружие 12-го уровня',                  p:()=>[S.bow,12],               r:{sh:15}},
   {id:'far7',   name:'На краю света',     d:'Дойти до Костяной пущи',            p:()=>[S.meta.best.zone,7],     r:{sh:10}},
   {id:'codex',  name:'Летописец',         d:'Заполнить весь бестиарий',          p:()=>[bestiary().filter(e=>S.meta.codex[e.key]).length,bestiary().length], r:{sh:30}},
   {id:'winner', name:'Победитель Мора',   d:'Одолеть Владыку Мора',              p:()=>[S.final.killed?1:0,1],   r:{sh:50}},
@@ -1962,7 +1971,7 @@ function logRows(){
   R.push({note:'<b>Альбом обликов</b> · открываются навсегда, как только вы их достигли'});
   const al=[];
   AXE_SKINS.forEach((k,i)=>al.push({n:'Топор: '+k.name,ok:M.best.axe>=k.from,ico:skinIcon('axe',i),h:`топор ур. ${k.from}`}));
-  BOW_SKINS.forEach((k,i)=>al.push({n:'Лук: '+k.name,ok:M.best.bow>=k.from,ico:skinIcon('bow',i),h:`лук ур. ${k.from}`}));
+  secSkins().forEach((k,i)=>al.push({n:secName()+': '+k.name,ok:M.best.bow>=k.from,ico:skinIcon(secKind(),i),h:`${secName().toLowerCase()} ур. ${k.from}`}));
   HQ_SKINS.forEach((n,i)=>{if(i)al.push({n:'Лагерь: '+n,ok:M.best.base>=i,h:`главный дом ур. ${i}`})});
   FENCE_SKINS.forEach((n,i)=>{if(i)al.push({n:'Забор: '+n,ok:fenceSkin(M.best.fence)>=i&&M.best.fence>0,h:`забор ур. ${i*2-1}`})});
   TOWER_SKINS.forEach((n,i)=>{if(i)al.push({n:'Башня: '+n,ok:M.best.tower>=i,h:`башня ур. ${i}`})});
@@ -1978,7 +1987,7 @@ function gainXp(n){
 }
 let perkOffer=[];
 function rollPerks(){
-  const open=Object.keys(PERKS).filter(k=>pr(k)<PERKS[k].max);
+  const open=Object.keys(PERKS).filter(k=>pr(k)<PERKS[k].max&&perkAvail(k));
   const byBr={};for(const k of open)(byBr[PERKS[k].br]=byBr[PERKS[k].br]||[]).push(k);
   const pick=[];for(const b in byBr){const a=byBr[b];pick.push(a[Math.floor(Math.random()*a.length)])}
   while(pick.length<3&&pick.length<open.length){const k=open[Math.floor(Math.random()*open.length)];if(!pick.includes(k))pick.push(k)}
@@ -1990,8 +1999,8 @@ function showPerks(){
   if(!perkOffer.length){S.perkPend=0;return}
   document.getElementById('perkTitle').textContent=`Уровень ${S.lvl-S.perkPend+1}: выберите умение`;
   const box=document.getElementById('perkList');box.textContent='';
-  for(const k of perkOffer){const P_=PERKS[k],b=document.createElement('button');b.type='button';b.className='perk';b.dataset.perk=k;b.style.setProperty('--bc',BR_COL[P_.br]);
-    const nm=nextMast(P_.br);b.innerHTML=`<small>${P_.br}</small><b>${P_.name}</b><span>${P_.desc}</span><em>ранг ${pr(k)} → ${pr(k)+1} из ${P_.max}</em>${nm?`<em style="color:var(--muted)">мастерство «${nm.name}»: ещё ${nm.at-brPts(P_.br)}</em>`:''}`;box.append(b)}
+  for(const k of perkOffer){const P_=PERKS[k],b=document.createElement('button');b.type='button';b.className='perk';b.dataset.perk=k;b.style.setProperty('--bc',BR_COL[brLabel(P_.br)]);
+    const nm=nextMast(P_.br);b.innerHTML=`<small>${brLabel(P_.br)}</small><b>${perkName(k)}</b><span>${perkDesc(k)}</span><em>ранг ${pr(k)} → ${pr(k)+1} из ${P_.max}</em>${nm?`<em style="color:var(--muted)">мастерство «${nm.name}»: ещё ${nm.at-brPts(P_.br)}</em>`:''}`;box.append(b)}
   document.getElementById('perks').hidden=false;keys.clear();actHeld=false;
 }
 document.getElementById('perkList').addEventListener('click',e=>{
@@ -2007,7 +2016,7 @@ document.getElementById('perkList').addEventListener('click',e=>{
   const bp0=brPts(PERKS[k].br);S.perks[k]=pr(k)+1;S.perkPend--;checkMastery(PERKS[k].br,bp0);
   if(k==='vit')S.p.hp+=8;
   if(k==='mason'){S.fence.hp+=fenceHp(S.fence.lvl)-oldF;S.hq+=hqMax(S.base)-oldH}
-  sfx.buy();toast(`Умение: ${PERKS[k].name} (ранг ${S.perks[k]})`,'good');save();
+  sfx.buy();toast(`Умение: ${perkName(k)} (ранг ${S.perks[k]})`,'good');save();
   document.getElementById('perks').hidden=true;
   if(S.perkPend>0)setTimeout(showPerks,150);
 });
@@ -2130,7 +2139,7 @@ function update(dt){
   P.fell=Math.max(0,(P.fell||0)-dt);if(!DG){updateRoots(dt);updateRefugees(dt)}
   if(S.rested>0){S.rested=Math.max(0,S.rested-dt);if(S.rested===0)toast('Бонус отдыха закончился','', 'rest')}
   if(P.rageT>0){P.rageT-=dt;if(P.rageT<=0)P.rage=0}
-  updFx(dt);updAch(dt);updRelics(dt);
+  updFx(dt);updAch(dt);updRelics(dt);updAbility(dt);
   if(mast('repair')&&!phase().night){const kk=0.01*dt;if(S.fence.lvl)S.fence.hp=Math.min(fenceHp(S.fence.lvl),S.fence.hp+fenceHp(S.fence.lvl)*kk);S.hq=Math.min(hqMax(S.base),S.hq+hqMax(S.base)*kk);for(const q of pois){const f=farmOf(q);if(f&&!f.broken)f.hp=Math.min(fHp(q,f),f.hp+fHp(q,f)*kk)}}
 
   // --- лагерь: сдача и лечение
@@ -2219,7 +2228,7 @@ function specialTarget(){
   return null;
 }
 function findTarget(){
-  const bow=S.weapon==='bow'&&S.bow>0, reach=bow?bowRange(S.bow):0;
+  const bow=S.weapon==='bow'&&S.bow>0&&cls()!=='warrior', reach=bow?bowRange(S.bow):0;
   let best=null,bd=1e9;
   for(const z of zombies){const d=dist(P.x,P.y,z.x,z.y);if(d<(bow?reach:z.r+38)&&d<bd){bd=d;best={k:'z',o:z,ok:true}}}
   for(const m of mounds){if(m.dead)continue;const d=dist(P.x,P.y,m.x,m.y);if(d<(bow?reach:44)&&d<bd){bd=d;best={k:'m',o:m,ok:true}}}
@@ -2242,7 +2251,7 @@ function findTarget(){
 const promptEl=document.getElementById('prompt');
 function showPrompt(t){
   if(t&&(!t.ok||t.k==='f'||t.k==='x')){if(promptEl.textContent!==t.msg)promptEl.textContent=t.msg;promptEl.hidden=false}else promptEl.hidden=true;
-  const lbl=t&&(t.k==='f'||t.k==='x')?(t.lbl||'Рубить'):!t?(S.weapon==='bow'&&S.bow>0?'Стрелять':'Рубить'):(t.k==='z'||t.k==='m')?(S.weapon==='bow'&&S.bow>0?'Стрелять':'Бить'):t.k==='r'?'Копать':'Рубить';
+  const lbl=t&&(t.k==='f'||t.k==='x')?(t.lbl||'Рубить'):!t?(S.weapon==='bow'&&S.bow>0&&cls()!=='warrior'?'Стрелять':'Рубить'):(t.k==='z'||t.k==='m')?(S.weapon==='bow'&&S.bow>0&&cls()!=='warrior'?'Стрелять':'Бить'):t.k==='r'?'Копать':'Рубить';
   if(actBtn.textContent!==lbl)actBtn.textContent=lbl;
 }
 const gatherMul=()=>(1+0.15*pr('hand'))*(1+gear('gather')/100)*(1+0.15*rl('gather'))*(restOn()?REST.gather:1);
@@ -2251,10 +2260,7 @@ function doAction(t){
   if(t.k==='x'){P.cd=0.5;t.fn();return}
   P.face=Math.atan2(t.o.y-P.y,t.o.x-P.x);
   if(t.k==='z'||t.k==='m'){
-    if(S.weapon==='bow'&&S.bow>0){
-      P.cd=bowCd(S.bow)/(1+gear('spd')/100);P.shot=0.2;sfx.shoot();
-      tracers.push({x1:P.x,y1:P.y,x2:t.o.x,y2:t.o.y,t:0.12,lvl:Math.min(6,1+Math.floor(S.bow/2))});
-      {let [d,cr]=heroHit(bowDmg(S.bow)*(1+0.12*pr('str'))*atkMul()*(1+0.2*S.forgeUp.bow));if(mast('cleave')&&(P.arrowN=(P.arrowN||0)+1)%4===0&&!cr){d*=2;cr=true}hitEnemy(t,d,'ranged',cr);twinShot(t,d,cr)}
+    if(S.weapon==='bow'&&S.bow>0){secAttack(t)
     }else{P.cd=axeCd(S.up.axe)/(1+gear('spd')/100);P.swing=0.18;sfx.hit();const [d,cr]=heroHit(axeDmg(S.up.axe)*(1+0.12*pr('str'))*atkMul()*(1+0.2*S.forgeUp.melee));hitEnemy(t,d,'melee',cr)}
     if(P.rage)P.cd/=1+0.06*P.rage;
   }else{
@@ -2356,7 +2362,7 @@ function hitMound(m,dmg){
     toast('Могильник разрушен','good');checkZone(m.zone);save();
   }
 }
-function damagePlayer(n){if(P.inv>0){addFloat(P.x,P.y-24,'уклон','#9fc3d6');return}n*=1-Math.min(0.6,gear('armor')/100);S.p.hp-=n;P.hurt=0.2;sfx.hurt();shake(3.5,0.18);addFloat(P.x,P.y-24,'−'+Math.round(n),'#cf4b3f')}
+function damagePlayer(n){if(P.inv>0){addFloat(P.x,P.y-24,'уклон','#9fc3d6');return}n*=1-Math.min(0.6,gear('armor')/100);n*=1-0.06*pr('mshield');S.p.hp-=n;P.hurt=0.2;sfx.hurt();shake(3.5,0.18);addFloat(P.x,P.y-24,'−'+Math.round(n),'#cf4b3f')}
 
 function leashBack(z,dt){
   // обычные мертвецы не уходят далеко от своего места и своего кольца
@@ -2800,13 +2806,14 @@ function render(now){
 
   camX0=vx0;camX1=vx1;camY0=vy0;camY1=vy1;
   for(const q of pois){const f=farmOf(q);if(f&&f.road)drawCart(q,now)}
-  drawRelicFx(now);
+  drawRelicFx(now);drawAbilityFx(now);
   // плевки
   drawRoots();
   for(const sp of spits){if(sp.col){ctx.fillStyle=sp.col;ctx.globalAlpha=0.35;ctx.beginPath();ctx.arc(sp.x-sp.vx*0.03,sp.y-sp.vy*0.03,(sp.r||5)+3,0,7);ctx.fill();ctx.globalAlpha=1;ctx.beginPath();ctx.arc(sp.x,sp.y,sp.r||5,0,7);ctx.fill();continue}ctx.fillStyle='rgba(120,200,90,.35)';ctx.beginPath();ctx.arc(sp.x-sp.vx*0.03,sp.y-sp.vy*0.03,6,0,7);ctx.fill();ctx.fillStyle='#8fd16a';ctx.beginPath();ctx.arc(sp.x,sp.y,4.5,0,7);ctx.fill()}
   // трассеры башен
   ctx.lineWidth=2;
   for(const tr of tracers){
+    if(tr.fire){const k=1-tr.t/(tr.mx||0.18),hx=tr.x1+(tr.x2-tr.x1)*k,hy=tr.y1+(tr.y2-tr.y1)*k,g=ctx.createRadialGradient(hx,hy,1,hx,hy,10);g.addColorStop(0,'rgba(255,240,160,1)');g.addColorStop(0.5,'rgba(255,140,40,.9)');g.addColorStop(1,'rgba(255,60,20,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(hx,hy,10,0,7);ctx.fill();continue}
     const k=1-tr.t/0.12,a=Math.atan2(tr.y2-tr.y1,tr.x2-tr.x1);
     const hx=tr.x1+(tr.x2-tr.x1)*Math.min(1,k*1.4),hy=tr.y1+(tr.y2-tr.y1)*Math.min(1,k*1.4);
     const fire=tr.lvl>=6,len=14;
@@ -3352,31 +3359,144 @@ const skinIcoCache={};
 function skinIcon(kind,i){
   const key=kind+i;if(skinIcoCache[key])return skinIcoCache[key];
   try{const cv=document.createElement('canvas');cv.width=cv.height=44;const c=cv.getContext('2d');if(!c||!cv.toDataURL)return '';
-    if(kind==='axe')drawAxeSkin(c,AXE_SKINS[i],8,36,-0.8,26,0);else drawBowSkin(c,BOW_SKINS[i],26,22,0,0,0,true);
+    if(kind==='axe')drawAxeSkin(c,AXE_SKINS[i],8,36,-0.8,26,0);else if(kind==='ham')drawHammerSkin(c,HAM_SKINS[i],8,36,-0.8,18,0);else if(kind==='stf')drawStaffSkin(c,STF_SKINS[i],6,38,-0.8,22,0);else drawBowSkin(c,BOW_SKINS[i],26,22,0,0,0,true);
     return skinIcoCache[key]=cv.toDataURL();}catch(e){return ''}
 }
 function skinNote(arr,l){const i=skinTier(arr,l),n=arr[i+1];return ` · облик «${arr[i].name}»${n?`, следующий «${n.name}» на ур. ${n.from}`:''}`}
+/* ================= КЛАССЫ ГЕРОЯ ================= */
+const CLASSES={
+  warrior:{name:'Воин',  br:'Варвар',  col:'#d9784a',body:'#a8452a',weap:'Молот', abil:'Вихрь',        cd:8,  abilD:'крутится с оружием и бьёт всех вокруг',weapD:'тяжёлый удар по площади перед собой',set:'Доспех Варвара'},
+  mage:   {name:'Маг',   br:'Чародей', col:'#8a7aff',body:'#5a3a8a',weap:'Посох', abil:'Огненный залп',cd:10, abilD:'3 огненных шара веером, поджигают',weapD:'стреляет маленьким огненным шаром, может поджечь',set:'Облачение Чародея'},
+  archer: {name:'Лучник',br:'Следопыт',col:'#5fc98a',body:'#3e6a3a',weap:'Лук',   abil:'Град стрел',   cd:14, abilD:'10 с каждый выстрел — 3 стрелы',weapD:'дальний выстрел',set:'Снаряжение Следопыта'},
+};
+const cls=()=>S&&S.cls&&CLASSES[S.cls]?S.cls:null;
+const secName=()=>cls()?CLASSES[cls()].weap:'Лук';
+const brLabel=br=>br==='Воин'&&cls()?CLASSES[cls()].br:br;
+Object.assign(BR_COL,{'Варвар':'#d9784a','Чародей':'#8a7aff','Следопыт':'#5fc98a'});
+// умения ветки класса: общие получают своё имя, плюс уникальные
+Object.assign(PERKS,{
+  smash: {br:'Воин',cls:'warrior',name:'Раскол',       max:3,desc:'+20% к площади удара молотом'},
+  mshield:{br:'Воин',cls:'mage',  name:'Мана-щит',     max:4,desc:'−6% получаемого урона'},
+  flame: {br:'Воин',cls:'mage',   name:'Пламя',        max:4,desc:'+12% шанс поджога посохом'},
+  eagle: {br:'Воин',cls:'archer', name:'Орлиный глаз', max:4,desc:'+6% шанс крита'},
+  pierce:{br:'Воин',cls:'archer', name:'Пробивание',   max:2,desc:'Стрела задевает ещё одного врага рядом с целью'},
+});
+const PERK_NAMES={str:{warrior:'Ярость',mage:'Сила чар',archer:'Тугой лук'},vit:{warrior:'Крепкая шкура',mage:'Стойкость',archer:'Выносливость'},vamp:{warrior:'Кровожадность',mage:'Похищение жизни',archer:'Охотничий трофей'},aim:{warrior:'Размах',mage:'Сосредоточение',archer:'Меткость'}};
+const PERK_DESC={aim:{warrior:'+10% к скорости удара молотом',mage:'+10% к дальности и скорости посоха'}};
+const perkName=k=>(PERK_NAMES[k]&&PERK_NAMES[k][cls()])||PERKS[k].name;
+const perkDesc=k=>(PERK_DESC[k]&&PERK_DESC[k][cls()])||PERKS[k].desc;
+const perkAvail=k=>!PERKS[k].cls||PERKS[k].cls===cls();
+// --- облики молота и посоха (уровни как у лука)
+const HAM_SKINS=[{from:1,name:'Колотушка',h:'#8d6540',m:'#a07a4c',e:'#c9a06a'},{from:3,name:'Кузнечный молот',h:'#6e4a2c',m:'#8e959b',e:'#cfd8de'},{from:6,name:'Боевой молот',h:'#4a3322',m:'#9ea5aa',e:'#ffffff',sp:1},{from:9,name:'Рунный молот',h:'#3a2618',m:'#6a7a8a',e:'#7ec8ff',rune:1},{from:12,name:'Громовой молот',h:'#1e1410',m:'#c9a24a',e:'#fff7c0',bolt:1,glow:'rgba(126,200,255,'}];
+const STF_SKINS=[{from:1,name:'Ясеневый посох',w:'#8d6540',o:'#86c05a',leaf:1},{from:3,name:'Посох с кристаллом',w:'#6e4a2c',o:'#9fc3d6'},{from:6,name:'Посох огня',w:'#4a3322',o:'#ff7a2a',glow:'rgba(255,140,40,'},{from:9,name:'Посох бури',w:'#2a2a3a',o:'#7ec8ff',glow:'rgba(126,200,255,',ring:1},{from:12,name:'Посох Феникса',w:'#5a1e12',o:'#ffd34d',glow:'rgba(255,180,60,',wing:1}];
+const secSkins=()=>cls()==='warrior'?HAM_SKINS:cls()==='mage'?STF_SKINS:BOW_SKINS;
+const secKind=()=>cls()==='warrior'?'ham':cls()==='mage'?'stf':'bow';
+function drawHammerSkin(c,K,x,y,a,L,t){c.save();c.translate(x,y);c.rotate(a);if(K.glow){const p=0.4+0.2*Math.sin(t/160),g=c.createRadialGradient(L,0,2,L,0,20);g.addColorStop(0,K.glow+p+')');g.addColorStop(1,K.glow+'0)');c.fillStyle=g;c.beginPath();c.arc(L,0,20,0,7);c.fill()}
+  c.strokeStyle=K.h;c.lineWidth=3.2;c.lineCap='round';c.beginPath();c.moveTo(3,0);c.lineTo(L+2,0);c.stroke();c.translate(L,0);
+  c.fillStyle=K.m;c.fillRect(-6,-10,12,20);c.strokeStyle=K.e;c.lineWidth=1.3;c.strokeRect(-6,-10,12,20);
+  if(K.sp){c.fillStyle=K.e;c.beginPath();c.moveTo(6,-4);c.lineTo(11,0);c.lineTo(6,4);c.fill()}
+  if(K.rune){c.strokeStyle=K.e;c.lineWidth=1.2;c.beginPath();c.moveTo(-3,-6);c.lineTo(2,-2);c.lineTo(-2,2);c.lineTo(3,6);c.stroke()}
+  if(K.bolt){c.strokeStyle='#7ec8ff';c.lineWidth=1.5;c.beginPath();c.moveTo(2,-12);c.lineTo(-2,-4);c.lineTo(2,-4);c.lineTo(-2,4);c.stroke()}
+  c.restore()}
+function drawStaffSkin(c,K,x,y,a,L,t){c.save();c.translate(x,y);c.rotate(a);c.strokeStyle=K.w;c.lineWidth=3;c.lineCap='round';c.beginPath();c.moveTo(-4,0);c.lineTo(L,0);c.stroke();c.translate(L+4,0);
+  if(K.glow){const p=0.5+0.2*Math.sin(t/180),g=c.createRadialGradient(0,0,1,0,0,16);g.addColorStop(0,K.glow+p+')');g.addColorStop(1,K.glow+'0)');c.fillStyle=g;c.beginPath();c.arc(0,0,16,0,7);c.fill()}
+  if(K.ring){c.strokeStyle='#cfd8de';c.lineWidth=1.5;c.beginPath();c.arc(0,0,8,0,7);c.stroke()}
+  if(K.wing){c.fillStyle='#e98b3d';for(const sd of [-1,1]){c.beginPath();c.moveTo(-3,0);c.quadraticCurveTo(-6,sd*12,4,sd*9);c.lineTo(0,sd*2);c.fill()}}
+  if(K.leaf){c.fillStyle='#5a8a3a';c.beginPath();c.ellipse(-4,-5,5,2.5,0.6,0,7);c.fill();c.beginPath();c.ellipse(-4,5,5,2.5,-0.6,0,7);c.fill()}
+  c.fillStyle=K.o;c.beginPath();c.arc(0,0,5,0,7);c.fill();c.fillStyle='rgba(255,255,255,.7)';c.beginPath();c.arc(-1.5,-1.5,1.6,0,7);c.fill();c.restore()}
+// --- тело героя по классу
+function drawHeroBody(c,x,y,cl,hurt,face){
+  if(cl==='archer'){c.save();c.translate(x,y);c.rotate(face+Math.PI);c.fillStyle='#6b4a2c';c.fillRect(4,-4,12,8);c.fillStyle='#c9b48a';for(let i=0;i<3;i++)c.fillRect(14,-3+i*3,5,1.2);c.restore()}
+  if(cl==='mage'){c.fillStyle='#3a2560';c.beginPath();c.arc(x,y+2,14,0,7);c.fill()}
+  c.fillStyle=hurt?'#f0e6d0':cl?CLASSES[cl].body:'#c4672a';c.beginPath();c.arc(x,y,12,0,7);c.fill();
+  if(cl==='warrior'){c.fillStyle='#d8cfb8';c.beginPath();c.arc(x,y+4,12,0.2,Math.PI-0.2);c.fill();c.fillStyle='#8e959b';c.beginPath();c.arc(x,y-3,8,0,7);c.fill();c.fillStyle='#4c5257';c.fillRect(x-1,y-3,2,7);c.fillStyle='#e8e0cc';for(const sd of [-1,1]){c.beginPath();c.moveTo(x+sd*6,y-7);c.quadraticCurveTo(x+sd*15,y-10,x+sd*14,y-2);c.lineTo(x+sd*9,y-4);c.fill()}}
+  else if(cl==='mage'){c.fillStyle='#2a1a48';c.beginPath();c.arc(x,y-3,10,0,7);c.fill();c.fillStyle='#4a2f78';c.beginPath();c.moveTo(x-6,y-6);c.lineTo(x,y-20);c.lineTo(x+6,y-6);c.fill();c.fillStyle='#f4c766';c.beginPath();c.arc(x,y-19,1.8,0,7);c.fill();c.fillStyle='rgba(126,200,255,.9)';c.fillRect(x-4,y-4,2,2);c.fillRect(x+2,y-4,2,2)}
+  else if(cl==='archer'){c.fillStyle='#2f4f2a';c.beginPath();c.arc(x,y-3,9,0,7);c.fill();c.fillStyle='#24401f';c.beginPath();c.moveTo(x-8,y-4);c.lineTo(x,y-15);c.lineTo(x+8,y-4);c.fill();c.fillStyle='#1a2a16';c.beginPath();c.arc(x,y-1,4.5,0,7);c.fill()}
+  else{c.fillStyle='#2b2219';c.beginPath();c.arc(x,y-3,7,0,7);c.fill()}
+}
+// --- второе оружие: атака
+function secAttack(t){
+  const c=cls()||'archer',base=bowDmg(S.bow)*(1+0.12*pr('str'))*atkMul()*(1+0.2*S.forgeUp.bow);
+  const crit4=(d,cr)=>{if(mast('cleave')&&(P.arrowN=(P.arrowN||0)+1)%4===0&&!cr){d*=2;cr=true}return [d,cr]};
+  if(c==='warrior'){
+    P.cd=bowCd(S.bow)*1.35/(1+gear('spd')/100)/(1+0.1*pr('aim'));P.swing=0.3;sfx.hit();
+    let [d,cr]=crit4(...heroHit(base*1.5));hitEnemy(t,d,'melee',cr);
+    const R=60*(1+0.2*pr('smash'));RX.rings.push({x:t.o.x,y:t.o.y,r:10,max:R,t:0.25,col:'#e8e0cc'});shake(2,0.08);
+    if(t.k==='z')for(const o of zombies.slice()){if(o===t.o||dist(o.x,o.y,t.o.x,t.o.y)>R+o.r||!canHit(o,'melee'))continue;dmgNum(o.x,o.y-o.r-4,d*0.6,false);hitZombie(o,d*0.6,P.x,P.y,'melee')}
+    twinShot(t,d,cr);return}
+  P.cd=bowCd(S.bow)/(1+gear('spd')/100);P.shot=0.2;sfx.shoot();
+  const lv=Math.min(6,1+Math.floor(S.bow/2));
+  if(c==='mage'){tracers.push({x1:P.x,y1:P.y,x2:t.o.x,y2:t.o.y,t:0.18,mx:0.18,fire:true,lvl:lv});let [d,cr]=crit4(...heroHit(base*0.95));hitEnemy(t,d,'ranged',cr);
+    if(t.k==='z'&&zombies.includes(t.o)&&Math.random()<0.15+0.12*pr('flame')){t.o.burn=3;t.o.burnDps=Math.max(t.o.burnDps||0,d*0.35)}twinShot(t,d,cr);return}
+  // лучник
+  tracers.push({x1:P.x,y1:P.y,x2:t.o.x,y2:t.o.y,t:0.12,lvl:lv});let [d,cr]=crit4(...heroHit(base));hitEnemy(t,d,'ranged',cr);twinShot(t,d,cr);
+  const extra=(n,mul,near)=>{let k=0;for(const o of zombies.slice()){if(k>=n)break;if(o===t.o||!canHit(o,'ranged'))continue;if(near?dist(o.x,o.y,t.o.x,t.o.y)>70:dist(o.x,o.y,P.x,P.y)>bowRange(S.bow))continue;k++;tracers.push({x1:P.x,y1:P.y,x2:o.x,y2:o.y,t:0.12,lvl:lv});hitEnemy({k:'z',o},d*mul,'ranged',false)}};
+  if(t.k==='z'&&pr('pierce'))extra(pr('pierce'),0.6,true);
+  if(RX.volley>0&&t.k==='z')extra(2,0.7,false);
+}
+// --- способности класса (клавиша C)
+const abilBase=()=>heroHit(Math.max(axeDmg(S.up.axe),S.bow?bowDmg(S.bow):0)*(1+0.12*pr('str'))*atkMul())[0];
+function useAbility(){
+  const c=cls();if(!c||S.over)return;
+  if((P.abCd||0)>0){toast(`${CLASSES[c].abil}: ещё ${Math.ceil(P.abCd)} с`,'', 'abcd');return}
+  if(c==='warrior'){RX.whirl=1.2;RX.whirlT=0;sfx.dash()}
+  if(c==='mage'){let a=P.face,best=null,bd=460;for(const z of zombies){const d=dist(z.x,z.y,P.x,P.y);if(d<bd&&canHit(z,'ranged')){bd=d;best=z}}if(best)a=Math.atan2(best.y-P.y,best.x-P.x);
+    const n=3+Math.floor(pr('mshield')>=4?0:0);for(let i=0;i<n;i++){const aa=a+(i-(n-1)/2)*0.32;RX.fb.push({x:P.x,y:P.y,vx:Math.cos(aa)*430,vy:Math.sin(aa)*430,t:1.1,d:abilBase()*2.5,a:aa})}sfx.shoot()}
+  if(c==='archer'){RX.volley=10;toast('Град стрел: 10 секунд по 3 стрелы','good','abv')}
+  P.abCd=CLASSES[c].cd;
+}
+function updAbility(dt){
+  P.abCd=Math.max(0,(P.abCd||0)-dt);RX.volley=Math.max(0,(RX.volley||0)-dt);
+  if(RX.whirl>0){RX.whirl-=dt;RX.whirlT-=dt;P.face+=dt*14;if(RX.whirlT<=0){RX.whirlT=0.3;const d=abilBase()*0.6;
+    for(const z of zombies.slice()){if(dist(z.x,z.y,P.x,P.y)>85+z.r||!canHit(z,'melee'))continue;dmgNum(z.x,z.y-z.r-4,d,false);burst(z.x,z.y,4,['#ffd34d','#fff'],140,0.3,2);hitZombie(z,d,P.x,P.y,'melee')}shake(1.5,0.08)}}
+  for(const f of RX.fb){f.t-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;if(Math.random()<0.6)burst(f.x,f.y,1,['#ffb347','#ff6a2a'],40,0.3,3);
+    for(const z of zombies){if(dist(z.x,z.y,f.x,f.y)>z.r+10||!canHit(z,'ranged'))continue;f.t=0;dmgNum(z.x,z.y-z.r-4,f.d,true);z.burn=3;z.burnDps=Math.max(z.burnDps||0,f.d*0.3);burst(f.x,f.y,16,['#ffd34d','#ff7a2a','#cf4b3f'],200,0.5,3);shake(2,0.1);hitZombie(z,f.d,f.x,f.y,'ranged');break}}
+  RX.fb=RX.fb.filter(f=>f.t>0);
+}
+function drawAbilityFx(now){
+  if(RX.whirl>0){const K=cls()==='warrior'&&S.bow?HAM_SKINS[skinTier(HAM_SKINS,S.bow)]:null;for(let r=0;r<3;r++){ctx.strokeStyle=`rgba(255,240,200,${0.45-r*0.12})`;ctx.lineWidth=9-r*3;const a0=now/90+r*0.8;ctx.beginPath();ctx.arc(P.x,P.y,62+r*7,a0,a0+3.2);ctx.stroke()}}
+  for(const f of RX.fb){const g=ctx.createRadialGradient(f.x,f.y,1,f.x,f.y,18);g.addColorStop(0,'rgba(255,240,160,1)');g.addColorStop(0.4,'rgba(255,140,40,.9)');g.addColorStop(1,'rgba(255,60,20,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,18,0,7);ctx.fill()}
+  if(RX.volley>0){ctx.strokeStyle=`rgba(95,201,138,${0.35+0.15*Math.sin(now/150)})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(P.x,P.y,20,0,7);ctx.stroke()}
+}
+const ABIL_ICO={warrior:'<path d="M16 4a12 12 0 1 1-11 7" stroke="#ffd34d" stroke-width="3" fill="none"/><path d="M3 6l2 6 6-2" stroke="#ffd34d" stroke-width="2.5" fill="none"/><rect x="13" y="10" width="7" height="11" fill="#9ea5aa" stroke="#4c5257"/>',
+  mage:'<circle cx="11" cy="20" r="6" fill="#ff7a2a"/><circle cx="20" cy="12" r="5" fill="#ffb347"/><circle cx="25" cy="23" r="4" fill="#ffd34d"/><circle cx="11" cy="20" r="2.5" fill="#fff5c0"/>',
+  archer:'<g stroke="#c9b48a" stroke-width="2"><path d="M4 8l20 6M4 16h22M4 24l20-6"/></g><path d="M28 16l-5-3v6z" fill="#cfd8de"/><path d="M26 14l-4-3v4zM26 18l-4 3v-4z" fill="#cfd8de"/>'};
+// --- экран выбора класса
+function clsPortrait(k){const cv=document.createElement('canvas');cv.width=cv.height=120;const c2=cv.getContext&&cv.getContext('2d');if(!c2||!cv.toDataURL)return '';c2.fillStyle='#4f6e3a';c2.fillRect(0,0,120,120);c2.translate(56,66);c2.scale(2.3,2.3);
+  c2.fillStyle='rgba(0,0,0,.35)';c2.beginPath();c2.ellipse(2,11,13,5,0,0,7);c2.fill();drawHeroBody(c2,0,0,k,false,-0.4);
+  if(k==='warrior')drawHammerSkin(c2,HAM_SKINS[2],0,0,-0.5,18,0);if(k==='mage')drawStaffSkin(c2,STF_SKINS[2],0,0,-0.6,16,0);if(k==='archer')drawBowSkin(c2,BOW_SKINS[2],13,0,-0.4,0,0,true);return cv.toDataURL()}
+function showClassPick(){
+  const el=document.getElementById('clsPick');if(!el)return;const box=document.getElementById('clsList');box.textContent='';
+  for(const k in CLASSES){const C=CLASSES[k],b=document.createElement('button');b.type='button';b.className='cls-card';b.dataset.cls=k;b.style.setProperty('--cc',C.col);
+    b.innerHTML=`<img src="${clsPortrait(k)}" alt="" width="120" height="120"><b>${C.name}</b><small>${C.br}</small><span><em>Оружие</em>Топор + ${C.weap.toLowerCase()}: ${C.weapD}</span><span><em>Способность (C)</em>${C.abil}: ${C.abilD}, перезарядка ${C.cd} с</span><span><em>Ветка умений</em>${C.br}</span><span><em>Комплект в склепе</em>${C.set}</span><i>Выбрать</i>`;box.append(b)}
+  el.hidden=false;keys.clear();actHeld=false;
+}
+const clsOpen=()=>{const el=document.getElementById('clsPick');return !!el&&!el.hidden};
+
 function drawPlayer(){
   const x=P.x,y=P.y;
   if(S.buffAtk>0){const a=0.25+0.12*Math.sin(performance.now()/180);const g=ctx.createRadialGradient(x,y,4,x,y,26);g.addColorStop(0,`rgba(240,140,50,${a})`);g.addColorStop(1,'rgba(240,140,50,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill()}
   if(P.dash>0||P.inv>0.15){ctx.fillStyle='rgba(159,195,214,.3)';for(let k=1;k<4;k++){ctx.beginPath();ctx.arc(x-P.ddx*k*14,y-P.ddy*k*14,12-k*2,0,7);ctx.fill()}}
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x+2,y+11,12,5,0,0,7);ctx.fill();
-  const bow=S.weapon==='bow'&&S.bow>0&&P.swing<=0;
-  const nowT=performance.now();
-  if(bow){
+  const sec=S.weapon==='bow'&&S.bow>0,cl=cls();const nowT=performance.now();
+  const bow=sec&&cl!=='warrior'&&cl!=='mage'&&P.swing<=0;
+  if(sec&&cl==='warrior'){const sw=P.swing>0?(1-P.swing/0.3)*2.6-1.3:-0.9,a=P.face+sw;drawHammerSkin(ctx,HAM_SKINS[skinTier(HAM_SKINS,S.bow)],x,y,a,20,nowT)}
+  else if(sec&&cl==='mage'){drawStaffSkin(ctx,STF_SKINS[skinTier(STF_SKINS,S.bow)],x+Math.cos(P.face+0.6)*6,y+Math.sin(P.face+0.6)*6,P.face-0.25,20,nowT)}
+  else if(bow){
     const a=P.face,bx=x+Math.cos(a)*13,by=y+Math.sin(a)*13,pull=P.shot>0?P.shot/0.2*4:0;
     drawBowSkin(ctx,bowSkin(S.bow),bx,by,a,pull,nowT,P.cd<=0.05||P.shot>0);
   }else{
     const sw=P.swing>0?(1-P.swing/0.18)*2.2-1.1:-0.9, a=P.face+sw;
     drawAxeSkin(ctx,axeSkin(S.up.axe),x,y,a,21,nowT);
   }
-  ctx.fillStyle=P.hurt>0?'#f0e6d0':'#c4672a';ctx.beginPath();ctx.arc(x,y,12,0,7);ctx.fill();
-  ctx.fillStyle='#2b2219';ctx.beginPath();ctx.arc(x,y-3,7,0,7);ctx.fill();
+  drawHeroBody(ctx,x,y,cl,P.hurt>0,P.face);
   const bx=x-Math.cos(P.face)*9,by=y-Math.sin(P.face)*9;
   const fill=bagTotal()/bagCap(S.up.bag);
   ctx.fillStyle='#5b4329';ctx.beginPath();ctx.arc(bx,by,5+fill*4,0,7);ctx.fill();
-  if(S.bow>0&&!bow){const K=bowSkin(S.bow);ctx.lineCap='round';ctx.strokeStyle=K.wood;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(bx,by,9,P.face+2.2,P.face+4.1);ctx.stroke()}
-  if(bow){ctx.save();ctx.translate(bx,by);ctx.scale(0.55,0.55);drawAxeSkin(ctx,axeSkin(S.up.axe),0,0,P.face+Math.PI*0.75,14,nowT);ctx.restore()}
+  if(S.bow>0&&!sec){if(cl==='warrior'){ctx.save();ctx.translate(bx,by);ctx.scale(0.55,0.55);drawHammerSkin(ctx,HAM_SKINS[skinTier(HAM_SKINS,S.bow)],0,0,P.face+Math.PI*0.75,14,nowT);ctx.restore()}
+    else if(cl==='mage'){ctx.save();ctx.translate(bx,by);ctx.scale(0.55,0.55);drawStaffSkin(ctx,STF_SKINS[skinTier(STF_SKINS,S.bow)],0,0,P.face+Math.PI*0.75,16,nowT);ctx.restore()}
+    else{const K=bowSkin(S.bow);ctx.lineCap='round';ctx.strokeStyle=K.wood;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(bx,by,9,P.face+2.2,P.face+4.1);ctx.stroke()}}
+  if(sec){ctx.save();ctx.translate(bx,by);ctx.scale(0.55,0.55);drawAxeSkin(ctx,axeSkin(S.up.axe),0,0,P.face+Math.PI*0.75,14,nowT);ctx.restore()}
 }
 function drawGuards(now){
   const n=S.jobs.guard;
@@ -3409,7 +3529,7 @@ function hud(){
   $('streakTxt').textContent=`Серия ночей: ${S.streak}`+(S.bestStreak>S.streak?` · рекорд ${S.bestStreak}`:'');
   potBtn.hidden=S.potions<=0;setHtml('potBtn',`${ICONS.potion} ×${S.potions}`);potBtn.title='Зелье лечения (Q)';
   {const b=S.buffAtk>0,t=Math.ceil(S.buffAtk);atkBtn.hidden=S.potAtk<=0&&!b;atkBtn.classList.toggle('on',b);setHtml('atkBtn',`<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="6.4" y="1.5" width="3.2" height="3" rx=".6" fill="#d8d2c0"/><path d="M6.6 4.4h2.8v1.8a4.6 4.6 0 1 1-2.8 0z" fill="#e8822e"/><path d="M6 12.6l4-4" stroke="#ffe0b0" stroke-width="1.3" stroke-linecap="round"/></svg> ×${S.potAtk}${b?` <small>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</small>`:''}`);atkBtn.title='Зелье силы: +20% урона на минуту (F)'}
-  wpnBtn.hidden=S.bow<=0;const wl=S.weapon==='bow'?'Лук':'Топор';if(wpnBtn.textContent!==wl)wpnBtn.textContent=wl;
+  wpnBtn.hidden=S.bow<=0;const wl=S.weapon==='bow'?secName():'Топор';if(wpnBtn.textContent!==wl)wpnBtn.textContent=wl;
   $('phaseTxt').textContent=(ph.night?'до рассвета ':'до ночи ')+m+':'+String(s).padStart(2,'0');
   {const fq=nearFarm(),lbl=fq?'Хутор':'Лагерь';if(campBtn.textContent!==lbl)campBtn.textContent=lbl}
   $('clock').classList.toggle('night',ph.night);
@@ -3423,7 +3543,7 @@ function hud(){
 }
 let dashReq=false;
 const dashBtn=$('dashBtn');dashBtn.addEventListener('pointerdown',e=>{dashReq=true;e.preventDefault()});
-function toggleWeapon(){if(S.bow<=0)return;S.weapon=S.weapon==='bow'?'axe':'bow';toast(S.weapon==='bow'?'В руках лук':'В руках топор','', 'wpn');hud()}
+function toggleWeapon(){if(S.bow<=0)return;S.weapon=S.weapon==='bow'?'axe':'bow';toast(S.weapon==='bow'?`В руках: ${secName().toLowerCase()}`:'В руках топор','', 'wpn');hud()}
 wpnBtn.addEventListener('click',toggleWeapon);
 function drawMini(){
   mctx.setTransform(1,0,0,1,0,0);mctx.clearRect(0,0,240,240);
@@ -3569,10 +3689,10 @@ function rowsFor(t){
       if(l>=u.max)R.push({title:u.name,lvl:`ур. ${l} · максимум`,desc:u.desc(l)+(k==='axe'?skinNote(AXE_SKINS,l):''),ico});
       else{const c=u.cost(l);R.push({title:u.name,lvl:`ур. ${l}`,desc:`${u.desc(l)} → ${u.desc(l+1)}${extra}`,cost:c,why:gate(c),act:'up:'+k,ico})}
     }
-    const b=S.bow;
-    if(b===0){const c=bowCost(0);R.push({title:'Лук',lvl:'не изготовлен',desc:`Дальний бой: урон ${fmt1(bowDmg(1))}, дальность ${bowRange(1)}. Переключение между луком и топором кнопкой внизу или клавишей R.`,cost:c,why:gate(c),act:'bow'})}
-    else if(b>=BOW_MAX)R.push({title:'Лук',lvl:`ур. ${b} · максимум`,desc:`Урон ${fmt1(bowDmg(b))}, дальность ${bowRange(b)}${skinNote(BOW_SKINS,b)}`,ico:skinIcon('bow',skinTier(BOW_SKINS,b))});
-    else{const c=bowCost(b);R.push({title:'Лук',lvl:`ур. ${b}`,desc:`Урон ${fmt1(bowDmg(b))} → ${fmt1(bowDmg(b+1))}, дальность ${bowRange(b)} → ${bowRange(b+1)}, выстрел раз в ${bowCd(b+1).toFixed(2)} с${skinNote(BOW_SKINS,b)}`,cost:c,why:gate(c),act:'bow',ico:skinIcon('bow',skinTier(BOW_SKINS,b))})}
+    const b=S.bow,SN=secName(),SK=secSkins(),KD=secKind(),mel=cls()==='warrior';
+    if(b===0){const c=bowCost(0);R.push({title:SN,lvl:'не изготовлен',desc:`${mel?'Тяжёлый удар по площади':'Дальний бой'}: урон ${fmt1(bowDmg(1)*(mel?1.5:1))}${mel?'':', дальность '+bowRange(1)}. Переключение между ним и топором кнопкой внизу или клавишей R.`,cost:c,why:gate(c),act:'bow'})}
+    else if(b>=BOW_MAX)R.push({title:SN,lvl:`ур. ${b} · максимум`,desc:`Урон ${fmt1(bowDmg(b)*(mel?1.5:1))}${mel?'':', дальность '+bowRange(b)}${skinNote(SK,b)}`,ico:skinIcon(KD,skinTier(SK,b))});
+    else{const c=bowCost(b);R.push({title:SN,lvl:`ур. ${b}`,desc:`Урон ${fmt1(bowDmg(b)*(mel?1.5:1))} → ${fmt1(bowDmg(b+1)*(mel?1.5:1))}${mel?'':`, дальность ${bowRange(b)} → ${bowRange(b+1)}`}, удар раз в ${(bowCd(b+1)*(mel?1.35:1)).toFixed(2)} с${skinNote(SK,b)}`,cost:c,why:gate(c),act:'bow',ico:skinIcon(KD,skinTier(SK,b))})}
   }
   if(t==='items'){
     R.push({note:`${resHtml(S.shards,'shard')} осколков · ${resHtml(S.iron,'iron')} железа · ${resHtml(S.keys,'key')} ключей. Вещи надеваются где угодно. ${S.forge?(inCamp()?'Кузница рядом: можно улучшать и перековывать.':'Улучшать и перековывать можно в лагере, у кузницы.'):'Постройте кузницу во вкладке «Лагерь», чтобы улучшать вещи.'}`});
@@ -3649,10 +3769,10 @@ function rowsFor(t){
     R.push({note:`Уровень ${S.lvl} · опыт ${Math.floor(S.xp)}/${xpNeed(S.lvl)}. Опыт даётся за мертвецов, боссов, могильники, срубленные деревья, разбитые валуны, пережитые ночи, хутора и задания. Каждый уровень — выбор 1 из 3 умений.`});
     if(S.perkPend>0)R.push({title:'Выбрать умение',lvl:`ожидает: ${S.perkPend}`,desc:'Новый уровень ещё не потрачен',cost:null,heroPick:true});
     for(const br of ['Лесоруб','Воин','Строитель']){
-      const ks=Object.keys(PERKS).filter(k=>PERKS[k].br===br);
+      const ks=Object.keys(PERKS).filter(k=>PERKS[k].br===br&&perkAvail(k));
       const pts=brPts(br),nm=nextMast(br);
-      R.push({note:`<b style="color:${BR_COL[br]}">${br}</b> · очков в ветке: ${pts}${nm?` · до мастерства «${nm.name}» ещё ${nm.at-pts}`:' · все мастерства открыты'}`});
-      for(const k of ks)R.push({title:PERKS[k].name,lvl:`${pr(k)}/${PERKS[k].max}`,desc:PERKS[k].desc});
+      R.push({note:`<b style="color:${BR_COL[brLabel(br)]}">${brLabel(br)}</b> · очков в ветке: ${pts}${nm?` · до мастерства «${nm.name}» ещё ${nm.at-pts}`:' · все мастерства открыты'}`});
+      for(const k of ks)R.push({title:perkName(k),lvl:`${pr(k)}/${PERKS[k].max}`,desc:perkDesc(k)});
       for(const m of MASTERY[br])R.push({title:(pts>=m.at?'★ ':'☆ ')+m.name,lvl:pts>=m.at?'мастерство открыто':`мастерство на ${m.at} очках`,desc:m.desc});
     }
     R.push({note:'<b>Сочетания</b> · включаются сами, когда собраны оба условия'});
@@ -3738,7 +3858,7 @@ function doAct(a){
   if(a==='fxshake'){FX.shake=!FX.shake;try{localStorage.setItem('lumber-camp-shake',FX.shake?'1':'0')}catch(e){}return}
   const [k,arg,arg2]=a.split(':');
   if(k==='up'){const u=UP[arg],l=S.up[arg];if(l<u.max&&spend(u.cost(l))){S.up[arg]++;if(arg==='hp')S.p.hp=maxHp(S.up.hp);toast(`${u.name}: уровень ${S.up[arg]}`,'good');if(arg==='axe'&&AXE_SKINS.some(q=>q.from===S.up.axe))toast(`Новый облик топора: «${axeSkin(S.up.axe).name}»`,'good')}}
-  if(k==='bow'&&S.bow<BOW_MAX&&spend(bowCost(S.bow))){S.bow++;if(S.bow===1){S.weapon='bow';toast('Лук изготовлен и в руках. Переключение: кнопка внизу или R.','good')}else toast(`Лук: уровень ${S.bow}`,'good');if(S.bow>1&&BOW_SKINS.some(q=>q.from===S.bow))toast(`Новый облик лука: «${bowSkin(S.bow).name}»`,'good')}
+  if(k==='bow'&&S.bow<BOW_MAX&&spend(bowCost(S.bow))){S.bow++;if(S.bow===1){S.weapon='bow';toast(`${secName()} изготовлен и в руках. Переключение: кнопка внизу или R.`,'good')}else toast(`${secName()}: уровень ${S.bow}`,'good');if(S.bow>1&&secSkins().some(q=>q.from===S.bow))toast(`Новый облик: «${secSkins()[skinTier(secSkins(),S.bow)].name}»`,'good')}
   if(k==='farmup'){const q=poiById(arg+':'+arg2)||poiById(arg),f=q&&farmOf(q);if(f&&f.lvl<FARM.maxLvl&&spendFarm(farmUpCost(q.zone,f.lvl))){f.lvl++;f.hp=fHp(q,f);buildPeasants();toast(`${farmName(q)}: уровень ${f.lvl}, пришёл ещё один крестьянин`,'good')}}
   if(k==='farmfix'){const q=poiById(arg),f=q&&farmOf(q);if(f){const mx=fHp(q,f);if(spendFarm(farmFixCost(q,f,mx-f.hp))){f.hp=mx;toast('Хутор починен','good')}}}
   if(k==='farmpal'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.pal||0)<FARM_PAL_MAX&&spendFarm(farmPalCost(q.zone,f.pal||0))){const old=fHp(q,f);f.pal=(f.pal||0)+1;f.hp+=fHp(q,f)-old;toast(`${farmName(q)}: ${PAL_SKINS[f.pal]}`,'good')}}
@@ -3805,6 +3925,7 @@ function migrate(src){
   if(src&&ver<10&&src.crypts&&Object.keys(src.crypts).length){st.crypts={};st.keys+=Object.keys(src.crypts).length}
   st.meta.codex={};st.meta.ach={};if(src&&src.meta){for(const k in src.meta.codex||{})st.meta.codex[k]=+src.meta.codex[k]||0;for(const k in src.meta.ach||{})st.meta.ach[k]=+src.meta.ach[k]||1}
   if(src&&ver<12)st.worldV=0;
+  st.cls=src&&CLASSES[src.cls]?src.cls:null;
   st.v=12;
   if(!st.itemSeq||st.itemSeq<2)st.itemSeq=1+Math.max(0,...st.inv.map(i=>i.id||0),...Object.values(st.eq).map(i=>i?i.id:0));
   if(src&&!(typeof src.seed==='number'&&src.seed>0))st.seed=4242; // старые сохранения — прежняя карта
@@ -3848,7 +3969,8 @@ function checkWallGap(wall=Date.now()){
 function frame(now){
   checkWallGap();
   let dt=Math.min(0.05,(now-last)/1000);last=now;if(slowT>0&&!menuOpen){slowT-=dt;dt*=0.3}
-  if(!menuOpen&&!mapOpen&&!S.over&&!perksOpen()&&$('win').hidden)update(dt);
+  if(!S.over&&!cls()&&!clsOpen()&&!perksOpen()&&$('win').hidden)showClassPick();
+  if(!menuOpen&&!mapOpen&&!S.over&&!perksOpen()&&!clsOpen()&&$('win').hidden)update(dt);
   render(now);if(mapOpen)drawBigMap(now);
   hudT+=dt;if(hudT>0.1){hudT=0;hud();if(menuOpen)renderMenu()}
   miniT+=dt;if(miniT>0.25){miniT=0;drawMini()}
@@ -3867,7 +3989,8 @@ function start(data){
   requestAnimationFrame(t=>{last=t;frame(t)});
 }
 addEventListener('beforeunload',save);
-document.getElementById('relicBar').addEventListener('click',e=>{const b=e.target.closest('[data-relic-use]');if(!b)return;const k=b.dataset.relicUse;if(RELIC2[k]&&RELIC2[k].act)useRelic(k);else toast(`${relicName(k)}: ${relicDesc(k,rl(k))}`,'', 'rinfo')});
+document.getElementById('clsList').addEventListener('click',e=>{const b=e.target.closest('[data-cls]');if(!b)return;S.cls=b.dataset.cls;document.getElementById('clsPick').hidden=true;relicBarSig='';sfx.levelup();toast(`Класс: ${CLASSES[S.cls].name}. Способность «${CLASSES[S.cls].abil}» — клавиша C или кнопка вверху. ${S.bow>0?CLASSES[S.cls].weap+' уже в руках (прокачка сохранена).':'Второе оружие — в меню «Снаряжение».'}`,'good');save()});
+document.getElementById('relicBar').addEventListener('click',e=>{const b=e.target.closest('[data-relic-use]');if(!b)return;const k=b.dataset.relicUse;if(k==='_cls'){useAbility();return}if(RELIC2[k]&&RELIC2[k].act)useRelic(k);else toast(`${relicName(k)}: ${relicDesc(k,rl(k))}`,'', 'rinfo')});
 mini.addEventListener('click',()=>{if(!S.over)toggleMap(true)});
 addEventListener('resize',()=>{if(mapOpen){bmResize();bmZoom(1)}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();lastWall=Date.now()}else checkWallGap()});
