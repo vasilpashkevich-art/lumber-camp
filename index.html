@@ -1368,7 +1368,7 @@ const RELICS = {
 /* ================= РЕЛИКВИИ С УМЕНИЯМИ ================= */
 // новые реликвии: ранги 1–2; act — активная (клавиша), иначе действует сама
 const RELIC2 = {
-  hammer: {name:'Молот Громовержца', max:2, key:'Digit1', kl:'1', act:true, cd:r=>r>1?8:11,  desc:r=>`Бросок молота вперёд: крутится, пробивает всех на пути и возвращается в руку. Урон ×${r>1?4:2.5} от удара`},
+  hammer: {name:'Молот Громовержца', max:2, key:'Digit1', kl:'1', act:true, cd:r=>r>1?8:11,  desc:r=>`Молот сам летит в тех, кто за вами гонится: облетает до ${HAMMER.n} врагов, бьёт каждого и всех на пути, потом возвращается в руку. Урон ×${r>1?3:2} от удара`},
   frost:  {name:'Ледяной оберег',    max:2, key:'Digit2', kl:'2', act:true, cd:r=>r>1?16:22, desc:r=>`Морозная волна: враги в радиусе ${r>1?300:220} замерзают на 3 с (боссы на 1,2 с)`},
   totem:  {name:'Тотем предков',     max:2, key:'Digit3', kl:'3', act:true, cd:r=>r>1?30:40, desc:r=>`Ставит тотем, который ${r>1?40:25} с сам стреляет по нечисти рядом`},
   mirror: {name:'Зеркало возврата',  max:2, key:'Digit4', kl:'4', act:true, cd:r=>r>1?50:90, desc:r=>`Мгновенно переносит в лагерь (не из склепа). Перезарядка ${r>1?50:90} с`},
@@ -1413,7 +1413,7 @@ function useRelic(k){
   if((RX.cd[k]||0)>0){toast(`${R.name}: ещё ${Math.ceil(RX.cd[k])} с`,'', 'rcd'+k);return}
   if(k==='mirror'){if(DG){toast('Зеркало не работает в склепе','', 'rcdm');return}
     burst(P.x,P.y,30,['#9fc3d6','#ffffff'],200,0.6,3);P.x=CX;P.y=CY+40;S.p.x=P.x;S.p.y=P.y;burst(P.x,P.y,30,['#9fc3d6','#ffffff'],200,0.6,3);sfx.levelup();toast('Зеркало перенесло вас в лагерь','good')}
-  if(k==='hammer'){const a=P.face;RX.hammers.push({x:P.x,y:P.y,vx:Math.cos(a)*560,vy:Math.sin(a)*560,t:0.7,back:false,hit:new Set(),rot:0,d:relDmg(r>1?4:2.5)});sfx.dash()}
+  if(k==='hammer'){const tg=hammerTargets(),a=tg.length?Math.atan2(tg[0].y-P.y,tg[0].x-P.x):P.face;RX.hammers.push({x:P.x,y:P.y,vx:Math.cos(a)*560,vy:Math.sin(a)*560,t:0.7,life:HAMMER.life,tg,back:false,hit:new Set(),rot:0,d:relDmg(r>1?3:2)});sfx.dash()}
   if(k==='frost'){const R2=r>1?300:220;RX.rings.push({x:P.x,y:P.y,r:10,max:R2,t:0.45,col:'#bfe6ff'});
     for(const z of zombies.slice()){if(dist(z.x,z.y,P.x,P.y)>R2+z.r)continue;z.frozen=z.boss?1.2:3;const d=relDmg(1);dmgNum(z.x,z.y-z.r-4,d,false);hitZombie(z,d,P.x,P.y,'ranged')}
     burst(P.x,P.y,40,['#bfe6ff','#ffffff','#7ec8ff'],260,0.7,3);sfx.crumble()}
@@ -1515,11 +1515,20 @@ function petElem(c,x,y,s=1){c.save();c.translate(x,y);c.scale(s,s);c.lineJoin='r
  c.fillStyle='rgba(255,200,90,.9)';for(const [ex,ey,r] of [[-9,-40,1.2],[3,-42,1],[-16,-35,.9],[9,-36,1.1],[-1,-47,.8]]){c.beginPath();c.arc(ex,ey,r,0,7);c.fill()}
  c.restore()}
 
+// цели молота: враги, которые гонятся за героем (ближние первыми); если таких нет — ближайшие рядом
+const HAMMER={n:4,range:450,speed:640,life:3};
+function aggroOn(z){const d=dist(z.x,z.y,P.x,P.y);if(d>HAMMER.range)return false;if(z.boss)return !!z.engaged;if(z.guard||z.wave||z.dun!=null||z.final)return true;return !!z.chasing&&!z.ret&&z.canChase!==false}
+function hammerTargets(){const by=a=>a.filter(z=>canHit(z,'ranged')).sort((a,b)=>dist(a.x,a.y,P.x,P.y)-dist(b.x,b.y,P.x,P.y)).slice(0,HAMMER.n);
+  const ag=by(zombies.filter(aggroOn));if(ag.length)return ag;return by(zombies.filter(z=>dist(z.x,z.y,P.x,P.y)<HAMMER.range*0.8))}
 function updRelics(dt){
   for(const k in RX.cd)RX.cd[k]=Math.max(0,RX.cd[k]-dt);
   // молот
   for(const h of RX.hammers){h.rot+=dt*22;
-    if(!h.back){h.t-=dt;h.x+=h.vx*dt;h.y+=h.vy*dt;if(h.t<=0){h.back=true;h.hit.clear()}}
+    h.life=(h.life??HAMMER.life)-dt;if(h.life<=0&&!h.back){h.back=true;h.hit.clear()}
+    if(!h.back&&h.tg&&h.tg.length){while(h.tg.length&&!zombies.includes(h.tg[0]))h.tg.shift();
+      if(!h.tg.length){h.back=true;h.hit.clear()}
+      else{const z=h.tg[0],d=dist(h.x,h.y,z.x,z.y)||1;h.x+=(z.x-h.x)/d*Math.min(d,HAMMER.speed*dt);h.y+=(z.y-h.y)/d*Math.min(d,HAMMER.speed*dt);if(d<z.r+16){if(!h.hit.has(z)&&canHit(z,'ranged')){h.hit.add(z);dmgNum(z.x,z.y-z.r-4,h.d,false);burst(z.x,z.y,6,['#7ec8ff','#ffffff'],160,0.3,2);shake(1.5,0.06);hitZombie(z,h.d,h.x,h.y,'ranged')}h.tg.shift();if(!h.tg.length){h.back=true}}}}
+    else if(!h.back){h.t-=dt;h.x+=h.vx*dt;h.y+=h.vy*dt;if(h.t<=0){h.back=true;h.hit.clear()}}
     else{const d=dist(h.x,h.y,P.x,P.y)||1,sp=Math.max(620,d*3);h.x+=(P.x-h.x)/d*sp*dt;h.y+=(P.y-h.y)/d*sp*dt;if(d<20)h.done=true}
     for(const z of zombies.slice()){if(h.hit.has(z)||dist(z.x,z.y,h.x,h.y)>z.r+16||!canHit(z,'ranged'))continue;h.hit.add(z);dmgNum(z.x,z.y-z.r-4,h.d,false);burst(z.x,z.y,6,['#7ec8ff','#ffffff'],160,0.3,2);shake(1.5,0.06);hitZombie(z,h.d,h.x,h.y,'ranged')}}
   RX.hammers=RX.hammers.filter(h=>!h.done);
@@ -1725,7 +1734,7 @@ function heroStats(){
 
 /* ================= АРЕНЫ БОССОВ ================= */
 const ARENA_R = 250;   // радиус арены босса
-const LEASH = 300;     // насколько далеко от своего места гонится обычный мертвец
+const LEASH = 450;     // насколько далеко от своего места гонится обычный мертвец
 const lairOf = z => lairs.find(l=>l.zone===z.boss);
 function decorateArenas(){
   for(const l of lairs){
@@ -2479,7 +2488,7 @@ function leashBack(z,dt){
   // обычные мертвецы не уходят далеко от своего места и своего кольца
   if(z.boss||z.guard||z.wave||z.dun!=null||z.hunt){z.canChase=true;return false}
   const hz=zoneAt(z.hx,z.hy)||zoneById(z.zone),pr=dist(P.x,P.y,CX,CY);
-  const pz=zoneAt(P.x,P.y),inBand=!hz||(pr>CFG.fenceR+40&&(pz===hz||dist(P.x,P.y,z.hx,z.hy)<220));
+  const pz=zoneAt(P.x,P.y),inBand=!hz||(pr>CFG.fenceR+40&&(pz===hz||dist(P.x,P.y,z.hx,z.hy)<330));
   z.canChase=!DG&&inBand&&dist(P.x,P.y,z.hx,z.hy)<LEASH;
   if(z.owner&&typeof z.owner==='object'&&z.owner.boss){const L=lairOf(z.owner);if(L&&dist(P.x,P.y,L.x,L.y)>ARENA_R+10)z.canChase=false}
   const hd=dist(z.x,z.y,z.hx,z.hy);
@@ -4564,7 +4573,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 // режим проверки для снимков экрана: только при #dev в адресе
-if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs};
+if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets};
 function start(data){
   const saved=(data&&data.state)||loadLocal();
   S=migrate(saved);
