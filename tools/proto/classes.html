@@ -1,0 +1,69 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#0b0f0c"><canvas id=c></canvas>
+<script src="worldgen.js"></script><script src="../parts/skins.js"></script><script>
+const mode=new URLSearchParams(location.search).get('m')||'pick';const cv=document.getElementById('c'),c=cv.getContext('2d');
+const CL={
+ warrior:{name:'Воин',col:'#a8452a',sub:'Варвар',weap:'Молот',abil:'Вихрь',abilD:'крутится с оружием и бьёт всех вокруг (×2 урона), 8 с перезарядка',weapD:'тяжёлый удар по площади перед собой',set:'Доспех Варвара',perks:'Ярость, Крепкая шкура, Раскол, Кровожадность'},
+ mage:{name:'Маг',col:'#5a3a8a',sub:'Чародей',weap:'Посох',abil:'Огненный залп',abilD:'3 огненных шара веером, поджигают, 10 с перезарядка',weapD:'стреляет маленьким огненным шаром',set:'Облачение Чародея',perks:'Пламя, Мана-щит, Метеор, Испепеление'},
+ archer:{name:'Лучник',col:'#3e6a3a',sub:'Следопыт',weap:'Лук',abil:'Град стрел',abilD:'10 с каждый выстрел — 3 стрелы, 14 с перезарядка',weapD:'дальний выстрел, как сейчас',set:'Снаряжение Следопыта',perks:'Меткость, Ловушки, Пробивание, Орлиный глаз'}};
+// --- герой сверху
+function hero(cls,x,y,s=1,face=0){c.save();c.translate(x,y);c.scale(s,s);
+  c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(2,11,13,5,0,0,7);c.fill();
+  if(cls==='archer'){c.fillStyle='#6b4a2c';c.save();c.rotate(face+Math.PI);c.fillRect(4,-4,12,8);c.fillStyle='#c9b48a';for(let i=0;i<3;i++)c.fillRect(14,-3+i*3,5,1.2);c.restore()}
+  if(cls==='mage'){c.fillStyle='#3a2560';c.beginPath();c.arc(0,2,15,0,7);c.fill()}
+  c.fillStyle=CL[cls].col;c.beginPath();c.arc(0,0,12,0,7);c.fill();
+  if(cls==='warrior'){c.fillStyle='#d8cfb8';c.beginPath();c.arc(0,4,12,0.2,Math.PI-0.2);c.fill();c.fillStyle='#8e959b';c.beginPath();c.arc(0,-3,8,0,7);c.fill();c.fillStyle='#4c5257';c.fillRect(-1,-3,2,7);c.fillStyle='#e8e0cc';for(const sd of [-1,1]){c.beginPath();c.moveTo(sd*6,-7);c.quadraticCurveTo(sd*15,-10,sd*14,-2);c.lineTo(sd*9,-4);c.fill()}}
+  if(cls==='mage'){c.fillStyle='#2a1a48';c.beginPath();c.arc(0,-3,10,0,7);c.fill();c.fillStyle='#4a2f78';c.beginPath();c.moveTo(-6,-6);c.lineTo(0,-20);c.lineTo(6,-6);c.fill();c.fillStyle='#f4c766';c.beginPath();c.arc(0,-19,1.8,0,7);c.fill();c.fillStyle='rgba(126,200,255,.9)';c.fillRect(-4,-4,2,2);c.fillRect(2,-4,2,2)}
+  if(cls==='archer'){c.fillStyle='#2f4f2a';c.beginPath();c.arc(0,-3,9,0,7);c.fill();c.fillStyle='#24401f';c.beginPath();c.moveTo(-8,-4);c.lineTo(0,-15);c.lineTo(8,-4);c.fill();c.fillStyle='#1a2a16';c.beginPath();c.arc(0,-1,4.5,0,7);c.fill()}
+  c.restore()}
+// --- молот и посох по уровням
+const HAM=[{n:'Колотушка',h:'#8d6540',m:'#a07a4c',e:'#c9a06a'},{n:'Кузнечный молот',h:'#6e4a2c',m:'#8e959b',e:'#cfd8de'},{n:'Боевой молот',h:'#4a3322',m:'#9ea5aa',e:'#ffffff',sp:1},{n:'Рунный молот',h:'#3a2618',m:'#6a7a8a',e:'#7ec8ff',rune:1},{n:'Громовой молот',h:'#1e1410',m:'#c9a24a',e:'#fff7c0',bolt:1,glow:'rgba(126,200,255,'}];
+const STF=[{n:'Ясеневый посох',w:'#8d6540',o:'#86c05a',leaf:1},{n:'Посох с кристаллом',w:'#6e4a2c',o:'#9fc3d6'},{n:'Посох огня',w:'#4a3322',o:'#ff7a2a',glow:'rgba(255,140,40,'},{n:'Посох бури',w:'#2a2a3a',o:'#7ec8ff',glow:'rgba(126,200,255,',ring:1},{n:'Посох Феникса',w:'#5a1e12',o:'#ffd34d',glow:'rgba(255,180,60,',wing:1}];
+function hammer(K,x,y,a,L=24,t=0){c.save();c.translate(x,y);c.rotate(a);if(K.glow){const g=c.createRadialGradient(L,0,2,L,0,20);g.addColorStop(0,K.glow+'.55)');g.addColorStop(1,K.glow+'0)');c.fillStyle=g;c.beginPath();c.arc(L,0,20,0,7);c.fill()}
+  c.strokeStyle=K.h;c.lineWidth=3.2;c.lineCap='round';c.beginPath();c.moveTo(3,0);c.lineTo(L+2,0);c.stroke();c.translate(L,0);
+  c.fillStyle=K.m;c.fillRect(-6,-10,12,20);c.strokeStyle=K.e;c.lineWidth=1.3;c.strokeRect(-6,-10,12,20);
+  if(K.sp){c.fillStyle=K.e;c.beginPath();c.moveTo(6,-4);c.lineTo(11,0);c.lineTo(6,4);c.fill()}
+  if(K.rune){c.strokeStyle=K.e;c.lineWidth=1.2;c.beginPath();c.moveTo(-3,-6);c.lineTo(2,-2);c.lineTo(-2,2);c.lineTo(3,6);c.stroke()}
+  if(K.bolt){c.strokeStyle='#7ec8ff';c.lineWidth=1.5;c.beginPath();c.moveTo(2,-12);c.lineTo(-2,-4);c.lineTo(2,-4);c.lineTo(-2,4);c.stroke()}
+  c.restore()}
+function staff(K,x,y,a,L=26){c.save();c.translate(x,y);c.rotate(a);c.strokeStyle=K.w;c.lineWidth=3;c.lineCap='round';c.beginPath();c.moveTo(-4,0);c.lineTo(L,0);c.stroke();c.translate(L+4,0);
+  if(K.glow){const g=c.createRadialGradient(0,0,1,0,0,16);g.addColorStop(0,K.glow+'.7)');g.addColorStop(1,K.glow+'0)');c.fillStyle=g;c.beginPath();c.arc(0,0,16,0,7);c.fill()}
+  if(K.ring){c.strokeStyle='#cfd8de';c.lineWidth=1.5;c.beginPath();c.arc(0,0,8,0,7);c.stroke()}
+  if(K.wing){c.fillStyle='#e98b3d';for(const sd of [-1,1]){c.beginPath();c.moveTo(-3,0);c.quadraticCurveTo(-6,sd*12,4,sd*9);c.lineTo(0,sd*2);c.fill()}}
+  if(K.leaf){c.fillStyle='#5a8a3a';c.beginPath();c.ellipse(-4,-5,5,2.5,0.6,0,7);c.fill();c.beginPath();c.ellipse(-4,5,5,2.5,-0.6,0,7);c.fill()}
+  c.fillStyle=K.o;c.beginPath();c.arc(0,0,5,0,7);c.fill();c.fillStyle='rgba(255,255,255,.7)';c.beginPath();c.arc(-1.5,-1.5,1.6,0,7);c.fill();c.restore()}
+function fireball(x,y,r,a){const g=c.createRadialGradient(x,y,1,x,y,r*2.2);g.addColorStop(0,'rgba(255,240,160,1)');g.addColorStop(0.4,'rgba(255,140,40,.9)');g.addColorStop(1,'rgba(255,60,20,0)');c.fillStyle=g;c.beginPath();c.arc(x,y,r*2.2,0,7);c.fill();
+  c.fillStyle='rgba(255,120,40,.35)';for(let i=1;i<5;i++){c.beginPath();c.arc(x-Math.cos(a)*i*r*0.9,y-Math.sin(a)*i*r*0.9,r*(1-i*0.18),0,7);c.fill()}}
+function zom(x,y,r=12,col='#6f7d5a'){c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(x+2,y+r*0.8,r*0.9,r*0.4,0,0,7);c.fill();c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,7);c.fill();c.fillStyle='#ff5a44';c.fillRect(x-4,y-r*0.35,2.5,2.5);c.fillRect(x+2,y-r*0.35,2.5,2.5)}
+function grass(x0,y0,w,h,seed){const n=vnoise(seed),id=c.createImageData(w,h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=(n(x/50,y/50)-0.5)*24;const o=(y*w+x)*4;id.data[o]=86+v;id.data[o+1]=118+v;id.data[o+2]=58+v;id.data[o+3]=255}c.putImageData(id,x0,y0)}
+function txt(t,x,y,fs=13,col='#ece6d3',w=500,al='left'){c.font=`${w} ${fs}px sans-serif`;c.fillStyle=col;c.textAlign=al;c.fillText(t,x,y)}
+function wrap(t,x,y,maxW,lh,fs=12,col='#c9c2b0'){c.font=`${fs}px sans-serif`;c.fillStyle=col;c.textAlign='left';let line='';for(const w of t.split(' ')){const tt=line?line+' '+w:w;if(c.measureText(tt).width>maxW){c.fillText(line,x,y);y+=lh;line=w}else line=tt}c.fillText(line,x,y);return y+lh}
+if(mode==='pick'){cv.width=1280;cv.height=720;c.fillStyle='rgba(5,8,6,1)';c.fillRect(0,0,1280,720);
+  txt('Выберите класс героя',640,58,28,'#ece6d3',800,'center');txt('Топор и рывок (Shift) есть у всех. Класс определяет второе оружие, способность (C) и свою ветку умений.',640,88,14,'#98a191',400,'center');
+  ['warrior','mage','archer'].forEach((k,i)=>{const C=CL[k],x=60+i*400,y=120;c.fillStyle='#141a15';c.strokeStyle=['#d9784a','#8a7aff','#5fc98a'][i];c.lineWidth=2;c.beginPath();c.roundRect(x,y,360,560,14);c.fill();c.stroke();
+    grass(x+20,y+20,320,210,7+i);hero(k,x+180,y+130,3.2,-0.4);
+    if(k==='warrior'){c.save();c.translate(x+180,y+130);c.scale(3.2,3.2);hammer(HAM[2],0,0,-0.5,22);c.restore()}if(k==='mage'){c.save();c.translate(x+180,y+130);c.scale(3.2,3.2);staff(STF[2],0,0,-0.6,20);c.restore()}if(k==='archer'){c.save();c.translate(x+180,y+130);c.scale(3.2,3.2);drawBowSkin(c,BOW_SKINS[2],13,0,-0.4,0,0,true);c.restore()}
+    txt(C.name,x+24,y+268,24,'#ece6d3',800);txt(C.sub,x+24+c.measureText(C.name).width*24/24+70,y+268,14,'#98a191',500);
+    let yy=y+300;txt('Оружие',x+24,yy,12,'#98a191',700);yy=wrap(`Топор + ${C.weap.toLowerCase()}: ${C.weapD}`,x+24,yy+18,312,17,13,'#ece6d3');
+    txt('Способность (C)',x+24,yy+8,12,'#98a191',700);yy=wrap(`${C.abil}: ${C.abilD}`,x+24,yy+26,312,17,13,'#ece6d3');
+    txt('Ветка умений',x+24,yy+8,12,'#98a191',700);yy=wrap(`${C.sub}: ${C.perks}`,x+24,yy+26,312,17,13,'#ece6d3');
+    txt('Комплект в склепе',x+24,yy+8,12,'#98a191',700);yy=wrap(C.set,x+24,yy+26,312,17,13,'#ece6d3');
+    c.fillStyle=['#d9784a','#8a7aff','#5fc98a'][i];c.beginPath();c.roundRect(x+24,y+505,312,38,8);c.fill();txt('Выбрать',x+180,y+530,16,'#14110e',800,'center')});
+}
+if(mode==='abil'){cv.width=1500;cv.height=430;c.fillStyle='#0b0f0c';c.fillRect(0,0,1500,430);
+  const P=[['warrior','Воин: Вихрь (C)','крутится 1,2 с, бьёт всех рядом'],['mage','Маг: Огненный залп (C)','3 шара веером + обычная атака — малый шар'],['archer','Лучник: Град стрел (C)','10 с каждый выстрел — 3 стрелы']];
+  P.forEach(([k,t1,t2],i)=>{const x0=10+i*500,y0=10,W=480,H=360;grass(x0,y0,W,H,30+i);const hx=x0+W/2-40,hy=y0+H/2+20;
+    if(k==='warrior'){for(let r=0;r<3;r++){c.strokeStyle=`rgba(255,240,200,${0.5-r*0.14})`;c.lineWidth=10-r*3;c.beginPath();c.arc(hx,hy,62+r*6,-0.5+r*0.8,2.8+r*0.8);c.stroke()}
+      hero(k,hx,hy,1.6,0);hammer(HAM[3],hx,hy,1.2,40);for(const [a,d] of [[0.3,80],[1.9,76],[3.3,82],[4.7,78]]){zom(hx+Math.cos(a)*d,hy+Math.sin(a)*d,13,'#5d6e63');c.fillStyle='#ffd34d';c.font='700 16px sans-serif';c.textAlign='center';c.fillText('24!',hx+Math.cos(a)*d,hy+Math.sin(a)*d-20)}}
+    if(k==='mage'){hero(k,hx-80,hy,1.6,0);staff(STF[2],hx-80,hy,-0.3,40);for(const da of [-0.35,0,0.35]){const a=da,d=150;fireball(hx-80+Math.cos(a)*d,hy+Math.sin(a)*d,8,a)}fireball(hx-80+60,hy+60,4,0.7);zom(hx+140,hy-40,14,'#6a5a6e');zom(hx+150,hy+30,14,'#6a5a6e');zom(hx+120,hy+90,14,'#6a5a6e')}
+    if(k==='archer'){hero(k,hx-90,hy,1.6,0);c.save();c.translate(hx-90,hy);c.scale(1.6,1.6);drawBowSkin(c,BOW_SKINS[3],13,0,0,4,0,false);c.restore();
+      for(const da of [-0.12,0,0.12]){c.strokeStyle='#c9b48a';c.lineWidth=2;const a=da,x1=hx-40,y1=hy+Math.sin(a)*20,x2=hx+120,y2=hy+Math.sin(a)*120;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.fillStyle='#cfd8de';c.beginPath();c.arc(x2,y2,3,0,7);c.fill()}
+      zom(hx+150,hy-20,14,'#4a3f55');zom(hx+160,hy+20,14,'#4a3f55');c.fillStyle='rgba(14,19,15,.85)';c.fillRect(hx-150,hy-70,120,26);txt('Град стрел: 7 с',hx-90,hy-52,13,'#5fc98a',700,'center')}
+    txt(t1,x0+4,y0+H+26,15,'#ece6d3',700);txt(t2,x0+4,y0+H+46,12,'#98a191',400)});
+}
+if(mode==='weap'){cv.width=1500;cv.height=560;c.fillStyle='#0b0f0c';c.fillRect(0,0,1500,560);
+  const rows=[['Молот Воина (вместо лука)',HAM,(K,x,y)=>{c.save();c.translate(x,y);c.scale(2.6,2.6);hammer(K,-12,6,-0.7,22);c.restore()}],['Посох Мага',STF,(K,x,y)=>{c.save();c.translate(x,y);c.scale(2.6,2.6);staff(K,-14,8,-0.7,22);c.restore()}],['Лук Лучника (как сейчас)',BOW_SKINS,(K,x,y)=>{c.save();c.translate(x,y);c.scale(2.6,2.6);drawBowSkin(c,K,0,0,0,0,0,true);c.restore()}]];
+  const lv=['ур. 1–2','ур. 3–5','ур. 6–8','ур. 9–11','ур. 12'];
+  rows.forEach(([t,arr,f],ri)=>{const y=40+ri*180;txt(t,20,y,16,'#ece6d3',700);arr.forEach((K,i)=>{const x=150+i*270;c.fillStyle='#141a15';c.beginPath();c.roundRect(x-110,y+12,230,140,10);c.fill();f(K,x,y+96);txt(K.n||K.name,x,y+144,13,'#ece6d3',600,'center');txt(lv[i],x,y+30,11,'#98a191',500,'center')})});
+}
+document.title='done';
+</script>
