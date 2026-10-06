@@ -1,0 +1,40 @@
+<!doctype html><meta charset=utf-8>
+<style>
+body{margin:0;background:#0b0f0c;color:#ece6d3;font-family:sans-serif;padding:18px;width:1100px}
+h1{font-size:20px;text-align:center;margin:4px 0 16px}
+.row{display:flex;gap:22px;align-items:flex-start;margin-bottom:22px}
+.lab{width:200px;font-weight:700;font-size:15px;padding-top:30px}
+.lab small{display:block;color:#98a191;font-weight:500;font-size:12px;margin-top:4px}
+.cell{display:flex;flex-direction:column;align-items:center;gap:8px;width:160px;font-size:13px;text-align:center}
+.slot{width:104px;height:104px;border-radius:14px;background:#141b16;display:grid;place-items:center;position:relative}
+.slot svg{width:84px;height:84px}
+.epic{border:3px solid #b47ae6}
+.set{border:3px solid transparent;background:linear-gradient(#141b16,#141b16) padding-box,conic-gradient(from 0deg,var(--c),#f4c766,var(--c),#fff3c0,var(--c)) border-box;box-shadow:0 0 18px var(--c),inset 0 0 18px color-mix(in srgb,var(--c) 35%,transparent)}
+.set::after{content:'';position:absolute;inset:0;border-radius:12px;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.18),transparent 45%)}
+.tag{font-size:11px;color:var(--c);font-weight:700}
+.note{color:#98a191;font-size:13px;margin-top:6px}
+</style>
+<h1>Вещи комплекта: значки и особая рамка</h1>
+<div id=rows></div>
+<script>
+const O='#24180f';
+const ART={
+warrior:{c:'#d9784a',n:['Рогатый шлем Варвара','Нагрудник Варвара','Поножи Варвара'],
+ head:`<path d="M5 18c-3-6-2-12 1-15 0 6 2 9 5 10z" fill="#ece2c8" stroke="${O}"/><path d="M27 18c3-6 2-12-1-15 0 6-2 9-5 10z" fill="#ece2c8" stroke="${O}"/><path d="M14 9c-3-6-8-6-11-4 4 1 7 3 10 6z" fill="#d9784a" stroke="${O}"/><path d="M8 20a8 8 0 0116 0v6h-4v-4H12v4H8z" fill="#5a5f66" stroke="${O}"/><rect x="7.5" y="18" width="17" height="3" fill="#f4c766" stroke="${O}" stroke-width=".8"/><rect x="15" y="18" width="2.4" height="8" fill="#f4c766" stroke="${O}" stroke-width=".7"/><circle cx="12" cy="14" r="2" fill="#fff" opacity=".35"/>`,
+ armor:`<path d="M6 8l5-2h10l5 2 2 9-3 1-1 10H8L7 18l-3-1z" fill="#5a5f66" stroke="${O}"/><path d="M13 6h6l1 22h-8z" fill="#d9784a" stroke="${O}" stroke-width=".8"/><circle cx="16" cy="14" r="3" fill="#f4c766" stroke="${O}" stroke-width=".7"/><path d="M15 13l1-1.4 1 1.4-1 2z" fill="#5a3010"/><path d="M4 9l3-4 2 4M28 9l-3-4-2 4" fill="#cfd8de" stroke="${O}" stroke-width=".8"/><path d="M8 7q8-4 16 0" fill="none" stroke="#c9b48a" stroke-width="2.4"/>`,
+ legs:`<rect x="8" y="5" width="7" height="20" rx="2" fill="#5a5f66" stroke="${O}"/><rect x="17" y="5" width="7" height="20" rx="2" fill="#5a5f66" stroke="${O}"/><circle cx="11.5" cy="13" r="2.4" fill="#f4c766" stroke="${O}" stroke-width=".7"/><circle cx="20.5" cy="13" r="2.4" fill="#f4c766" stroke="${O}" stroke-width=".7"/><rect x="7" y="23" width="9" height="4" rx="1.5" fill="#c9b48a" stroke="${O}"/><rect x="16" y="23" width="9" height="4" rx="1.5" fill="#c9b48a" stroke="${O}"/>`},
+mage:{c:'#8a7aff',n:['Венец Чародея','Мантия Чародея','Шаровары Чародея'],
+ head:`<circle cx="16" cy="7" r="6" fill="#b48aff" opacity=".35"/><path d="M16 2l3 5-3 5-3-5z" fill="#b48aff" stroke="${O}"/><path d="M5 26l2-12 4 7 5-10 5 10 4-7 2 12z" fill="#cfd8e6" stroke="${O}"/><rect x="5" y="22" width="22" height="4" fill="#9aa3c8" stroke="${O}" stroke-width=".8"/><circle cx="16" cy="19" r="2" fill="#7ec8ff" stroke="${O}" stroke-width=".7"/>`,
+ armor:`<path d="M9 5h14l3 6-3 1 2 16H7l2-16-3-1z" fill="#2a2060" stroke="${O}"/><path d="M13 5h6v23h-6z" fill="#3a2f8a"/><path d="M9 5l-4-3 3 7M23 5l4-3-3 7" fill="#3a2f8a" stroke="${O}" stroke-width=".8"/><rect x="8" y="17" width="16" height="2.4" fill="#7ec8ff" stroke="${O}" stroke-width=".7"/><path d="M11 11l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z M21 22l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="#cfd8e6"/>`,
+ legs:`<path d="M8 4h16l4 22q-12 4-24 0z" fill="#2a2060" stroke="${O}"/><path d="M5 22q11 4 22 0" fill="none" stroke="#cfd8e6" stroke-width="1.6"/><circle cx="10" cy="19" r="2.4" fill="#aadcff" opacity=".8"/><circle cx="16" cy="20" r="2.4" fill="#aadcff" opacity=".8"/><circle cx="22" cy="19" r="2.4" fill="#aadcff" opacity=".8"/>`},
+archer:{c:'#5fc98a',n:['Капюшон Следопыта','Куртка Следопыта','Штаны Следопыта'],
+ head:`<path d="M6 26c-2-10 2-20 10-20s12 10 10 20z" fill="#2f6a3a" stroke="${O}"/><ellipse cx="17" cy="19" rx="6" ry="6.4" fill="#f2c9a0" stroke="${O}"/><path d="M11 21q6 3 12 0v4q-6 3-12 0z" fill="#2a5a32" stroke="${O}" stroke-width=".8"/><g fill="#5fc98a" stroke="${O}" stroke-width=".6"><ellipse cx="8" cy="11" rx="3" ry="1.6" transform="rotate(-50 8 11)"/><ellipse cx="12" cy="7" rx="3" ry="1.6" transform="rotate(-20 12 7)"/><ellipse cx="17" cy="6" rx="3" ry="1.6"/><ellipse cx="22" cy="7.5" rx="3" ry="1.6" transform="rotate(25 22 7.5)"/><ellipse cx="25.5" cy="11.5" rx="3" ry="1.6" transform="rotate(55 25.5 11.5)"/></g><path d="M9 8q-5-6-3-9 1 5 5 8z" fill="#d8c050" stroke="${O}" stroke-width=".7"/><circle cx="15" cy="17" r="1" fill="${O}"/><circle cx="19.5" cy="17" r="1" fill="${O}"/>`,
+ armor:`<path d="M7 6h18l2 8-2 1v13H7V15l-2-1z" fill="#3a5a32" stroke="${O}"/><g fill="#5fc98a" stroke="${O}" stroke-width=".5"><path d="M8 10q2 3 4 0q-2 1-4 0z"/><path d="M12 10q2 3 4 0q-2 1-4 0z"/><path d="M16 10q2 3 4 0q-2 1-4 0z"/><path d="M20 10q2 3 4 0q-2 1-4 0z"/><path d="M10 15q2 3 4 0q-2 1-4 0z"/><path d="M14 15q2 3 4 0q-2 1-4 0z"/><path d="M18 15q2 3 4 0q-2 1-4 0z"/><path d="M8 20q2 3 4 0q-2 1-4 0z"/><path d="M12 20q2 3 4 0q-2 1-4 0z"/><path d="M16 20q2 3 4 0q-2 1-4 0z"/><path d="M20 20q2 3 4 0q-2 1-4 0z"/></g><path d="M8 6l17 17" stroke="#5a3a1c" stroke-width="2"/><ellipse cx="17" cy="15" rx="1.6" ry="1" fill="#d8c050"/>`,
+ legs:`<rect x="8" y="4" width="7" height="20" rx="2" fill="#4a3a22" stroke="${O}"/><rect x="17" y="4" width="7" height="20" rx="2" fill="#4a3a22" stroke="${O}"/><path d="M8 9l7 1M8 12l7 1M17 9l7 1M17 12l7 1" stroke="#2f6a3a" stroke-width="1.4"/><ellipse cx="11.5" cy="16" rx="3" ry="1.6" fill="#5fc98a" stroke="${O}" stroke-width=".6"/><ellipse cx="20.5" cy="16" rx="3" ry="1.6" fill="#5fc98a" stroke="${O}" stroke-width=".6"/><rect x="7" y="22" width="9" height="5" rx="1.5" fill="#2a1a0e" stroke="${O}"/><rect x="16" y="22" width="9" height="5" rx="1.5" fill="#2a1a0e" stroke="${O}"/><rect x="10.5" y="23" width="2" height="1.4" fill="#d8c050"/><rect x="19.5" y="23" width="2" height="1.4" fill="#d8c050"/>`}};
+const box=document.getElementById('rows');
+const NAMES={warrior:['Доспех Варвара','Воин'],mage:['Облачение Чародея','Маг'],archer:['Снаряжение Следопыта','Лучник']};
+for(const id of ['warrior','mage','archer']){const A=ART[id];let h=`<div class=row style="--c:${A.c}"><div class=lab style="color:${A.c}">${NAMES[id][0]}<small>${NAMES[id][1]} · редкость «Комплект»</small></div>`;
+  ['head','armor','legs'].forEach((sl,i)=>{h+=`<div class=cell><div class="slot set"><svg viewBox="0 0 32 32">${A[sl]}</svg></div><b>${A.n[i]}</b><span class=tag>Комплект</span></div>`});h+='</div>';box.insertAdjacentHTML('beforeend',h)}
+box.insertAdjacentHTML('beforeend',`<div class=row><div class=lab>Для сравнения<small>обычная эпическая вещь</small></div><div class=cell><div class="slot epic"><svg viewBox="0 0 32 32"><path d="M8 20a8 8 0 0116 0v6H8z" fill="#b47ae6" stroke="${O}"/></svg></div><b>Древний шлем</b><span class=tag style="color:#b47ae6">Эпический</span></div><div class=note style="width:480px;padding-top:24px">У вещей комплекта своя рамка: переливается цветом комплекта и золотом, светится. В инвентаре рамка медленно вращается. Лежащая на земле вещь комплекта светит столбом цвета комплекта.</div></div>`);
+document.title='done';
+</script>
