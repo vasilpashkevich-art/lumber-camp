@@ -1,0 +1,68 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#0b0f0c"><canvas id=c></canvas>
+<script>
+// Эскиз v47: старец, который даёт и принимает задания; стрелка к цели; окно задания
+const cv=document.getElementById('c'),c=cv.getContext('2d');const O='#24180f';
+function hp(fn,fill,lw=1.1){c.beginPath();fn();if(fill){c.fillStyle=fill;c.fill()}if(lw){c.strokeStyle=O;c.lineWidth=lw;c.stroke()}}
+function glow(x,y,r,col,a){const g=c.createRadialGradient(x,y,1,x,y,r);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+// старец: смотрит вправо, origin — грудь, ноги на +12
+function elder(x,y,s,mark,night,t=0){c.save();c.translate(x,y);c.scale(s,s);c.lineJoin='round';c.lineCap='round';
+  c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(0,13,11,3.4,0,0,7);c.fill();
+  // посох с фонарём (сзади)
+  c.strokeStyle=O;c.lineWidth=3;c.beginPath();c.moveTo(11,13);c.lineTo(13,-26);c.stroke();c.strokeStyle='#7a5530';c.lineWidth=1.8;c.stroke();
+  hp(()=>{c.moveTo(13,-26);c.quadraticCurveTo(17,-30,14,-34);c.quadraticCurveTo(12,-30,13,-26)},'#7a5530',0.8);
+  if(night)glow(16,-22,30,'255,200,90',0.55);
+  c.strokeStyle=O;c.lineWidth=0.8;c.beginPath();c.moveTo(14,-29);c.lineTo(16,-26);c.stroke();hp(()=>c.roundRect(13.4,-26,5.2,7,1.2),night?'#ffd36a':'#c9a24a',0.9);hp(()=>c.rect(13,-26.6,6,1.4),'#5a4128',0.6);
+  // ряса до земли
+  hp(()=>{c.moveTo(-7,-5);c.quadraticCurveTo(0,-8,7,-5);c.lineTo(10,12);c.quadraticCurveTo(0,14.5,-10,12);c.closePath()},'#7a6a52');
+  c.save();c.beginPath();c.moveTo(-7,-5);c.quadraticCurveTo(0,-8,7,-5);c.lineTo(10,12);c.quadraticCurveTo(0,14.5,-10,12);c.closePath();c.clip();c.fillStyle='rgba(0,0,0,.18)';c.fillRect(-11,-8,6,24);
+  c.strokeStyle='#5a4c38';c.lineWidth=0.7;for(const px of [-3,3]){c.beginPath();c.moveTo(px,-4);c.lineTo(px*1.6,13);c.stroke()}c.restore();
+  hp(()=>{c.moveTo(-9.5,11.6);c.quadraticCurveTo(0,14,9.5,11.6);c.lineTo(9.2,10);c.quadraticCurveTo(0,12.4,-9.2,10);c.closePath()},'#5a4c38',0.6);
+  hp(()=>c.rect(-8,2.5,16,2.2),'#c9a24a',0.7);hp(()=>{c.moveTo(-1,4.7);c.lineTo(-2,10);c.lineTo(0,10);c.lineTo(1,4.7)},'#c9a24a',0.6);
+  // капюшон сзади
+  hp(()=>{c.moveTo(-8,-6);c.quadraticCurveTo(-11,-14,-6,-19);c.lineTo(-3,-9);c.closePath()},'#5a4c38',0.9);
+  // руки: одна на посохе
+  hp(()=>c.ellipse(-8,0,2.6,4.2,0.2,0,7),'#7a6a52',0.9);hp(()=>c.ellipse(8,-1,2.6,4.2,-0.4,0,7),'#7a6a52',0.9);hp(()=>c.arc(11.4,-2,2.3,0,7),'#e8c09a',0.9);
+  // голова
+  hp(()=>c.arc(0,-12,7.2,0,7),'#e8c09a');
+  hp(()=>{c.moveTo(-6.6,-14);c.quadraticCurveTo(-7.4,-6,-4,-6);c.lineTo(-6,-15)},'#ece6df',0.8);
+  hp(()=>{c.arc(-0.5,-14.5,6.8,Math.PI*1.05,Math.PI*1.95);c.quadraticCurveTo(0,-18,-6.4,-15)},'#ece6df',0.8);
+  // брови, глаза, нос
+  c.strokeStyle='#ece6df';c.lineWidth=1.6;c.beginPath();c.moveTo(1.2,-14.6);c.lineTo(3.6,-15.4);c.moveTo(4.6,-15.2);c.lineTo(6.8,-14.4);c.stroke();
+  for(const ex of [2.4,5.6]){c.fillStyle=O;c.beginPath();c.ellipse(ex,-12.6,0.9,1.1,0,0,7);c.fill()}
+  hp(()=>c.ellipse(7,-10.5,1.6,1.2,0,0,7),'#d8a888',0.6);
+  // длинная борода до пояса
+  hp(()=>{c.moveTo(-1.5,-10);c.quadraticCurveTo(3,-8.5,7.6,-10);c.quadraticCurveTo(8,-1,4,6);c.quadraticCurveTo(2,8,1,5);c.quadraticCurveTo(-1,-2,-1.5,-10)},'#f2eee8',0.9);
+  c.strokeStyle='#d8d2c8';c.lineWidth=0.6;for(const bx of [2,4,6]){c.beginPath();c.moveTo(bx,-7);c.quadraticCurveTo(bx-0.5,-1,bx-1.5,4);c.stroke()}
+  hp(()=>{c.moveTo(1.5,-9.6);c.quadraticCurveTo(4.5,-11,7,-9.6);c.quadraticCurveTo(4.5,-8.6,1.5,-9.6)},'#f2eee8',0.6);
+  // знак над головой
+  if(mark){const by=-30+Math.sin(t*3)*1.5,col=mark==='!'?'#f4c766':'#9fe0a8';glow(0,by,12,mark==='!'?'244,199,102':'159,224,168',0.55);
+    c.font='900 15px sans-serif';c.textAlign='center';c.lineWidth=3;c.strokeStyle=O;c.strokeText(mark,0,by+5);c.fillStyle=col;c.fillText(mark,0,by+5)}
+  c.restore()}
+function txt(t,x,y,f=13,col='#ece6d3',w=700,al='center'){c.font=`${w} ${f}px sans-serif`;c.textAlign=al;c.fillStyle=col;c.fillText(t,x,y)}
+function grass(x0,y0,w,h,night){c.fillStyle=night?'#2a3a24':'#55753c';c.fillRect(x0,y0,w,h);c.fillStyle='rgba(0,0,0,.08)';for(let i=0;i<w*h/700;i++)c.fillRect(x0+((i*977)%w),y0+((i*593)%h),2,2)}
+function wrap(t,x,y,maxW,lh,f=13,col='#c9c2b0'){c.font=`500 ${f}px sans-serif`;c.fillStyle=col;c.textAlign='left';let line='';for(const w of t.split(' ')){const tt=line?line+' '+w:w;if(c.measureText(tt).width>maxW){c.fillText(line,x,y);y+=lh;line=w}else line=tt}c.fillText(line,x,y);return y+lh}
+cv.width=1240;cv.height=820;c.fillStyle='#0b0f0c';c.fillRect(0,0,cv.width,cv.height);
+txt('Старец Ермолай: даёт и принимает задания',cv.width/2,30,20,'#fff',800);
+const T=[['Есть новое задание','над головой «!»','!',false],['Задание выполнено — сдать','над головой «?»','?',false],['Ночью','фонарь на посохе светит','!',true],['В игре в настоящем размере','стоит у главного дома','?',false]];
+T.forEach(([n,s,m,night],i)=>{const x0=10+i*307,y0=50;grass(x0,y0,297,280,night);c.save();c.beginPath();c.rect(x0,y0,297,280);c.clip();elder(x0+148,y0+(i===3?190:200),i===3?1.6:4.2,m,night,1.2);c.restore();txt(n,x0+148,y0+300,14);txt(s,x0+148,y0+318,12,'#98a191',500)});
+// окно задания у старца
+const px=10,py=380;c.fillStyle='#141b16';c.fillRect(px,py,600,320);c.strokeStyle='#e98b3d';c.lineWidth=2;c.strokeRect(px,py,600,320);
+c.save();c.beginPath();c.rect(px+16,py+16,120,140);c.clip();grass(px+16,py+16,120,140);elder(px+72,py+120,3.4,null,false);c.restore();c.strokeStyle='#3a332a';c.lineWidth=1;c.strokeRect(px+16,py+16,120,140);
+txt('Старец Ермолай',px+156,py+40,17,'#f4c766',800,'left');txt('Шаг 7 из 15',px+156,py+60,12,'#98a191',600,'left');
+let yy=wrap('«Говорят, в Берёзовой роще стоит брошенная хижина. Отыщи её — в тайнике могло что-то уцелеть. Стрелка у края экрана подскажет дорогу.»',px+156,py+88,420,19,14,'#ece6d3');
+txt('Задание: найти заброшенную хижину и открыть тайник',px+156,yy+10,14,'#e9c46a',700,'left');txt('Награда: 120 древесины, 30 камня, зелье лечения',px+156,yy+32,13,'#9fc07a',600,'left');
+c.fillStyle='#e98b3d';c.fillRect(px+156,py+250,190,44);txt('Взять задание',px+251,py+278,15,'#1a1208',800);c.fillStyle='#2a332b';c.fillRect(px+360,py+250,140,44);txt('Позже',px+430,py+278,14);
+// стрелка к цели и строка задания на экране
+const qx=640,qy=380;grass(qx,qy,590,320);c.fillStyle='rgba(14,19,15,.85)';c.fillRect(qx+340,qy+14,236,74);c.strokeStyle='#e98b3d';c.lineWidth=1.5;c.strokeRect(qx+340,qy+14,236,74);
+txt('ОБУЧЕНИЕ · 7 / 15',qx+352,qy+34,11,'#e98b3d',800,'left');txt('Найти заброшенную хижину',qx+352,qy+56,13,'#ece6d3',700,'left');txt('и открыть тайник',qx+352,qy+74,13,'#ece6d3',700,'left');
+// герой в центре
+c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(qx+300,qy+180,12,4,0,0,7);c.fill();c.fillStyle='#c4672a';c.beginPath();c.arc(qx+300,qy+168,10,0,7);c.fill();c.strokeStyle=O;c.lineWidth=1.2;c.stroke();
+// стрелка у края экрана
+const ax=qx+560,ay=qy+235,ang=Math.atan2(ay-(qy+168),ax-(qx+300));c.save();c.translate(ax,ay);c.rotate(ang);glow(0,0,26,'244,199,102',0.5);
+hp(()=>{c.moveTo(16,0);c.lineTo(-8,-11);c.lineTo(-3,0);c.lineTo(-8,11);c.closePath()},'#f4c766',1.6);c.restore();
+txt('хижина · 640 шагов',ax-50,ay-24,12,'#f4c766',700);
+c.strokeStyle='rgba(244,199,102,.35)';c.lineWidth=2;c.setLineDash([6,8]);c.beginPath();c.moveTo(qx+312,qy+176);c.lineTo(ax-14,ay-6);c.stroke();c.setLineDash([]);
+txt('Строка задания справа вверху вместо обычных заданий; стрелка у края экрана показывает цель',qx+295,qy+305,12,'#98a191',500);
+txt('Когда цель на экране, вместо стрелки над ней мигает золотой ромб',qx+295,qy+288,12,'#98a191',500);
+document.title='done';
+</script>
