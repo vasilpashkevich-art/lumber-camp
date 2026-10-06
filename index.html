@@ -594,7 +594,9 @@ function fixJobs(){
   for(const k of ['guard','stone','wood']){while(sum>r&&S.jobs[k]>0){S.jobs[k]--;sum--}}
   if(sum<r)S.jobs.wood+=r-sum;
 }
-function towerPos(i){const a=i*(Math.PI*2/6)+Math.PI/6;return {x:CX+Math.cos(a)*CFG.fenceR,y:CY+Math.sin(a)*CFG.fenceR}}
+// места открываются парами напротив друг друга: 2 — по диагонали, 4 — крестом, 6 — по кругу
+const TOWER_ORDER=[0,3,2,5,1,4];
+function towerPos(i){const a=TOWER_ORDER[i]*(Math.PI*2/6)+Math.PI/6;return {x:CX+Math.cos(a)*CFG.fenceR,y:CY+Math.sin(a)*CFG.fenceR}}
 function housePos(i){const a=i*(Math.PI*2/15)-Math.PI/2+0.3;return {x:CX+Math.cos(a)*108,y:CY+Math.sin(a)*108}}
 function guardPos(i){const n=S.jobs.guard,a=i/n*6.283+S.clock*0.12;return {x:CX+Math.cos(a)*(CFG.fenceR-26),y:CY+Math.sin(a)*(CFG.fenceR-26),a}}
 function addFloat(x,y,text,color){floats.push({x,y,text,color,t:1.1})}
