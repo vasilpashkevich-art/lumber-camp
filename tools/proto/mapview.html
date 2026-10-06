@@ -1,0 +1,60 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#0b0f0c"><canvas id=c></canvas>
+<script src="worldgen.js"></script><script>
+const q=new URLSearchParams(location.search),seed=+q.get('seed')||4242,ng=+q.get('ng')||0,S=1000;
+const w=makeWorld(seed,ng),cv=document.getElementById('c');cv.width=S;cv.height=S+60;const c=cv.getContext('2d');
+const k=w.W/S,img=c.createImageData(S,S),D=img.data,ZID=new Int16Array(S*S);
+const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const ZC=ZONES.map(z=>z.col);
+for(let py=0;py<S;py++)for(let px=0;px<S;px++){
+  const x=px*k,y=py*k,r=w.region(x,y);let col;
+  const n=w.noise(x/180,y/180),n2=w.noise2(x/40,y/40);
+  if(r.sea){const t=Math.min(1,r.cd/(500*w.scale));col=lerp([70,130,150],[18,40,62],Math.sqrt(t));if(r.cd<18*w.scale)col=lerp(col,[220,230,225],0.6);col=col.map(v=>v+(n2-0.5)*8)}
+  else{
+    if(r.side){col=r.side.col.slice();const t=Math.min(1,r.edge/0.12);col=lerp(ZC[r.zone],col,t)}
+    else{col=ZC[r.zone].slice();if(r.zone<6&&r.zd<70*w.scale){const t=1-r.zd/(70*w.scale);col=lerp(col,ZC[r.zone+1],t*0.5)}}
+    const sh=(n-0.5)*26+(n2-0.5)*10;col=col.map(v=>v+sh);
+    if(r.cd<45*w.scale){const sand=r.side&&r.side.id==='snow'?[226,234,240]:[196,178,128];col=lerp(col,sand,Math.min(1,1-(r.cd/(45*w.scale)))*0.85)}
+    if(r.d<230*w.scale){col=lerp(col,[96,84,58],0.8)}
+  }
+  const zid=r.sea?-1:r.side?20+SIDE.indexOf(SIDE.find(q=>q.id===r.side.id)):r.zone;ZID[py*S+px]=zid;
+  if(px>0&&py>0&&zid>=0){const l=ZID[py*S+px-1],u=ZID[(py-1)*S+px];if((l>=0&&l!==zid)||(u>=0&&u!==zid))col=col.map(v=>v*0.72)}
+  const o=(py*S+px)*4;D[o]=col[0];D[o+1]=col[1];D[o+2]=col[2];D[o+3]=255}
+c.putImageData(img,0,0);
+const X=v=>v/k;
+const rng=mulberry(seed*5+1);
+// деревья
+const TREE_UNUSED=0;const TREE={0:'#a8c878',1:'#2f5a3a',2:'#5e7a32',3:'#4a3f48',4:'#1f2638',5:'#6e5a4c',6:'#9a9483',snow:'#f4fbff',marsh:'#2f4a3a',shroom:'#c76fb0',waste:'#7a3a24',high:'#5a6a52',mist:'#5c6c74'};
+for(let i=0;i<9000*w.scale*w.scale;i++){const x=rng()*w.W,y=rng()*w.W,r=w.region(x,y);if(r.sea||r.d<260*w.scale||r.cd<60)continue;
+  const key=r.side?r.side.id:r.zone;if(key==='waste'&&rng()<0.7)continue;if(key==='high'&&rng()<0.4)continue;
+  c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.arc(X(x)+1,X(y)+1.2,2.2,0,7);c.fill();c.fillStyle=TREE[key];c.beginPath();c.arc(X(x),X(y),key==='shroom'?2.6:2,0,7);c.fill()}
+// скалы на нагорье, пятна болот
+for(let i=0;i<1400*w.scale*w.scale;i++){const x=rng()*w.W,y=rng()*w.W,r=w.region(x,y);if(r.sea||!r.side)continue;
+  if(r.side.id==='high'&&rng()<0.5){c.fillStyle='#8f8b82';c.beginPath();c.arc(X(x),X(y),2+rng()*3,0,7);c.fill()}
+  if((r.side.id==='marsh'||r.side.id==='mist')&&rng()<0.25){c.fillStyle='rgba(60,110,110,.6)';c.beginPath();c.ellipse(X(x),X(y),5+rng()*6,3+rng()*4,rng()*3,0,7);c.fill()}
+  if(r.side.id==='snow'&&rng()<0.15){c.fillStyle='rgba(255,255,255,.7)';c.beginPath();c.ellipse(X(x),X(y),4,2,0.3,0,7);c.fill()}}
+// лагерь
+c.strokeStyle='#c9a06a';c.lineWidth=2;c.beginPath();c.arc(X(w.C),X(w.C),X(205),0,7);c.stroke();c.fillStyle='#e98b3d';c.beginPath();c.arc(X(w.C),X(w.C),5,0,7);c.fill();
+// логова: по одному в каждой зоне + снежный босс
+const labs=[];
+const lairAt=(zi,name,col)=>{for(let t=0;t<400;t++){const a=rng()*6.283,rr=(zi?w.zoneR(zi-1,a):300)+(w.zoneR(zi,a)-(zi?w.zoneR(zi-1,a):300))*(0.35+rng()*0.3),x=w.C+Math.cos(a)*rr,y=w.C+Math.sin(a)*rr,r=w.region(x,y);if(!r.sea&&!r.side&&r.zone===zi&&r.cd>220){draw(x,y);return}}
+  function draw(x,y){c.setLineDash([3,2]);c.strokeStyle=col;c.lineWidth=1.5;c.beginPath();c.arc(X(x),X(y),X(170),0,7);c.stroke();c.setLineDash([]);c.fillStyle=col;c.beginPath();c.moveTo(X(x),X(y)-6);c.lineTo(X(x)+6,X(y));c.lineTo(X(x),X(y)+6);c.lineTo(X(x)-6,X(y));c.fill();labs.push([X(x),X(y)+9,name,'#ffb0a0',10])}};
+const BN=['Королева слизи','Древень','Двуглавая гидра','Болотный ящер','Крылатый змей','Пепельный голем','Царь Мор'];
+for(let i=0;i<7;i++)lairAt(i,BN[i],'#ff6a5a');
+{const sn=w.sides.find(s=>s.id==='snow');if(sn){for(let t=0;t<400;t++){const rr=w.R*(0.72+rng()*0.12),x=w.C+Math.cos(sn.a)*rr,y=w.C+Math.sin(sn.a)*rr,r=w.region(x,y);if(r.side===sn||(r.side&&r.side.id==='snow')){c.setLineDash([3,2]);c.strokeStyle='#7ec8ff';c.lineWidth=1.5;c.beginPath();c.arc(X(x),X(y),X(170),0,7);c.stroke();c.setLineDash([]);c.fillStyle='#7ec8ff';c.beginPath();c.moveTo(X(x),X(y)-6);c.lineTo(X(x)+6,X(y));c.lineTo(X(x),X(y)+6);c.lineTo(X(x)-6,X(y));c.fill();labs.push([X(x),X(y)+9,'Ледяной великан','#bfe6ff',10]);break}}}}
+// склеп (один) — в 3-й зоне
+for(let t=0;t<400;t++){const a=rng()*6.283,rr=(w.zoneR(1,a)+w.zoneR(2,a))/2,x=w.C+Math.cos(a)*rr,y=w.C+Math.sin(a)*rr,r=w.region(x,y);if(!r.sea&&!r.side&&r.zone===2){c.fillStyle='#c08ae8';c.strokeStyle='#000';c.lineWidth=1.5;c.fillRect(X(x)-6,X(y)-6,12,12);c.strokeRect(X(x)-6,X(y)-6,12,12);c.fillStyle='#2a1f33';c.fillRect(X(x)-2,X(y)-1,4,6);labs.push([X(x),X(y)+10,'Склеп','#e0c0ff',11]);break}}
+// хижины (2 на зону)
+for(let zi=0;zi<7;zi++)for(let j=0;j<2;j++)for(let t=0;t<200;t++){const a=rng()*6.283,rr=(zi?w.zoneR(zi-1,a):300)+((w.zoneR(zi,a))-(zi?w.zoneR(zi-1,a):300))*rng(),x=w.C+Math.cos(a)*rr,y=w.C+Math.sin(a)*rr,r=w.region(x,y);if(!r.sea&&r.zone===zi&&r.cd>120){c.fillStyle='#f4c766';c.beginPath();c.moveTo(X(x)-4,X(y)+3);c.lineTo(X(x)-4,X(y)-1);c.lineTo(X(x),X(y)-5);c.lineTo(X(x)+4,X(y)-1);c.lineTo(X(x)+4,X(y)+3);c.fill();break}}
+// подписи зон: точка внутри своей зоны, подальше от границ, ближе к верху
+for(let zi=0;zi<7;zi++){let best=null,bs=-1e9;for(let t=0;t<900;t++){const x=rng()*w.W,y=rng()*w.W,r=w.region(x,y);if(r.sea||r.side||r.zone!==zi)continue;
+  let ok=0;for(const [dx,dy] of [[90,0],[-90,0],[0,50],[0,-50],[160,0],[-160,0]]){const q=w.region(x+dx*w.scale,y+dy*w.scale);if(!q.sea&&!q.side&&q.zone===zi)ok++}
+  const sc=ok*10-(y-w.C)/w.W*14-Math.abs(x-w.C)/w.W*6;if(sc>bs){bs=sc;best=[X(x),X(y)]}}
+  if(best)labs.push([best[0],best[1],ZONES[zi].name,'#ece6d3',13,true])}
+for(const s of w.sides){let best=null,bs=-1;for(let t=0;t<1500;t++){const x=rng()*w.W,y=rng()*w.W,r=w.region(x,y);if(!r.side||r.side.id!==s.id)continue;let ok=0;for(const [dx,dy] of [[120,0],[-120,0],[0,80],[0,-80]]){const q=w.region(x+dx*w.scale,y+dy*w.scale);if(q.side&&q.side.id===s.id)ok++}if(ok>bs){bs=ok;best=[x,y]}}if(!best)continue;labs.push([X(best[0]),X(best[1]),s.name,s.id==='snow'?'#0d2a40':'#fff2d8',14,true])}
+c.textAlign='center';const placed=[];labs.sort((a,b)=>(b[5]?1:0)-(a[5]?1:0));for(let [x,y,t,col,fs,b] of labs){c.font=`${b?700:500} ${fs}px sans-serif`;const wd=c.measureText(t).width;for(let tr=0;tr<8;tr++){const hit=placed.some(q=>Math.abs(q[0]-x)<(q[2]+wd)/2+4&&Math.abs(q[1]-y)<fs+2);if(!hit)break;y+=fs+2}placed.push([x,y,wd]);c.font=`${b?700:500} ${fs}px sans-serif`;c.lineWidth=3;c.strokeStyle=col==='#0d2a40'?'rgba(255,255,255,.7)':'rgba(0,0,0,.65)';c.strokeText(t,x,y+fs/2);c.fillStyle=col;c.fillText(t,x,y+fs/2)}
+// шапка
+c.fillStyle='#0e130f';c.fillRect(0,S,S,60);c.textAlign='left';c.fillStyle='#ece6d3';c.font='700 18px sans-serif';
+const nm=['Мир 1 (до переселения)','Мир 2 (после 1-го переселения) · площадь +30%','Мир 3 и дальше · площадь ×2 от первого'][Math.min(2,ng)];
+c.fillText(nm,14,S+24);c.font='13px sans-serif';c.fillStyle='#98a191';c.fillText(`7 зон + ${w.sides.map(s=>s.name).join(', ')} · ◆ логово босса · ■ склеп (один) · ⌂ хижины · море непроходимо`,14,S+46);
+document.title='done';
+</script>

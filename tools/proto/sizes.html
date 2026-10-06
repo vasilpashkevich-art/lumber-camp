@@ -1,0 +1,10 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#0b0f0c"><canvas id=c width=1500 height=620></canvas>
+<script src="worldgen.js"></script><script>
+const c=document.getElementById('c').getContext('2d');c.fillStyle='#14324a';c.fillRect(0,0,1500,620);
+const sc=1/15;let ox=20;const names=['Мир 1','Мир 2 · +30%','Мир 3+ · ×2'];
+[[0,4242],[1,777],[2,31337]].forEach(([ng,seed],i)=>{const w=makeWorld(seed,ng),st=w.W/220;
+  for(let y=0;y<w.W;y+=st)for(let x=0;x<w.W;x+=st){const r=w.region(x,y);if(r.sea)continue;const col=r.side?r.side.col:ZONES[r.zone].col;c.fillStyle=`rgb(${col})`;c.fillRect(ox+x*sc,40+y*sc,st*sc+0.6,st*sc+0.6)}
+  c.fillStyle='#e98b3d';c.beginPath();c.arc(ox+w.C*sc,40+w.C*sc,4,0,7);c.fill();
+  c.fillStyle='#ece6d3';c.font='700 18px sans-serif';c.fillText(names[i],ox+10,28);ox+=w.W*sc+20});
+c.fillStyle='#ece6d3';c.fillRect(20,600,500*sc*4,4);c.font='12px sans-serif';c.fillText('2000 шагов',20,594);document.title='done';
+</script>
