@@ -270,7 +270,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 <div class="hud" id="quests"><button type="button" id="questHead">Задания <span>▾</span></button><ul id="questList"></ul></div>
 <div id="perks" hidden><div class="perk-card"><h3 id="perkTitle">Новый уровень</h3><div id="perkList"></div></div></div>
 <div id="win" hidden><div class="over-card win-card"><h2>Лес очищен!</h2><p id="winTxt"></p><ul id="winList"></ul>
-<p class="win-note">Великое переселение: новая случайная карта, враги сильнее на 25%, а вы забираете 2 реликвии — постоянные бонусы на все следующие забеги. Вещи, ресурсы и постройки остаются здесь.</p>
+<p class="win-note">Великое переселение: новая случайная карта, враги сильнее и постройки дороже, а вы забираете 2 реликвии — постоянные бонусы на все следующие забеги. Вещи, ресурсы и постройки остаются здесь.</p>
 <div class="win-b"><button class="gbtn" id="stayBtn" type="button">Остаться на этой карте</button><button class="gbtn" id="ngBtn" type="button">Великое переселение</button></div></div></div>
 <div id="menu" hidden>
   <div class="sheet" role="dialog" aria-label="Меню лагеря">
@@ -376,8 +376,8 @@ const JOBS = {
   stone:{name:'Каменщики',  desc:'Носят камень на склад'},
   guard:{name:'Стражники',  desc:'Ходят вдоль забора и стреляют по нечисти'},
 };
-const woodRate  = () => S.jobs.wood*0.04*(1+bestCleared())*(1+0.1*pr('boss'))*(1+0.15*rl('gather'));
-const stoneRate = () => S.jobs.stone*0.025*(1+bestCleared())*(1+0.1*pr('boss'))*(1+0.15*rl('gather'));
+const woodRate  = () => S.jobs.wood*0.04*(1+bestCleared())*(1+0.1*pr('boss'))*incMul()*(1+0.15*rl('gather'));
+const stoneRate = () => S.jobs.stone*0.025*(1+bestCleared())*(1+0.1*pr('boss'))*incMul()*(1+0.15*rl('gather'));
 const guardDmg  = () => (1.5 + 0.5*S.base)*DEF.guard.mul[guardLvl()];
 // --- оборона лагеря (v41): ров, ловушки, баллисты, огненные чаши, стража по уровням, мастерская
 const DEF={
@@ -488,7 +488,7 @@ const SAVE_KEY = 'lumber-camp-save';
 const ICONS = {heart:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2S2.2 10.7 2.2 6.6C2.2 4.4 3.8 2.9 5.6 2.9c1 0 1.9.5 2.4 1.4.5-.9 1.4-1.4 2.4-1.4 1.8 0 3.4 1.5 3.4 3.7 0 4.1-5.8 7.6-5.8 7.6z" fill="#cf4b3f"/><path d="M4.6 5.2c.4-.8 1.1-1 1.6-1" stroke="#f3a097" stroke-width="1.1" fill="none" stroke-linecap="round"/></svg>', bag:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.6 5.4V4.2a2.4 2.4 0 0 1 4.8 0v1.2" stroke="#c9a46a" stroke-width="1.4" fill="none"/><rect x="2.4" y="5.2" width="11.2" height="9" rx="2.6" fill="#6b4a2c"/><rect x="5.2" y="8.2" width="5.6" height="2.2" rx="1" fill="#e98b3d"/></svg>', potion:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="6.4" y="1.5" width="3.2" height="3" rx=".6" fill="#d8d2c0"/><path d="M6.6 4.4h2.8v1.8a4.6 4.6 0 1 1-2.8 0z" fill="#cf4b3f"/><circle cx="6.6" cy="9.4" r="1" fill="#f3a097"/></svg>'};
 const RES = {iron:{name:'Железо', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 10.5l2.2-4.6h7.6L14 10.5z" fill="#7d8592"/><path d="M4.2 5.9h7.6l-1.1-2.2H5.3z" fill="#a9b2bf"/><path d="M2 10.5h12v2.3H2z" fill="#5a616c"/></svg>'}, shard:{name:'Осколки', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l4.5 5L8 14.5 3.5 6.5z" fill="#b47ae6"/><path d="M8 1.5l4.5 5H3.5z" fill="#d4a8f5"/></svg>'}, key:{name:'Ключи от склепов', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="5" cy="8" r="3.2" fill="none" stroke="#f4c766" stroke-width="1.8"/><path d="M8 8h6.5M12 8v2.5M14 8v2" stroke="#f4c766" stroke-width="1.8" fill="none"/></svg>'}, wood:{name:'Древесина', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="8.6" width="11.5" height="5.4" rx="2.7" fill="#8d6540"/><ellipse cx="12.4" cy="11.3" rx="2.3" ry="2.7" fill="#e2b46a"/><ellipse cx="12.4" cy="11.3" rx="1" ry="1.2" fill="#a8763f"/><rect x="2.8" y="2.6" width="10.6" height="5.4" rx="2.7" fill="#7b5634"/><ellipse cx="13.3" cy="5.3" rx="2.3" ry="2.7" fill="#e2b46a"/><ellipse cx="13.3" cy="5.3" rx="1" ry="1.2" fill="#a8763f"/></svg>'}, stone:{name:'Камень', icon:'<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11.5l1.6-5L7 3.5l4.6.8 2.6 3.6-.6 4.6-3.8 1.9H5z" fill="#8b8a84"/><path d="M7 3.5l1 4.2-4.4-1.2zM8 7.7l6.2.2-2.6-3.6z" fill="#b3b2aa"/><path d="M8 7.7L5 13.4 2 11.5l1.6-5z" fill="#6f6e69"/></svg>'}};
 const resHtml = (n,k='wood') => `<span class="val" title="${RES[k].name}">${n} ${RES[k].icon}</span>`;
-const disc = c => {const k=1-0.05*pr('thrift');return {w:Math.ceil((c.w||0)*k),s:Math.ceil((c.s||0)*k),i:c.i||0,sh:c.sh||0}};
+const disc = c => {const k=(1-0.05*pr('thrift'))*costMul();return {w:Math.ceil((c.w||0)*k),s:Math.ceil((c.s||0)*k),i:c.i||0,sh:c.sh||0}};
 const costHtml = c0 => {const c=disc(c0);return [c.w?resHtml(c.w):'',c.s?resHtml(c.s,'stone'):'',c.i?resHtml(c.i,'iron'):'',c.sh?resHtml(c.sh,'shard'):''].filter(Boolean).join(' ')||'бесплатно'};
 // ---------- Герой: опыт, уровни, умения
 const xpNeed = l => Math.round(25*1.32**(l-1));
@@ -574,7 +574,7 @@ function fmt1(n){return Number.isInteger(n)?String(n):n.toFixed(1)}
 /* ================= STATE (сохраняется) ================= */
 const randSeed=()=>1+Math.floor(Math.random()*2147483646);
 function newState(){return {v:12,worldV:12,cls:null,rested:0,cryptRuns:0,setPity:0,meta:{ng:0,relics:{},wins:0,relicPend:0,comp31:0,relicFix32:0,codex:{},ach:{},best:{day:1,zone:1,axe:1,bow:0,base:1,fence:0,tower:0},life:{kills:0,chopped:0,mined:0}},inv:[],eq:{weapon:null,head:null,armor:null,legs:null,amulet:null,ring:null},itemSeq:1,shards:0,iron:0,bagIron:0,keys:0,crypts:{},forge:false,forgeUp:{melee:0,bow:0},merchant:0,merchBought:0,extraRes:0,final:{killed:false},seed:randSeed(),lvl:1,xp:0,perks:{},perkPend:0,quests:[],questsDone:0,lastSeen:0,farms:{},hq:120,over:false,wood:0,stone:0,frac:0,fracS:0,bag:0,bagStone:0,up:{axe:1,pick:1,bag:1,boots:1,hp:1},bow:0,weapon:'axe',base:1,
-  fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],def:{moat:0,traps:0,tu:Array(20).fill(12),ball:[0,0],bowl:[0,0,0,0],guard:1,shop:0},houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
+  fence:{lvl:0,hp:0},towers:[0,0,0,0,0,0],zFix44:1,def:{moat:0,traps:0,tu:Array(20).fill(12),ball:[0,0],bowl:[0,0,0,0],guard:1,shop:0},houses:0,jobs:{wood:0,stone:0,guard:0},killed:{1:0,2:0,3:0,4:0,5:0,6:0,7:0},bosses:{},mounds:{},poi:{},
   day:1,clock:0,streak:0,bestStreak:0,potions:0,potAtk:0,buffAtk:0,waveZ:[],night:{kills:0,breached:false,stolen:0,died:false,active:false,hqHit:false,blood:false,farmHit:0,farmLost:0,fog:false},stats:{chopped:0,kills:0,chests:0,mined:0,bosses:0,nightKills:0,nights:0,cleanNights:0,moundsDone:0,farmsMade:0,upgrades:0,crypts:0},p:{x:-1,y:-1,hp:10}};}
 function merge(def,src){
   if(!src||typeof src!=='object')return def;
@@ -797,6 +797,10 @@ function buildWorld(){
   genWater(spots);
   // арены: логово 1-го кольца не ближе к лагерю, чем радиус арены
   for(const l of lairs){const d=dist(l.x,l.y,CX,CY),minD=CFG.fenceR+ARENA_R+80;if(d<minD){l.x=CX+(l.x-CX)/d*minD;l.y=CY+(l.y-CY)/d*minD}}
+  for(const l of lairs){const minD=CFG.fenceR+ARENA_R+80;for(let k=0;k<30;k++){let sea=0;for(let i=0;i<16;i++){const a=i/16*6.283;if(isSea(l.x+Math.cos(a)*(ARENA_R+30),l.y+Math.sin(a)*(ARENA_R+30)))sea++}
+    const d=dist(l.x,l.y,CX,CY);if(!sea||d-40<minD)break;l.x+=(CX-l.x)/d*40;l.y+=(CY-l.y)/d*40}}
+  const inArena=(x,y,pad)=>lairs.some(l=>Math.abs(x-l.x)<ARENA_R+pad&&dist(x,y,l.x,l.y)<ARENA_R*0.8+pad);
+  rocks=rocks.filter(r=>!inArena(r.x,r.y,0));patches=patches.filter(p=>!(p.kind==='rocks'||p.kind==='cliff'||p.kind==='spore'||p.kind==='drift'||p.kind==='ice'||p.kind==='swamp')||!inArena(p.x,p.y,p.r*0.5)||lairs.some(l=>dist(p.x,p.y,l.x,l.y)<8));
   trees=trees.filter(t=>lairs.every(l=>Math.abs(t.x-l.x)>ARENA_R*0.75||dist(t.x,t.y,l.x,l.y)>ARENA_R*0.75));
   decorateArenas();
   buildTerrain();
@@ -805,7 +809,7 @@ const rockMax = r => CFG.rocks.hp[r.zone]*(r.iron?1.5:1);
 function randInRing(zn){return randInZone(zn.id,Math.random,60,{minD:CFG.fenceR+120})||{x:CX+300,y:CY}}
 function spawnZoneZombies(){
   for(const zn of CFG.zones){
-    const alive=Math.max(0,zn.zcount-(S.killed[zn.id]||0));
+    const alive=Math.max(0,zCnt(zn)-(S.killed[zn.id]||0));
     for(let i=0;i<alive;i++){const p=randInRing(zn);let k;if(zn.id>=2&&Math.random()<0.25){const opts=zn.id>=3?['runner','ram','spitter']:['runner','ram'];k=opts[Math.floor(Math.random()*opts.length)]}zombies.push(makeZombie(zn.ztier,p.x,p.y,false,zn.id,k))}
     if(!S.bosses[zn.id])zombies.push(makeBoss(zn.id));
   }
@@ -837,7 +841,7 @@ function makeBoss(zid){
 /* ================= HELPERS ================= */
 const inCamp = () => dist(P.x,P.y,CX,CY) < CFG.baseR+20;
 const fenceOn = () => S.fence.lvl>0 && S.fence.hp>0;
-const zoneCleared = z => (S.killed[z.id]||0)>=z.zcount && !!S.bosses[z.id] && mounds.filter(m=>m.zone===z.id).every(m=>S.mounds[m.id]);
+const zoneCleared = z => (S.killed[z.id]||0)>=zCnt(z) && !!S.bosses[z.id] && mounds.filter(m=>m.zone===z.id).every(m=>S.mounds[m.id]);
 const clearedCount = () => CFG.zones.filter(zoneCleared).length;
 const bestCleared = () => {let b=0;for(const z of CFG.zones)if(zoneCleared(z))b=z.id;return b};
 const maxHouses = () => S.base>=4 ? 1+2*clearedCount() : 0;
@@ -1017,7 +1021,13 @@ sfx.drink=()=>{for(let i=0;i<3;i++)tone({freq:300+i*90,to:200+i*90,dur:0.09,type
    ===================================================================== */
 
 // ---------- общие помощники ----------
-const ngMul = () => 1 + 0.25*((S.meta&&S.meta.ng)||0);
+// сложность миров после переселения: враги, цены, доход жителей и хуторов, сколько нечисти надо перебить в зоне
+const NG = {enemy:0.5, cost:0.4, income:0.15, kills:0.5};
+const ngN = () => (S.meta&&S.meta.ng)||0;
+const ngMul = () => 1 + NG.enemy*ngN();
+const costMul = () => 1 + NG.cost*ngN();
+const incMul = () => Math.max(0.5, 1 - NG.income*ngN());
+const zCnt = z => Math.round(z.zcount*(1+NG.kills*ngN()));
 const rl = id => (S&&S.meta&&S.meta.relics&&S.meta.relics[id])||0;
 const potMax = () => LOOT.potionMax + rl('flask');
 const randOf = a => a[Math.floor(Math.random()*a.length)];
@@ -1714,7 +1724,7 @@ function heroStats(){
 }
 
 /* ================= АРЕНЫ БОССОВ ================= */
-const ARENA_R = 170;   // радиус арены босса
+const ARENA_R = 250;   // радиус арены босса
 const LEASH = 300;     // насколько далеко от своего места гонится обычный мертвец
 const lairOf = z => lairs.find(l=>l.zone===z.boss);
 function decorateArenas(){
@@ -1845,8 +1855,9 @@ function drawBossFig(z,bob){
   const sk=MOB.has(z.skin)?z.skin:null,dir=P.x<z.x?-1:1,t=performance.now()/1000+(z.ph||0);
   if(!sk){const zs=z.r/12;MOB.fig(ctx,z.kind,z.tier,z.biome,z.x,z.y+bob,zs,dir);return}
   const s=bossScale(z);ctx.save();ctx.translate(z.x,z.y+bob);ctx.scale(s*dir,s);ctx.lineJoin='round';ctx.lineCap='round';
-  if(z.hit>0&&'filter' in ctx)ctx.filter='brightness(1.8)';
-  MOB.boss(ctx,sk,t);ctx.restore();
+  MOB.boss(ctx,sk,t);
+  if(z.hit>0){const top=BOSS_TOP[sk]||30;ctx.globalAlpha=0.38;ctx.fillStyle='#fff8e8';ctx.beginPath();ctx.ellipse(0,(18-top)/2,26,(top+18)/2,0,0,7);ctx.fill();ctx.globalAlpha=1}
+  ctx.restore();
 }
 
 /* ================= ОТРИСОВКА: склепы, портал, подземелье ================= */
@@ -2157,8 +2168,8 @@ document.getElementById('questHead').addEventListener('click',()=>{const el=docu
 
 /* ================= ПРОГРЕСС БЕЗ ИГРЫ ================= */
 function farmRateEst(q,f){ // добычи в секунду на хутор
-  if(f.mode==='stone'){if(!rocks.some(r=>Math.abs(r.x-q.x)<FARM.stoneR&&dist(r.x,r.y,q.x,q.y)<FARM.stoneR))return 0;return f.lvl*CFG.rocks.stone[q.zone]/(CFG.rocks.hp[q.zone]*0.9+3+12)*(1+0.1*pr('boss'))}
-  const tt=CFG.trees[q.zone];return f.lvl*tt.wood/(tt.hp*0.6+1+7)*(1+0.1*pr('boss'));
+  if(f.mode==='stone'){if(!rocks.some(r=>Math.abs(r.x-q.x)<FARM.stoneR&&dist(r.x,r.y,q.x,q.y)<FARM.stoneR))return 0;return f.lvl*CFG.rocks.stone[q.zone]/(CFG.rocks.hp[q.zone]*0.9+3+12)*(1+0.1*pr('boss'))*incMul()}
+  const tt=CFG.trees[q.zone];return f.lvl*tt.wood/(tt.hp*0.6+1+7)*(1+0.1*pr('boss'))*incMul();
 }
 function applyOffline(title){
   if(!S.lastSeen)return false;
@@ -2450,7 +2461,7 @@ function killZombie(z){
   if(!z.wave&&z.zone){
     S.killed[z.zone]=(S.killed[z.zone]||0)+1;
     const zn=zoneById(z.zone);
-    if(S.killed[z.zone]===zn.zcount&&!zoneCleared(zn))toast(`${zn.name}: обычная нечисть перебита. Осталось: ${!S.bosses[zn.id]?'босс, ':''}могильники.`,'');
+    if(S.killed[z.zone]===zCnt(zn)&&!zoneCleared(zn))toast(`${zn.name}: обычная нечисть перебита. Осталось: ${!S.bosses[zn.id]?'босс, ':''}могильники.`,'');
     checkZone(z.zone);
   }
 }
@@ -2648,11 +2659,11 @@ function updateFarms(dt){
       const t=pe.tree;if(!t||!t.alive){if(t)t.claim=null;pe.tree=null;pe.state='idle';continue}
       const near=dist(t.x,t.y,P.x,P.y);
       if(pe.res==='stone'){
-        const mx=rockMax(t);t.hp-=mx/rockTime(t)*(1+0.1*pr('boss'))*dt;
+        const mx=rockMax(t);t.hp-=mx/rockTime(t)*(1+0.1*pr('boss'))*incMul()*dt;
         if(pe.swing<=0){pe.swing=0.7;t.shake=0.12;if(near<260)sfx.mine()}
         if(t.hp<=0){t.alive=false;t.t=CFG.rocks.respawn;t.claim=null;pe.tree=null;pe.carry=CFG.rocks.stone[t.zone];pe.state='back';if(near<300)sfx.crumble()}
       }else{
-        const tt=CFG.trees[t.tier],rate=tt.hp/(tt.hp*0.6+1)*(1+0.1*pr('boss'));
+        const tt=CFG.trees[t.tier],rate=tt.hp/(tt.hp*0.6+1)*(1+0.1*pr('boss'))*incMul();
         t.hp-=rate*dt;
         if(pe.swing<=0){pe.swing=0.6;t.shake=0.12;if(near<260)sfx.chop()}
         if(t.hp<=0){t.alive=false;t.t=tt.respawn;t.claim=null;pe.tree=null;pe.carry=tt.wood;pe.state='back';if(near<300)sfx.fall()}
@@ -4325,7 +4336,7 @@ function rowsFor(t){
       }
     }
     for(const z of CFG.zones){
-      const k=Math.min(z.zcount,S.killed[z.id]||0),ms=mounds.filter(m=>m.zone===z.id),md=ms.filter(m=>S.mounds[m.id]).length;
+      const k=Math.min(zCnt(z),S.killed[z.id]||0),ms=mounds.filter(m=>m.zone===z.id),md=ms.filter(m=>S.mounds[m.id]).length;
       R.push({zone:z,k,md,mt:ms.length,boss:!!S.bosses[z.id],done:zoneCleared(z)});
     }
   }
@@ -4403,7 +4414,7 @@ function renderMenu(){
     if(r.note){h+=`<p class="note">${r.note}</p>`;continue}
     if(r.job){
       h+=`<div class="item"><div><h3>${r.title}<small>${r.lvl}</small></h3><p>${r.desc}</p></div><div class="stepper"><button class="buy" data-act="job:${r.job}:-1" type="button" ${r.job==='wood'||S.jobs[r.job]<=0?'disabled':''} aria-label="Убрать">−</button><button class="buy" data-act="job:${r.job}:1" type="button" ${(r.job==='wood'?S.jobs.stone+S.jobs.guard===0:S.jobs.wood===0)?'disabled':''} aria-label="Добавить">+</button></div></div>`;continue}
-    if(r.zone){const z=r.zone,parts=`нечисть ${r.k}/${z.zcount} · босс ${r.boss?'повержен':'жив'} · могильники ${r.md}/${r.mt}`,prog=(r.k/z.zcount+(r.boss?1:0)+(r.mt?r.md/r.mt:1))/3;
+    if(r.zone){const z=r.zone,parts=`нечисть ${r.k}/${zCnt(z)} · босс ${r.boss?'повержен':'жив'} · могильники ${r.md}/${r.mt}`,prog=(r.k/zCnt(z)+(r.boss?1:0)+(r.mt?r.md/r.mt:1))/3;
       h+=`<div class="item zone"><div><h3>${z.name}<small>${CFG.trees[z.tree].name}, топор ${CFG.trees[z.tree].axe}+, кирка ${CFG.rocks.pick[z.id]}+</small></h3><p>${CFG.bosses[z.id].name} · ${parts}</p><div class="bar"><i style="width:${100*prog}%"></i></div></div><div class="num">${r.done?'Чисто':''}</div></div>`;continue}
     if(r.save){h+=`<div class="item" style="grid-template-columns:1fr"><div><h3>Код сохранения</h3><p>Игра сохраняется сама в этом браузере. Чтобы перенести прогресс на другое устройство, скопируйте код и вставьте его там.</p></div>
       <textarea id="saveCode" readonly></textarea>
@@ -4500,6 +4511,7 @@ function migrate(src){
   st.meta.codex={};st.meta.ach={};if(src&&src.meta){for(const k in src.meta.codex||{})st.meta.codex[k]=+src.meta.codex[k]||0;for(const k in src.meta.ach||{})st.meta.ach[k]=+src.meta.ach[k]||1}
   if(src&&ver<12)st.worldV=0;
   st.cls=src&&CLASSES[src.cls]?src.cls:null;
+  if(src&&!src.zFix44){for(const z of CFG.zones){const k=st.killed[z.id]||0;if(k>=z.zcount)st.killed[z.id]=Math.max(k,Math.round(z.zcount*(1+NG.kills*((st.meta&&st.meta.ng)||0))))}}st.zFix44=1;
   st.def.guard=Math.max(1,Math.min(4,st.def.guard|0));for(const k of ['moat','traps','shop'])st.def[k]=Math.max(0,Math.min(DEF[k].max,st.def[k]|0));st.def.tu=st.def.tu.map(u=>Math.max(0,Math.min(DEF.traps.uses,u|0)));
   st.v=12;
   if(!st.itemSeq||st.itemSeq<2)st.itemSeq=1+Math.max(0,...st.inv.map(i=>i.id||0),...Object.values(st.eq).map(i=>i?i.id:0));
@@ -4552,7 +4564,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 // режим проверки для снимков экрана: только при #dev в адресе
-if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants};
+if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs};
 function start(data){
   const saved=(data&&data.state)||loadLocal();
   S=migrate(saved);
