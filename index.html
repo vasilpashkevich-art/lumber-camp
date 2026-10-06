@@ -613,7 +613,7 @@ function toast(msg,kind,key){
 
 /* ================= INPUT ================= */
 const keys=new Set();
-let actHeld=false, joy=null, menuOpen=false;
+let actHeld=false, actTap=false, joy=null, menuOpen=false;
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='TEXTAREA')return;
   if(e.code==='KeyK'||(e.code==='Escape'&&mapOpen)){if(e.code==='Escape'||!S.over)toggleMap(e.code==='Escape'?false:undefined);e.preventDefault();return}
@@ -625,13 +625,14 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyF'){drinkAtk();return}
   if(e.code==='KeyR'){toggleWeapon();return}
   if(e.code==='Escape'&&menuOpen){toggleMenu(false);return}
+  if(e.code==='Space'||e.code==='KeyE')actTap=true;
   keys.add(e.code);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
 });
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>{keys.clear();actHeld=false});
 const actBtn=document.getElementById('act');
-actBtn.addEventListener('pointerdown',e=>{actHeld=true;actBtn.classList.add('on');e.preventDefault()});
+actBtn.addEventListener('pointerdown',e=>{actHeld=true;actTap=true;actBtn.classList.add('on');e.preventDefault()});
 ['pointerup','pointercancel','pointerleave'].forEach(ev=>actBtn.addEventListener(ev,()=>{actHeld=false;actBtn.classList.remove('on')}));
 const cvs=document.getElementById('game'), ctx=cvs.getContext('2d');
 cvs.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;joy={id:e.pointerId,ox:e.clientX,oy:e.clientY,dx:0,dy:0};cvs.setPointerCapture(e.pointerId)});
@@ -1861,7 +1862,7 @@ function update(dt){
 
   // --- действие
   P.cd-=dt;P.swing=Math.max(0,P.swing-dt);P.shot=Math.max(0,P.shot-dt);P.hurt=Math.max(0,P.hurt-dt);
-  const act=actHeld||keys.has('Space')||keys.has('KeyE');
+  const act=actHeld||actTap||keys.has('Space')||keys.has('KeyE');actTap=false;
   const tgt=findTarget();
   showPrompt(tgt);
   if(act&&P.cd<=0&&tgt&&tgt.ok)doAction(tgt);
@@ -3193,7 +3194,7 @@ function bmClamp(){const hw=BM.w/2/BM.s,hh=BM.h/2/BM.s;BM.cx=Math.max(Math.min(h
 const bmMe=()=>DG?{x:DG.ex,y:DG.ey}:{x:P.x,y:P.y};
 function bmResize(){const r=BM.cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);BM.w=Math.max(200,r.width);BM.h=Math.max(200,r.height);BM.cv.width=BM.w*d;BM.cv.height=BM.h*d;BM.d=d}
 function toggleMap(force){
-  bmEnsure();mapOpen=force===undefined?!mapOpen:force;BM.el.hidden=!mapOpen;
+  bmEnsure();mapOpen=force===undefined?!mapOpen:force;BM.el.hidden=!mapOpen;actTap=false;
   if(mapOpen){if(menuOpen)toggleMenu(false);keys.clear();actHeld=false;bmResize();BM.s=bmFit();BM.cx=CX;BM.cy=CY;bmClamp();drawBigMap(performance.now())}
 }
 function drawBigMap(now){
@@ -3259,7 +3260,7 @@ const TABS=[['hero','Герой'],['log','Летопись'],['items','Вещи'
 let tab='hero', menuSig='';
 const menu=$('menu'),list=$('list'),tabsEl=$('tabs'),menuTitle=$('menuTitle');
 function toggleMenu(force,farmId){
-  menuOpen=force===undefined?!menuOpen:force;menu.hidden=!menuOpen;
+  menuOpen=force===undefined?!menuOpen:force;menu.hidden=!menuOpen;actTap=false;
   menuFarm=menuOpen?(farmId||null):null;
   if(menuOpen){keys.clear();actHeld=false;menuSig='';renderMenu()}
 }

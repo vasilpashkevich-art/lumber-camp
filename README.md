@@ -11,6 +11,8 @@
 - `src/lumber-camp.html` — исходник игры в том виде, в каком он публикуется артефактом в Claude.
 - `index.html` — собранная страница для GitHub Pages (с мета-тегами для телефона). Собирается командой `python3 tools/build.py`.
 - `snapshots/` — сохранённые версии исходника, чтобы можно было откатиться.
+- `tools/parts/` — крупные блоки механик, `tools/tests/` — автотесты (`./tools/tests/run.sh`) и браузерные проверки.
+- `CLAUDE.md` — правила работы над проектом.
 
 Играть: https://vasilpashkevich-art.github.io/lumber-camp/
 
