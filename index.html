@@ -244,7 +244,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 <canvas class="hud" id="mini" width="240" height="240" title="Открыть карту (K)"></canvas>
 <div id="bigmap" hidden><div class="bm-card"><div class="bm-head"><h2>Карта</h2><span class="bm-hint">Колесо мыши — масштаб · перетаскивание — сдвиг · K или Esc — закрыть</span><div class="bm-tools"><button class="gbtn" id="bmMe" type="button">Где я</button><button class="gbtn" id="bmIn" type="button" aria-label="Приблизить">+</button><button class="gbtn" id="bmOut" type="button" aria-label="Отдалить">−</button><button class="gbtn" id="bmClose" type="button">Закрыть</button></div></div>
 <canvas id="bmCanvas"></canvas>
-<div class="bm-leg"><span><i style="background:#e98b3d;border-radius:50%"></i>Лагерь</span><span><i class="di" style="background:#ff4a3a"></i>Логово босса</span><span><i class="di" style="background:#86a85c"></i>Босс повержен</span><span><i class="hs" style="background:#86a85c"></i>Хутор</span><span><i class="hs" style="background:#f4c766"></i>Хижина / руины</span><span><i style="background:#a06ad0"></i>Могильник</span><span><i style="background:#c08ae8"></i>Склеп</span><span><i style="background:#2a5550;border-radius:50%"></i>Болото</span><span><i style="background:#77746b;border-radius:50%"></i>Скалы</span><span><i style="background:#ff5a4a;width:5px;height:5px"></i>Мертвецы</span></div></div></div>
+<div class="bm-leg"><span><i style="background:#e98b3d;border-radius:50%"></i>Лагерь</span><span><i class="di" style="background:#ff4a3a"></i>Логово босса</span><span><i class="di" style="background:#86a85c"></i>Босс повержен</span><span><i class="hs" style="background:#86a85c"></i>Хутор</span><span><i class="hs" style="background:#f4c766"></i>Хижина / руины</span><span><i style="background:#f4c766;border-radius:50%"></i>Торговец</span><span><i style="background:#a06ad0"></i>Могильник</span><span><i style="background:#c08ae8"></i>Склеп</span><span><i style="background:#2a5550;border-radius:50%"></i>Болото</span><span><i style="background:#77746b;border-radius:50%"></i>Скалы</span><span><i style="background:#ff5a4a;width:5px;height:5px"></i>Мертвецы</span></div></div></div>
 <div class="hud" id="prompt" hidden></div>
 <div class="hud" id="toasts"></div>
 <div id="help">WASD / стрелки — идти · Пробел или E (держать) — рубить, копать, бить<br>Shift — рывок · R — лук/топор · B — меню лагеря · K — карта · Q — лечение · F — сила · M — звук · болото замедляет</div>
@@ -1016,7 +1016,14 @@ function drawRefugee(r){
   ctx.fillStyle='#6b4a2c';ctx.fillRect(x-8,y-1+b,5,6);
   ctx.fillStyle='#000';ctx.fillRect(x-10,y-14,20,3);ctx.fillStyle='#9fc3d6';ctx.fillRect(x-10,y-14,20*r.hp/r.max,3);
 }
+const MERCH_POS={x:CX+92,y:CY+56};
+function openShop(){if(!merchantHere())return;tab='shop';menuSig='';toggleMenu(true)}
 function drawMerchant(now){
+  drawMerchant0(now);const x=MERCH_POS.x,y=MERCH_POS.y,b=Math.sin(now/250)*3,near=dist(P.x,P.y,x,y)<70;
+  ctx.textAlign='center';
+  if(!near){ctx.fillStyle='#f4c766';ctx.beginPath();ctx.arc(x+4,y-56+b,7,0,7);ctx.fill();ctx.fillStyle='#3b2a1c';ctx.font='700 11px Rubik, sans-serif';ctx.fillText('$',x+4,y-52+b)}
+}
+function drawMerchant0(now){
   const x=CX+92,y=CY+56;
   ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(x-24,y+4,52,12);
   ctx.fillStyle='#6b4a2c';ctx.fillRect(x-22,y-12,40,18);ctx.fillStyle='#b8442e';ctx.beginPath();ctx.moveTo(x-26,y-12);ctx.quadraticCurveTo(x-2,y-34,x+22,y-12);ctx.fill();
@@ -1906,6 +1913,7 @@ function update(dt){
 
 function specialTarget(){
   const near=(o,r)=>o&&Math.abs(o.x-P.x)<r&&dist(o.x,o.y,P.x,P.y)<r;
+  if(!DG&&merchantHere()&&near(MERCH_POS,70))return {k:'x',o:MERCH_POS,ok:true,lbl:'Торговать',msg:'Торговец: нажмите E, пробел или «Торговать», чтобы открыть лавку',fn:openShop};
   if(DG){
     if(near(DG.entry,60))return {k:'x',o:DG.entry,ok:true,lbl:'Выйти',msg:'Покинуть склеп (сокровища останутся непройденными)',fn:()=>leaveCrypt('Вы покинули склеп')};
     if(DG.chest&&!DG.chest.open&&near(DG.chest,60))return {k:'x',o:DG.chest,ok:true,lbl:'Открыть',msg:'Открыть сундук хранителя',fn:openDunChest};
@@ -2383,7 +2391,7 @@ function endNight(){
   const N=S.night, day=S.day;
   S.day++;sfx.dawn();
   if(hasUq('heart')&&S.potions<potMax()){S.potions++;toast('Сердце Мора: +1 зелье лечения','good')}
-  if(S.day>=3&&S.day%3===0){S.merchant=S.day;S.merchBought=0;setTimeout(()=>toast('В лагерь пришёл торговец. Он уйдёт с наступлением ночи.','good'),1200)}
+  if(S.day>=3&&S.day%3===0){S.merchant=S.day;S.merchBought=0;setTimeout(()=>toast('В лагерь пришёл торговец (справа от ратуши). Подойдите к нему и нажмите «Торговать». Уйдёт с наступлением ночи.','good'),1200)}
   if(S.day>=4&&!refugees.length&&Math.random()<0.25)setTimeout(spawnCaravan,2500);
   if(left)toast(`Рассвет, но ${left} мертвецов всё ещё бродят. На солнце они слабеют.`,'bad');
   if(!N.active){toast(`Рассвет. День ${S.day}.`,'good');save();return}
@@ -3108,6 +3116,7 @@ function drawMini(){
   {const pp=portalPos();if(pp&&allCleared()&&!S.final.killed){mctx.fillStyle='#ff4a3a';mctx.beginPath();mctx.arc(ox+pp.x*sc,oy+pp.y*sc,5+Math.sin(performance.now()/200),0,7);mctx.fill()}}
   for(const r of refugees){mctx.fillStyle='#9fc3d6';mctx.fillRect(ox+r.x*sc-2,oy+r.y*sc-2,4,4)}
   mctx.fillStyle='#e98b3d';mctx.beginPath();mctx.arc(120,120,4,0,7);mctx.fill();
+  if(merchantHere()){mctx.fillStyle='#f4c766';mctx.strokeStyle='#000';mctx.lineWidth=1;mctx.beginPath();mctx.arc(120+10,120+6,4,0,7);mctx.fill();mctx.stroke()}
   for(const z of zombies){
     if(z.boss){mctx.fillStyle='#ff4a3a';mctx.beginPath();mctx.arc(ox+z.x*sc,oy+z.y*sc,4,0,7);mctx.fill();mctx.strokeStyle='#000';mctx.lineWidth=1;mctx.stroke()}
     else if(z.wave){mctx.fillStyle='#cf4b3f';mctx.fillRect(ox+z.x*sc-1.5,oy+z.y*sc-1.5,3,3)}
@@ -3174,6 +3183,7 @@ function drawBigMap(now){
     else c.arc(sx,sy,sz/2,0,7);c.closePath();c.stroke();c.fill()};
   for(const z of CFG.zones){const r=(z.r0+Math.min(z.r1,2200))/2,a=-Math.PI/2;lab(CX+Math.cos(a)*r,CY+Math.sin(a)*r,z.name,zoneCleared(z)?'#9fc07a':'rgba(236,230,211,.75)',`${CFG.trees[z.tree].name} · топор ${CFG.trees[z.tree].axe}+${zoneCleared(z)?' · очищена':''}`,true,0)}
   lab(CX,CY+CFG.fenceR+16,'Лагерь','#e98b3d',HQ_SKINS[S.base],false,3);
+  if(merchantHere()){icon(MERCH_POS.x,MERCH_POS.y,'#f4c766','ci',10);lab(MERCH_POS.x+40,MERCH_POS.y-24,'Торговец','#f4c766','до ночи',false,4)}
   for(const l of lairs){const dead=!!S.bosses[l.zone];icon(l.x,l.y,dead?'#86a85c':'#ff4a3a','di',11);lab(l.x,l.y+16,CFG.bosses[l.zone].name,dead?'#9fc07a':'#ff7a6a',dead?'повержен':'логово босса',false,2)}
   for(const q of pois){const f=farmOf(q);
     if(f){icon(q.x,q.y,f.broken?'#cf4b3f':'#86a85c','house',10);lab(q.x,q.y+14,'Хутор',f.broken?'#e07070':'#9fc07a',f.broken?'разрушен':`ур. ${f.lvl} · ${f.mode==='stone'?'камень':'дерево'}`,false,2)}
@@ -3366,7 +3376,7 @@ function renderMenu(){
   const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+merchantHere()+'|'+S.shards+'|'+S.iron+'|'+(tab==='items'?JSON.stringify(heroStats()):'')+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc,r.itm&&r.itm.id,r.itm&&r.itm.rar,r.itm&&JSON.stringify(r.itm.mods),r.eqd,r.raw]));
   if(sig===menuSig)return;menuSig=sig;
   menuTitle.textContent=fq?farmName(fq):'Лагерь';tabsEl.hidden=!!fq;
-  tabsEl.innerHTML=fq?'':TABS.concat(merchantHere()?[['shop','Торговец']]:[]).map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
+  tabsEl.innerHTML=fq?'':(merchantHere()?[['shop','Торговец']]:[]).concat(TABS).map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
   let h='';
   if(tab==='shop'&&!merchantHere())tab='hero';
   if(!fq&&!inCamp()&&tab!=='save'&&tab!=='vil'&&tab!=='farm'&&tab!=='hero'&&tab!=='items'&&tab!=='log')h+=`<p class="warn">Строить и улучшать можно только в лагере.</p>`;
