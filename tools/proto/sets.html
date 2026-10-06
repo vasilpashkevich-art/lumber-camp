@@ -89,19 +89,22 @@ if(mode==='look'){const CW=230,RH=300;cv.width=40+CW*5;cv.height=60+RH*3+10;c.fi
 function zomb(x,y,s=1){c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(0,12,9,3,0,0,7);c.fill();const hp=(fn,f)=>{c.beginPath();fn();c.fillStyle=f;c.fill();c.strokeStyle=HO;c.lineWidth=1.1;c.stroke()};
   hp(()=>c.roundRect(-4,4,3.4,8,1.4),'#3a3428');hp(()=>c.roundRect(1,4,3.4,8,1.4),'#3a3428');hp(()=>{c.moveTo(-7,-5);c.quadraticCurveTo(0,-8,6,-5);c.lineTo(7,6);c.lineTo(-8,6);c.closePath()},'#5d6e63');hp(()=>c.arc(1,-12,7,0,7),'#93a38a');c.fillStyle='#ff5a44';c.beginPath();c.arc(2.5,-13,1.3,0,7);c.arc(5.5,-13.3,1.5,0,7);c.fill();c.restore()}
 if(mode==='abil'){cv.width=1240;cv.height=430;c.fillStyle='#0b0f0c';c.fillRect(0,0,cv.width,cv.height);txt('Способности полного комплекта',cv.width/2,30,20,'#fff',800);
-  const T=[['Варвар: «Буря молотов»','активная, клавиша V: молот облетает до 4 врагов, которые гонятся',()=>{
+  const T=[['Варвар: «Буря молотов»','клавиша V: молот облетает до 4 врагов',()=>{
       heroFig(c,'warrior',-40,10,2,1,{head:'warrior',armor:'warrior',legs:'warrior'},1);const Z=[[90,-40],[110,50],[-130,-50]];Z.forEach(([x,y])=>zomb(x,y,1.6));
       c.strokeStyle='rgba(255,200,90,.6)';c.lineWidth=5;c.lineCap='round';c.beginPath();c.moveTo(-30,0);c.quadraticCurveTo(40,-70,90,-45);c.quadraticCurveTo(140,0,110,40);c.stroke();c.strokeStyle='rgba(255,240,180,.9)';c.lineWidth=1.6;c.stroke();
       c.save();c.translate(108,36);c.rotate(0.8);const g=c.createRadialGradient(0,0,2,0,0,22);g.addColorStop(0,'rgba(255,200,90,.6)');g.addColorStop(1,'rgba(255,160,40,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,22,0,7);c.fill();
       c.fillStyle='#6b4a2c';c.fillRect(-2,-2,4,22);c.beginPath();c.rect(-11,-12,22,12);c.fillStyle='#5a5f66';c.fill();c.strokeStyle=HO;c.lineWidth=1.4;c.stroke();c.fillStyle='#f4c766';c.fillRect(-11,-7,22,2.4);c.strokeStyle='#ffe59a';c.lineWidth=1.4;c.beginPath();c.moveTo(-3,-16);c.lineTo(-6,-10);c.lineTo(-2,-10);c.lineTo(-5,-4);c.stroke();c.restore();
       c.fillStyle='#ffe59a';c.font='800 15px sans-serif';c.fillText('48',96,-62)}],
-    ['Маг: «Огненные сферы»','пассивная: 3 сферы кружат вокруг и поджигают, кого коснутся',()=>{
-      heroFig(c,'mage',0,10,2,1,{head:'mage',armor:'mage',legs:'mage'},1);zomb(70,-20,1.6);zomb(-90,40,1.6);
-      c.strokeStyle='rgba(255,150,60,.25)';c.lineWidth=2;c.setLineDash([4,6]);c.beginPath();c.ellipse(0,-6,66,40,0,0,7);c.stroke();c.setLineDash([]);
-      for(let i=0;i<3;i++){const a=0.6+i*2.094,x=Math.cos(a)*66,y=-6+Math.sin(a)*40;for(let k=1;k<5;k++){const aa=a-k*0.12;c.fillStyle=`rgba(255,140,40,${0.35-k*0.07})`;c.beginPath();c.arc(Math.cos(aa)*66,-6+Math.sin(aa)*40,7-k,0,7);c.fill()}
-        const g=c.createRadialGradient(x,y,1,x,y,14);g.addColorStop(0,'#fff5c0');g.addColorStop(0.4,'rgba(255,150,40,.95)');g.addColorStop(1,'rgba(255,60,20,0)');c.fillStyle=g;c.beginPath();c.arc(x,y,14,0,7);c.fill()}
-      c.fillStyle='rgba(255,140,40,.8)';for(let k=0;k<3;k++)c.fillRect(64+k*6,-40-k*4,3,3)}],
-    ['Лучник: «Дождь стрел»','активная, клавиша V: стрелы падают на толпу вокруг',()=>{
+    ['Маг: «Огненная глыба»','сама, раз в 8 с: глыба бьёт по толпе и поджигает',()=>{
+      heroFig(c,'mage',-110,30,2,1,{head:'mage',armor:'mage',legs:'mage'},1);const tx=70,ty=20;
+      c.fillStyle='rgba(255,90,30,.18)';c.beginPath();c.ellipse(tx,ty+14,62,24,0,0,7);c.fill();c.strokeStyle='rgba(255,140,60,.75)';c.lineWidth=2;c.setLineDash([5,5]);c.stroke();c.setLineDash([]);
+      [[40,10],[95,0],[70,35]].forEach(([x,y])=>zomb(x,y,1.5));
+      for(let k=1;k<9;k++){const q=k/9,x=tx-120*q-30,y=ty-110*q-20;c.fillStyle=`rgba(${k%2?'255,170,60':'120,110,100'},${0.55*(1-q)})`;c.beginPath();c.arc(x,y,16-q*8,0,7);c.fill()}
+      const mx=tx-20,my=ty-34,g=c.createRadialGradient(mx,my,2,mx,my,34);g.addColorStop(0,'#fff5c0');g.addColorStop(0.35,'rgba(255,160,50,.95)');g.addColorStop(0.7,'rgba(220,70,20,.8)');g.addColorStop(1,'rgba(160,30,10,0)');c.fillStyle=g;c.beginPath();c.arc(mx,my,34,0,7);c.fill();
+      c.fillStyle='#5a2a14';c.strokeStyle=HO;c.lineWidth=1.4;c.beginPath();c.moveTo(mx-12,my-4);c.lineTo(mx-4,my-13);c.lineTo(mx+9,my-10);c.lineTo(mx+13,my+2);c.lineTo(mx+4,my+12);c.lineTo(mx-9,my+9);c.closePath();c.fill();c.stroke();
+      c.strokeStyle='#ffb347';c.lineWidth=1.6;c.beginPath();c.moveTo(mx-7,my-2);c.lineTo(mx+1,my+1);c.lineTo(mx+6,my-5);c.moveTo(mx+1,my+1);c.lineTo(mx-1,my+8);c.stroke();
+      c.fillStyle='#ffe59a';c.font='800 18px sans-serif';c.textAlign='center';c.fillText('260',tx+10,ty-62)}],
+    ['Лучник: «Дождь стрел»','клавиша V: стрелы падают на толпу вокруг',()=>{
       heroFig(c,'archer',-60,20,2,1,{head:'archer',armor:'archer',legs:'archer'},1);const cx=60,cy=0;
       c.fillStyle='rgba(95,201,138,.15)';c.beginPath();c.ellipse(cx,cy+10,80,34,0,0,7);c.fill();c.strokeStyle='rgba(95,201,138,.6)';c.lineWidth=1.5;c.stroke();
       [[30,-10],[90,5],[60,30]].forEach(([x,y])=>zomb(x,y,1.4));
