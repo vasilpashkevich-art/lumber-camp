@@ -10,5 +10,5 @@ ok(g.RX.hammers.length===0,'молот вернулся в руку');
 // без гонящихся — в ближайшего рядом
 g.zombies().length=0;const n=mk(-100,0,false);ok(g.hammerTargets()[0]===n,'если никто не гонится — в ближайшего');
 // погоня: обычный мертвец гонится дальше, чем раньше
-{g.zombies().length=0;const q=g.pois()[0];const z=g.makeZombie(2,q.x+40,q.y,false,2);z.hx=z.x;z.hy=z.y;g.zombies().push(z);g.P.x=z.hx+400;g.P.y=z.hy;frames(2);ok(z.canChase!==false,'гонится в 400 от своего места');g.P.x=z.hx+520;frames(2);ok(z.canChase===false,'в 520 — бросает погоню')}
+{S.perkPend=0;els.perks.hidden=true;els.dawn.hidden=true;g.zombies().length=0;const q=g.pois()[0];const z=g.makeZombie(2,q.x+40,q.y,false,2);z.hx=z.x;z.hy=z.y;g.zombies().push(z);const hz=g.zoneAt(z.hx,z.hy);let dir=[1,0];for(let k=0;k<16;k++){const a=k*Math.PI/8,c=[Math.cos(a),Math.sin(a)];if(Math.hypot(z.hx+c[0]*400-g.CX,z.hy+c[1]*400-g.CX)>g.CFG.fenceR+80&&g.zoneAt(z.hx+c[0]*400,z.hy+c[1]*400)===hz&&g.zoneAt(z.hx+c[0]*520,z.hy+c[1]*520)===hz){dir=c;break}}g.P.x=z.hx+dir[0]*400;g.P.y=z.hy+dir[1]*400;frames(2);ok(z.canChase!==false,'гонится в 400 от своего места');g.P.x=z.hx+dir[0]*520;g.P.y=z.hy+dir[1]*520;frames(2);ok(z.canChase===false,'в 520 — бросает погоню')}
 console.log(bad?'FAILED '+bad:'hammer ok');

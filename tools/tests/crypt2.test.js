@@ -23,7 +23,7 @@ const w0=g.S.wood,runs0=g.S.cryptRuns||0;g.openDunChest();ok(g.S.wood>w0&&g.S.cr
 // гарантия комплекта и без повторов
 g.S.cls='warrior';g.S.inv=[];g.S.setPity=14;const before=g.drops().filter(d=>d.kind==='item').length;
 g.DG.chest.open=false;g.openDunChest();const setDrops=g.drops().filter(d=>d.kind==='item'&&d.it.set==='warrior');ok(setDrops.length>=1,'гарантия через 15 походов');
-g.S.inv=[g.makeSetItem('warrior','head',3),g.makeSetItem('warrior','armor',3)];let slots=new Set();for(let i=0;i<40;i++){g.S.setPity=15;g.DG.chest.open=false;const n0=g.drops().length;g.openDunChest();for(const d of g.drops().slice(n0))if(d.kind==='item')slots.add(d.it.slot)}
+g.S.inv=[g.makeSetItem('warrior','head',3),g.makeSetItem('warrior','armor',3)];let slots=new Set();for(let i=0;i<40;i++){g.S.setPity=15;g.DG.chest.open=false;const n0=g.drops().length;g.openDunChest();for(const d of g.drops().slice(n0))if(d.kind==='item'&&d.it.set)slots.add(d.it.slot)}
 ok(slots.size===1&&slots.has('legs'),'выпадают только недостающие вещи');
 // бонус комплекта
 g.S.eq.head=g.S.inv[0];g.S.eq.armor=g.S.inv[1];ok(g.setCount('warrior')===2&&g.gear('dmg')>=15,'бонус 2 вещей +15% урона');

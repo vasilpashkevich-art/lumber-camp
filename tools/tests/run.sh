@@ -7,6 +7,6 @@ python3 tools/build.py >/dev/null || exit 1
 fail=0
 for t in tools/tests/*.test.js; do
   out=$(timeout 300 node "$t" 2>&1); code=$?
-  if [ $code -ne 0 ] || echo "$out" | grep -q "ERR\|Error"; then echo "✗ $t"; echo "$out" | tail -5; fail=1; else echo "✓ $t — $(echo "$out" | tail -1 | cut -c1-90)"; fi
+  if [ $code -ne 0 ] || echo "$out" | grep -q "ERR\|Error\|^FAIL"; then echo "✗ $t"; echo "$out" | tail -5; fail=1; else echo "✓ $t — $(echo "$out" | tail -1 | cut -c1-90)"; fi
 done
 exit $fail
