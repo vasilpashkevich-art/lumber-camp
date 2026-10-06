@@ -3842,7 +3842,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 // режим проверки для снимков экрана: только при #dev в адресе
-if(location.hash==='#dev')window.__G={get S(){return S},P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG}};
+if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG}};
 function start(data){
   const saved=(data&&data.state)||loadLocal();
   S=migrate(saved);
