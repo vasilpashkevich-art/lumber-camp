@@ -3344,8 +3344,14 @@ $('stayBtn').addEventListener('click',()=>{$('win').hidden=true;toast('Вы ос
 $('ngBtn').addEventListener('click',()=>{S.meta.ng++;S.meta.relicPend+=2;$('win').hidden=true;newGame(true);save();toast(`Великое переселение ${S.meta.ng}: новая карта, враги сильнее.`,'good');setTimeout(showRelics,400)});
 
 /* ================= LOOP ================= */
-let last=performance.now(),hudT=0,miniT=0;
+let last=performance.now(),hudT=0,miniT=0,lastWall=Date.now();
+// вкладка была скрыта или компьютер спал: начислить работу лагеря за паузу
+function checkWallGap(wall=Date.now()){
+  if(wall-lastWall>OFFLINE.min*1000&&!S.over){S.lastSeen=lastWall;applyOffline()}
+  lastWall=wall;
+}
 function frame(now){
+  checkWallGap();
   let dt=Math.min(0.05,(now-last)/1000);last=now;if(slowT>0&&!menuOpen){slowT-=dt;dt*=0.3}
   if(!menuOpen&&!mapOpen&&!S.over&&!perksOpen()&&$('win').hidden)update(dt);
   render(now);if(mapOpen)drawBigMap(now);
@@ -3358,14 +3364,14 @@ function start(data){
   S=migrate(saved);
   buildWorld();applyState();resize();hud();
   if(S.over)gameOver();
-  else{applyOffline();fillQuests();renderQuests();if(S.meta.relicPend>0)setTimeout(showRelics,400);else if(S.perkPend>0)setTimeout(showPerks,400)}
+  else{applyOffline();lastWall=Date.now();fillQuests();renderQuests();if(S.meta.relicPend>0)setTimeout(showRelics,400);else if(S.perkPend>0)setTimeout(showPerks,400)}
   if(!saved)toast('Рубите берёзы рядом с лагерем и носите древесину домой. Серые пятна — скалы с камнем. Первая ночь через 2,5 минуты.');
   requestAnimationFrame(t=>{last=t;frame(t)});
 }
 addEventListener('beforeunload',save);
 mini.addEventListener('click',()=>{if(!S.over)toggleMap(true)});
 addEventListener('resize',()=>{if(mapOpen){bmResize();bmZoom(1)}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){save();lastWall=Date.now()}else checkWallGap()});
 try{window.claude?.hot?.snapshot?.(()=>({state:S}))}catch(e){}
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 })();
