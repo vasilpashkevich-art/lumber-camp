@@ -12,7 +12,7 @@ g.openMenu('hero');ok(!g.menuOpen,'повторное нажатие закры�
 g.openMenuHere();ok(g.menuOpen&&g.menuKind==='camp'&&g.MENUS.camp.tabs.includes(g.tab),'B открывает «Лагерь»');
 ok(!/data-tab="items"/.test(els.tabs.innerHTML),'в «Лагере» нет вещей героя');
 g.openMenu('hero','gear');ok(g.menuKind==='hero'&&g.tab==='gear','из «Лагеря» сразу в «Снаряжение»');
-g.openMenu('cfg','save');const r=g.rowsFor('save');ok(r.some(x=>x.act==='sound')&&r.some(x=>x.save),'⚙: звук и сохранение');
+g.openMenu('cfg');ok(g.tab==='sound','⚙ открывается на «Звук и музыка»');const r=g.rowsFor('sound');ok(r.some(x=>x.act==='sound')&&r.some(x=>x.raw&&/data-vol="m"/.test(x.raw)),'⚙: звук, ползунки громкости');ok(g.rowsFor('save').some(x=>x.save),'⚙: сохранение');
 // реликвии
 for(const k of ['hammer','frost','storm','twin','gather','steel'])S.meta.relics[k]=1;g.updRelicBar();
 ok(/data-relic-use="hammer"/.test(els.relicBar.innerHTML)&&/data-relic-use="_cls"/.test(els.relicBar.innerHTML)&&!/data-relic-use="storm"/.test(els.relicBar.innerHTML),'внизу — только умения на клавишах');
