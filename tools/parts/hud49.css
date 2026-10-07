@@ -1,0 +1,58 @@
+/* ===== v49: полоса сверху, портрет героя, панель умений внизу ===== */
+#topbar{top:0;left:0;right:0;height:32px;padding:0 12px;padding-top:env(safe-area-inset-top,0px);display:flex;align-items:center;gap:16px;background:rgba(10,14,11,.9);border-bottom:1px solid var(--line);font-size:13px;pointer-events:auto;z-index:7}
+#topbar .tb{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0;white-space:nowrap}
+#topbar .tb-store{justify-content:flex-end}
+#topbar .bar{width:80px;flex:none}
+#topbar #bagbar i{background:#c9a06a}
+#topbar #clock{position:static;transform:none;background:none;border:0;border-radius:0;padding:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap;flex:none}
+#topbar #clock b{display:inline;font-size:16px}
+#topbar #clock span{display:inline!important;font-size:12px}
+#cfgBtn{all:unset;cursor:pointer;width:26px;height:24px;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);font-size:14px;color:var(--ink);margin-left:6px}
+#cfgBtn:hover{border-color:var(--ember)}
+#stats{top:calc(42px + env(safe-area-inset-top,0px));left:12px;display:flex;gap:10px;align-items:center;background:none;border:0;padding:0;min-width:0;--cc:#86a85c}
+#pfBtn{all:unset;cursor:pointer;pointer-events:auto;position:relative;width:68px;height:68px;border-radius:50%;border:3px solid var(--cc);box-shadow:0 0 14px var(--cc),inset 0 0 0 2px #0b0f0c;background:radial-gradient(circle at 50% 35%,#6a8a4a,#2c3e22);flex:none}
+#pfBtn:hover{filter:brightness(1.12)}
+#pfCv{width:68px;height:68px;border-radius:50%;display:block}
+#pfBtn b{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:#141b16;border:2px solid #f4c766;color:#f4c766;border-radius:10px;font-size:12px;padding:0 6px;line-height:16px;font-family:var(--f-body)}
+#stats .uinfo{background:rgba(14,19,15,.82);border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:220px;display:grid;gap:4px}
+#stats .u-name{display:flex;align-items:baseline;gap:6px}
+#stats .u-name b{color:var(--cc);font-size:14px}
+#stats .u-name small{color:var(--muted);font-size:11px}
+#stats .bar.hp{height:13px;position:relative;background:#2a1414}
+#stats .bar.hp i{background:linear-gradient(#e0574a,#a8352a)}
+#hpTxt{position:absolute;inset:0;font-size:10px;line-height:13px;text-align:center;font-weight:700;color:#fff;text-shadow:0 1px 1px #000}
+#stats .bar.xp{height:4px}
+#stats .bar.xp i{background:#f4c766}
+#xpTxt{font-size:10px;color:var(--muted)}
+#relicPas{position:fixed;z-index:6;top:calc(122px + env(safe-area-inset-top,0px));left:12px;display:grid;grid-template-columns:repeat(8,32px);gap:4px;pointer-events:auto}
+#relicPas .rlc{width:32px;height:32px;border-radius:6px}
+#relicPas .rlc em{font-size:9px}
+#relicBar{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(14,19,15,.72);border:1px solid var(--line);border-radius:10px;padding:6px;align-items:center}
+#mini{top:calc(42px + env(safe-area-inset-top,0px))}
+#quests{top:calc(172px + env(safe-area-inset-top,0px))}
+#toasts{--toast-top:calc(204px + env(safe-area-inset-top,0px))}
+#hqWarn{top:calc(40px + env(safe-area-inset-top,0px))}
+#prompt{bottom:calc(164px + env(safe-area-inset-bottom,0px))}
+#sndBtn{display:none!important}
+#help{max-width:calc(50vw - 200px)}
+/* узкий экран и телефон: полоса в две строки, панель умений справа столбиком */
+@media (max-width:900px){
+  #topbar{height:auto;flex-wrap:wrap;row-gap:2px;padding:3px 8px;font-size:11px}
+  #topbar #clock{order:-1;flex-basis:100%;justify-content:center}
+  #topbar{justify-content:space-between}
+  #topbar .tb{flex:0 1 auto;overflow:hidden}
+  #topbar .lbl,#topbar .bar{display:none}
+  #stats .u-name small,#xpTxt{display:none}
+  #stats{top:calc(52px + env(safe-area-inset-top,0px))}
+  #pfBtn,#pfCv{width:52px;height:52px}
+  #stats .uinfo{width:150px;padding:4px 8px}
+  #relicPas{top:calc(118px + env(safe-area-inset-top,0px));grid-template-columns:repeat(6,26px)}
+  #relicPas .rlc{width:26px;height:26px}#relicPas .rlc svg{width:18px;height:18px}
+  #mini{top:calc(52px + env(safe-area-inset-top,0px))}
+  #quests{top:calc(150px + env(safe-area-inset-top,0px))}
+  #toasts{--toast-top:calc(196px + env(safe-area-inset-top,0px))}
+}
+@media (max-width:700px),(pointer:coarse){
+  #relicBar{top:auto;bottom:calc(210px + env(safe-area-inset-bottom,0px));left:auto;right:10px;transform:none;flex-direction:column;background:none;border:0;padding:0}
+}
+.touch #relicBar .rlc.act,.touch #relicBar .rlc{width:40px;height:40px}

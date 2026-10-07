@@ -12,6 +12,6 @@ const {chromium}=require('playwright'),path=require('path'),OUT=process.env.SHOT
   await p.waitForTimeout(cl==='mage'?250:350);
   await p.screenshot({path:path.join(OUT,`set_${cl}.png`),clip:{x:340,y:180,width:600,height:440}});
   await p.screenshot({path:path.join(OUT,`set_${cl}_bar.png`),clip:{x:440,y:60,width:400,height:80}});
-  if(cl==='warrior'){await p.keyboard.press('KeyB');await p.waitForTimeout(300);await p.click('[data-tab="items"]');await p.waitForTimeout(500);await p.screenshot({path:path.join(OUT,'set_inv.png'),fullPage:true})}
+  if(cl==='warrior'){await p.keyboard.press('KeyI');await p.waitForTimeout(300);await p.click('[data-tab="items"]');await p.waitForTimeout(500);await p.screenshot({path:path.join(OUT,'set_inv.png'),fullPage:true})}
   await c.close()}
  await b.close()})();

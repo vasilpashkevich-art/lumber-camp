@@ -202,7 +202,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 .touch #atkBtn{right:162px;bottom:96px;width:58px;height:58px;border-radius:50%;font-size:12px;gap:1px;flex-direction:column}
 .touch #atkBtn small{font-size:10px}
 .touch #campBtn{position:fixed;top:calc(104px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));height:44px;min-width:92px;padding:0 14px;font-size:14px;border-color:var(--ember)}
-.touch #sndBtn{position:fixed;top:calc(154px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));height:36px;min-width:92px;padding:0 10px;font-size:11px}
+.touch #sndBtn,.touch #heroBtn{position:fixed;top:calc(154px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));height:36px;min-width:92px;padding:0 10px;font-size:11px}
 .touch #quests{top:calc(198px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));width:min(200px,calc(100vw - 220px));font-size:12px}
 .touch #questHead{font-size:12px;padding:6px 0}
 .touch #questList li small{display:flex}
@@ -225,7 +225,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 @media (max-width:520px){
   .touch #mini{width:90px;height:90px}
   .touch #campBtn{top:calc(110px + env(safe-area-inset-top,0px))}
-  .touch #sndBtn{top:calc(160px + env(safe-area-inset-top,0px))}
+  .touch #sndBtn,.touch #heroBtn{top:calc(160px + env(safe-area-inset-top,0px))}
   .touch #quests{top:calc(204px + env(safe-area-inset-top,0px));width:min(170px,calc(100vw - 210px));font-size:11px}
   .touch #questList li small{display:none}
   .touch #stats{min-width:160px}
@@ -236,7 +236,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
   #stats{padding:6px 8px;gap:3px;font-size:12px}
   #mini{width:70px;height:70px}
   .touch #campBtn{top:calc(86px + env(safe-area-inset-top,0px));height:38px}
-  .touch #sndBtn{top:calc(130px + env(safe-area-inset-top,0px));height:30px;font-size:10px}
+  .touch #sndBtn,.touch #heroBtn{top:calc(130px + env(safe-area-inset-top,0px));height:30px;font-size:10px}
   .touch #quests{top:calc(130px + env(safe-area-inset-top,0px))}
   #clock{top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%)}
   .touch #toasts{--toast-top:calc(150px + env(safe-area-inset-top,0px))}
@@ -250,22 +250,80 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
   .touch #quests #questList{max-height:calc(100vh - 230px);overflow-y:auto}
 }
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
+/* ===== v49: полоса сверху, портрет героя, панель умений внизу ===== */
+#topbar{top:0;left:0;right:0;height:32px;padding:0 12px;padding-top:env(safe-area-inset-top,0px);display:flex;align-items:center;gap:16px;background:rgba(10,14,11,.9);border-bottom:1px solid var(--line);font-size:13px;pointer-events:auto;z-index:7}
+#topbar .tb{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0;white-space:nowrap}
+#topbar .tb-store{justify-content:flex-end}
+#topbar .bar{width:80px;flex:none}
+#topbar #bagbar i{background:#c9a06a}
+#topbar #clock{position:static;transform:none;background:none;border:0;border-radius:0;padding:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap;flex:none}
+#topbar #clock b{display:inline;font-size:16px}
+#topbar #clock span{display:inline!important;font-size:12px}
+#cfgBtn{all:unset;cursor:pointer;width:26px;height:24px;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);font-size:14px;color:var(--ink);margin-left:6px}
+#cfgBtn:hover{border-color:var(--ember)}
+#stats{top:calc(42px + env(safe-area-inset-top,0px));left:12px;display:flex;gap:10px;align-items:center;background:none;border:0;padding:0;min-width:0;--cc:#86a85c}
+#pfBtn{all:unset;cursor:pointer;pointer-events:auto;position:relative;width:68px;height:68px;border-radius:50%;border:3px solid var(--cc);box-shadow:0 0 14px var(--cc),inset 0 0 0 2px #0b0f0c;background:radial-gradient(circle at 50% 35%,#6a8a4a,#2c3e22);flex:none}
+#pfBtn:hover{filter:brightness(1.12)}
+#pfCv{width:68px;height:68px;border-radius:50%;display:block}
+#pfBtn b{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:#141b16;border:2px solid #f4c766;color:#f4c766;border-radius:10px;font-size:12px;padding:0 6px;line-height:16px;font-family:var(--f-body)}
+#stats .uinfo{background:rgba(14,19,15,.82);border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:220px;display:grid;gap:4px}
+#stats .u-name{display:flex;align-items:baseline;gap:6px}
+#stats .u-name b{color:var(--cc);font-size:14px}
+#stats .u-name small{color:var(--muted);font-size:11px}
+#stats .bar.hp{height:13px;position:relative;background:#2a1414}
+#stats .bar.hp i{background:linear-gradient(#e0574a,#a8352a)}
+#hpTxt{position:absolute;inset:0;font-size:10px;line-height:13px;text-align:center;font-weight:700;color:#fff;text-shadow:0 1px 1px #000}
+#stats .bar.xp{height:4px}
+#stats .bar.xp i{background:#f4c766}
+#xpTxt{font-size:10px;color:var(--muted)}
+#relicPas{position:fixed;z-index:6;top:calc(122px + env(safe-area-inset-top,0px));left:12px;display:grid;grid-template-columns:repeat(8,32px);gap:4px;pointer-events:auto}
+#relicPas .rlc{width:32px;height:32px;border-radius:6px}
+#relicPas .rlc em{font-size:9px}
+#relicBar{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(14,19,15,.72);border:1px solid var(--line);border-radius:10px;padding:6px;align-items:center}
+#mini{top:calc(42px + env(safe-area-inset-top,0px))}
+#quests{top:calc(172px + env(safe-area-inset-top,0px))}
+#toasts{--toast-top:calc(204px + env(safe-area-inset-top,0px))}
+#hqWarn{top:calc(40px + env(safe-area-inset-top,0px))}
+#prompt{bottom:calc(164px + env(safe-area-inset-bottom,0px))}
+#sndBtn{display:none!important}
+#help{max-width:calc(50vw - 200px)}
+/* узкий экран и телефон: полоса в две строки, панель умений справа столбиком */
+@media (max-width:900px){
+  #topbar{height:auto;flex-wrap:wrap;row-gap:2px;padding:3px 8px;font-size:11px}
+  #topbar #clock{order:-1;flex-basis:100%;justify-content:center}
+  #topbar{justify-content:space-between}
+  #topbar .tb{flex:0 1 auto;overflow:hidden}
+  #topbar .lbl,#topbar .bar{display:none}
+  #stats .u-name small,#xpTxt{display:none}
+  #stats{top:calc(52px + env(safe-area-inset-top,0px))}
+  #pfBtn,#pfCv{width:52px;height:52px}
+  #stats .uinfo{width:150px;padding:4px 8px}
+  #relicPas{top:calc(118px + env(safe-area-inset-top,0px));grid-template-columns:repeat(6,26px)}
+  #relicPas .rlc{width:26px;height:26px}#relicPas .rlc svg{width:18px;height:18px}
+  #mini{top:calc(52px + env(safe-area-inset-top,0px))}
+  #quests{top:calc(150px + env(safe-area-inset-top,0px))}
+  #toasts{--toast-top:calc(196px + env(safe-area-inset-top,0px))}
+}
+@media (max-width:700px),(pointer:coarse){
+  #relicBar{top:auto;bottom:calc(210px + env(safe-area-inset-bottom,0px));left:auto;right:10px;transform:none;flex-direction:column;background:none;border:0;padding:0}
+}
+.touch #relicBar .rlc.act,.touch #relicBar .rlc{width:40px;height:40px}
 </style>
 
 <canvas id="game"></canvas>
 
-<div class="hud" id="stats">
-  <div class="row"><span class="lbl"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2S2.2 10.7 2.2 6.6C2.2 4.4 3.8 2.9 5.6 2.9c1 0 1.9.5 2.4 1.4.5-.9 1.4-1.4 2.4-1.4 1.8 0 3.4 1.5 3.4 3.7 0 4.1-5.8 7.6-5.8 7.6z" fill="#cf4b3f"/><path d="M4.6 5.2c.4-.8 1.1-1 1.6-1" stroke="#f3a097" stroke-width="1.1" fill="none" stroke-linecap="round"/></svg>Здоровье</span><span class="num" id="hpTxt">10/10</span></div>
-  <div class="bar" id="hpbar"><i></i></div>
-  <div class="row"><span class="lbl"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.6 5.4V4.2a2.4 2.4 0 0 1 4.8 0v1.2" stroke="#c9a46a" stroke-width="1.4" fill="none"/><rect x="2.4" y="5.2" width="11.2" height="9" rx="2.6" fill="#6b4a2c"/><rect x="5.2" y="8.2" width="5.6" height="2.2" rx="1" fill="#e98b3d"/></svg>Сумка</span><span class="val" id="bagVal"></span></div>
-  <div class="bar" id="bagbar"><i></i></div>
-  <div class="row"><span class="lbl">Склад</span><span class="val" id="storeVal"></span></div>
-  <div class="row"><span class="lbl" style="color:#f4c766">Уровень <b class="num" id="lvlTxt" style="margin-left:4px">1</b></span><span class="num" id="xpTxt" style="font-size:11px;color:var(--muted)">0/25</span></div>
-  <div class="bar" id="xpbar"><i></i></div>
+<div class="hud" id="topbar">
+  <div class="tb tb-bag"><span class="lbl"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.6 5.4V4.2a2.4 2.4 0 0 1 4.8 0v1.2" stroke="#c9a46a" stroke-width="1.4" fill="none"/><rect x="2.4" y="5.2" width="11.2" height="9" rx="2.6" fill="#6b4a2c"/><rect x="5.2" y="8.2" width="5.6" height="2.2" rx="1" fill="#e98b3d"/></svg>Сумка</span><span class="val" id="bagVal"></span><div class="bar" id="bagbar"><i></i></div></div>
+  <div id="clock"><b id="dayTxt">День 1</b><span id="phaseTxt">до ночи 2:30</span><span id="streakTxt">· серия ночей 0</span></div>
+  <div class="tb tb-store"><span class="lbl">Склад</span><span class="val" id="storeVal"></span><button type="button" id="cfgBtn" title="Сохранение и звук" aria-label="Сохранение и звук">⚙</button></div>
 </div>
+<div class="hud" id="stats">
+  <button type="button" id="pfBtn" title="Персонаж (I)" aria-label="Персонаж"><canvas id="pfCv" width="136" height="136"></canvas><b class="num" id="lvlTxt">1</b></button>
+  <div class="uinfo"><div class="u-name"><b id="clsTxt">Лесоруб</b><small id="clsSub"></small></div><div class="bar hp" id="hpbar"><i></i><span class="num" id="hpTxt">10/10</span></div><div class="bar xp" id="xpbar"><i></i></div><small class="num" id="xpTxt">0/25</small></div>
+</div>
+<div id="relicPas" hidden></div>
 <div id="relicBar" hidden></div>
 <div id="clsPick" hidden><div class="cls-wrap"><h2>Выберите класс героя</h2><p>Топор и рывок (Shift) есть у всех. Класс определяет второе оружие, способность (C) и свою ветку умений. Прокачка второго оружия сохраняется.</p><div id="clsList"></div></div></div>
-<div class="hud" id="clock"><b id="dayTxt">День 1</b><span id="phaseTxt">до ночи 2:30</span><span id="streakTxt" style="display:block">Серия ночей: 0</span></div>
 <div id="dawn" hidden><div class="dawn-card"><h3 id="dawnTitle">Рассвет</h3><ul id="dawnList"></ul><button class="gbtn" id="dawnOk" type="button">Дальше</button></div></div>
 <canvas class="hud" id="mini" width="240" height="240" title="Открыть карту (K)"></canvas>
 <div id="bigmap" hidden><div class="bm-card"><div class="bm-head"><h2>Карта</h2><span class="bm-hint">Колесо мыши — масштаб · перетаскивание — сдвиг · K или Esc — закрыть</span><div class="bm-tools"><button class="gbtn" id="bmMe" type="button">Где я</button><button class="gbtn" id="bmIn" type="button" aria-label="Приблизить">+</button><button class="gbtn" id="bmOut" type="button" aria-label="Отдалить">−</button><button class="gbtn" id="bmClose" type="button">Закрыть</button></div></div>
@@ -273,7 +331,7 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
 <div class="bm-leg"><span><i style="background:#e98b3d;border-radius:50%"></i>Лагерь</span><span><i class="di" style="background:#ff4a3a"></i>Логово босса</span><span><i class="di" style="background:#86a85c"></i>Босс повержен</span><span><i class="hs" style="background:#86a85c"></i>Хутор</span><span><i class="hs" style="background:#f4c766"></i>Хижина / руины</span><span><i style="background:#f4c766;border-radius:50%"></i>Торговец</span><span><i style="background:#a06ad0"></i>Могильник</span><span><i style="background:#c08ae8"></i>Склеп</span><span><i style="background:linear-gradient(90deg,#4f8aa0,#6a4a2a,#5ac040,#bfe4f8);border-radius:50%"></i>Водоёмы</span><span><i style="background:#77746b;border-radius:50%"></i>Скалы</span><span><i style="background:#ff5a4a;width:5px;height:5px"></i>Мертвецы</span></div></div></div>
 <div class="hud" id="prompt" hidden></div>
 <div class="hud" id="toasts"></div>
-<div id="help">WASD / стрелки — идти · Пробел или E (держать) — рубить, копать, бить<br>Shift — рывок · R — лук/топор · B — меню лагеря · K — карта · Q — лечение · F — сила · M — звук · болото замедляет</div>
+<div id="help">WASD / стрелки — идти · Пробел или E (держать) — рубить, копать, бить<br>Shift — рывок · R — лук/топор · B — лагерь · I — персонаж · K — карта · Q — лечение · F — сила · M — звук · болото замедляет</div>
 
 <div class="btns">
   <button class="gbtn" id="potBtn" type="button" hidden aria-label="Выпить зелье лечения">×0</button>
@@ -281,7 +339,8 @@ textarea{width:100%;box-sizing:border-box;min-height:70px;background:#0b0f0c;col
   <button class="gbtn" id="dashBtn" type="button">Рывок</button>
   <button class="gbtn" id="wpnBtn" type="button" hidden>Топор</button>
   <button class="gbtn" id="sndBtn" type="button" aria-pressed="true">Звук: вкл</button>
-  <button class="gbtn" id="campBtn" type="button">Лагерь</button>
+  <button class="gbtn" id="heroBtn" type="button" title="Персонаж (I)">Персонаж</button>
+  <button class="gbtn" id="campBtn" type="button" title="Лагерь (B)">Лагерь</button>
   <button class="gbtn" id="act" type="button">Рубить</button>
 </div>
 
@@ -903,6 +962,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyV'){useSetAbility();return}
   {const rk=RELIC_ACT.find(q=>RELIC2[q].key===e.code||(e.code==='Numpad'+RELIC2[q].kl));if(rk){if(rl(rk))useRelic(rk);return}}
   if(e.code==='KeyB'){openMenuHere();e.preventDefault();return}
+  if(e.code==='KeyI'){openMenu('hero');e.preventDefault();return}
   if(e.code==='KeyM'){setSound(!Snd.on);return}
   if(e.code==='KeyQ'||e.code==='KeyH'){drinkPotion();return}
   if(e.code==='KeyF'){drinkAtk();return}
@@ -1134,15 +1194,15 @@ function modText(it){
 }
 function giveItem(it,x,y){
   if(x!=null){drops.push({x,y,kind:'item',it,t:180});return}
-  if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее во вкладке «Вещи».','bad','invfull');return false}
+  if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее в окне персонажа (I), вкладка «Вещи».','bad','invfull');return false}
   S.inv.push(it);return true;
 }
 function pickItem(d){
-  if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее во вкладке «Вещи».','bad','invfull');return}
+  if(S.inv.length>=INV_MAX){toast('Сумка вещей полна (20). Разберите лишнее в окне персонажа (I), вкладка «Вещи».','bad','invfull');return}
   S.inv.push(d.it);d.t=0;sfx.pickup();
   const cmp=itemCompare(d.it);
   addFloat(d.x,d.y-24,d.it.name+(cmp.better?' ▲':''),cmp.better?'#7ee07e':RAR[d.it.rar].col);
-  if(cmp.better)toast(`${d.it.name} — ${cmp.e?`лучше надетого (+${cmp.delta})`:'ячейка была пустой'}. Наденьте во вкладке «Вещи».`,'good');
+  if(cmp.better)toast(`${d.it.name} — ${cmp.e?`лучше надетого (+${cmp.delta})`:'ячейка была пустой'}. Наденьте в окне персонажа (I), вкладка «Вещи».`,'good');
   else if(d.it.rar>=2)toast(`${RAR[d.it.rar].n} предмет: ${d.it.name}`,'good');
   save();
 }
@@ -1373,7 +1433,7 @@ function drawRefugee(r){
   ctx.fillStyle='#000';ctx.fillRect(x-10,y-14,20,3);ctx.fillStyle='#9fc3d6';ctx.fillRect(x-10,y-14,20*r.hp/r.max,3);
 }
 const MERCH_POS={get x(){return CX+92},get y(){return CY+56}};
-function openShop(){if(!merchantHere())return;tab='shop';menuSig='';toggleMenu(true)}
+function openShop(){if(!merchantHere())return;menuKind='camp';tab='shop';menuSig='';toggleMenu(true)}
 function drawMerchant(now){
   drawMerchant0(now);const x=MERCH_POS.x,y=MERCH_POS.y,b=Math.sin(now/250)*3,near=dist(P.x,P.y,x,y)<70;
   ctx.textAlign='center';
@@ -1621,7 +1681,9 @@ function updRelicBar(){
   const fs=fullSet(),sig=(cl||'')+'|'+(fs||'')+'|'+own.map(k=>k+rl(k)).join(',');
   if(sig!==relicBarSig){relicBarSig=sig;el.hidden=!own.length&&!cl&&!fs;
     const ord=own.sort((a,b)=>(RELIC2[b]&&RELIC2[b].act?2:RELIC2[b]?1:0)-(RELIC2[a]&&RELIC2[a].act?2:RELIC2[a]?1:0));
-    el.innerHTML=ord.map(k=>{const A=RELIC2[k]&&RELIC2[k].act;return `<button type="button" class="rlc${A?' act':''}${RELIC2[k]?'':' old'}" data-relic-use="${k}" title="${relicName(k)} (ранг ${rl(k)}): ${relicDesc(k,rl(k))}">${relicSvg(k,A?28:22)}${A?`<b>${RELIC2[k].kl}</b><i data-cd="${k}"></i>`:''}${rl(k)>1?`<em>${rl(k)}</em>`:''}</button>`}).join('');
+    const rb=k=>{const A=RELIC2[k]&&RELIC2[k].act;return `<button type="button" class="rlc${A?' act':''}${RELIC2[k]?'':' old'}" data-relic-use="${k}" title="${relicName(k)} (ранг ${rl(k)}): ${relicDesc(k,rl(k))}">${relicSvg(k,A?28:22)}${A?`<b>${RELIC2[k].kl}</b><i data-cd="${k}"></i>`:''}${rl(k)>1?`<em>${rl(k)}</em>`:''}</button>`};
+    el.innerHTML=ord.filter(k=>RELIC2[k]&&RELIC2[k].act).map(rb).join('');
+    {const pe=document.getElementById('relicPas'),ps=ord.filter(k=>!(RELIC2[k]&&RELIC2[k].act));if(pe){pe.innerHTML=ps.map(rb).join('');pe.hidden=!ps.length}}
     if(fs){const A=SETAB[fs];el.innerHTML=`<button type="button" class="rlc${A.act?' act':''}" data-relic-use="_set" title="${A.name}: ${A.d}${A.act?'':' (срабатывает сама)'}" style="border-color:${SETS[fs].col};box-shadow:0 0 10px ${SETS[fs].col}"><svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">${SETAB_ICO[fs]}</svg>${A.act?'<b>V</b>':''}<i data-cd="_set"></i></button>`+el.innerHTML}
     if(cl)el.innerHTML=`<button type="button" class="rlc act" data-relic-use="_cls" title="${CLASSES[cl].abil}: ${CLASSES[cl].abilD}" style="border-color:${CLASSES[cl].col}"><svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">${ABIL_ICO[cl]}</svg><b>C</b><i data-cd="_cls"></i></button>`+el.innerHTML}
   if(fs){const i=el.querySelector('[data-cd="_set"]');if(i){i.style.height=(SX.cd>0?100*SX.cd/SETAB[fs].cd:0)+'%';i.textContent=SX.cd>0?Math.ceil(SX.cd):''}}
@@ -4220,9 +4282,19 @@ const mini=$('mini'),mctx=mini.getContext('2d');
 const htmlCache={};
 function setHtml(id,h){if(htmlCache[id]!==h){htmlCache[id]=h;$(id).innerHTML=h}}
 const wpnBtn=$('wpnBtn'),campBtn=$('campBtn');
+let pfSig='';const PF_SRC=[22,62,76];// какую часть картинки героя показывать в портрете (x, y, размер)
+// портрет героя слева вверху: лицо в цвете класса, имя класса и мир
+function updPortrait(){
+  const cl=cls(),set=heroSet(),sig=(cl||'')+'|'+set.head+set.armor+set.legs+'|'+((S.meta&&S.meta.ng)||0);if(sig===pfSig)return;pfSig=sig;
+  const st=$('stats');if(st)st.style.setProperty('--cc',cl?CLASSES[cl].col:'#86a85c');
+  $('clsTxt').textContent=cl?CLASSES[cl].br:'Лесоруб';$('clsSub').textContent=`${cl?CLASSES[cl].name+' · ':''}мир ${((S.meta&&S.meta.ng)||0)+1}`;
+  const cv=$('pfCv'),c=cv.getContext&&cv.getContext('2d');if(!c||!c.clearRect)return;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);
+  const sp=heroSprite(cl,1,false,set);if(sp)c.drawImage(sp,PF_SRC[0],PF_SRC[1],PF_SRC[2],PF_SRC[2],0,0,cv.width,cv.width);
+}
 let helpSig='';
-function renderHelp(){const c=cls();$('help').innerHTML=`WASD / стрелки — идти · Пробел или E (держать) — рубить, копать, бить<br>Shift — рывок · R — ${secName().toLowerCase()}/топор${c?` · C — ${CLASSES[c].abil.toLowerCase()}`:''} · B — меню лагеря · K — карта · Q — лечение · F — сила · M — звук · болото замедляет`}
+function renderHelp(){const c=cls();$('help').innerHTML=`WASD / стрелки — идти · Пробел или E (держать) — рубить, копать, бить<br>Shift — рывок · R — ${secName().toLowerCase()}/топор${c?` · C — ${CLASSES[c].abil.toLowerCase()}`:''} · B — лагерь · I — персонаж · K — карта · Q — лечение · F — сила · M — звук · болото замедляет`}
 function hud(){
+  updPortrait();
   {const hs=cls()+'';if(hs!==helpSig){helpSig=hs;renderHelp()}}
   updRelicBar();
   const mh=maxHp(S.up.hp),cap=bagCap(S.up.bag);
@@ -4230,11 +4302,11 @@ function hud(){
   setHtml('bagVal',`${resHtml(S.bag)} ${resHtml(S.bagStone,'stone')}${S.bagIron?' '+resHtml(S.bagIron,'iron'):''} <span class="num" style="color:var(--muted)">/ ${cap}</span>`);
   $('bagbar').firstChild.style.width=(100*bagTotal()/cap)+'%';
   const wr=woodRate()*60,sr=stoneRate()*60;
-  setHtml('storeVal',`${resHtml(S.wood+(wr>0?` <small>+${wr.toFixed(0)}/м</small>`:''))} ${resHtml(S.stone+(sr>0?` <small>+${sr.toFixed(0)}/м</small>`:''),'stone')}${S.iron||S.forge?' '+resHtml(S.iron,'iron'):''}`);
+  setHtml('storeVal',`${resHtml(S.wood+(wr>0?` <small>+${wr.toFixed(0)}/м</small>`:''))} ${resHtml(S.stone+(sr>0?` <small>+${sr.toFixed(0)}/м</small>`:''),'stone')}${S.iron||S.forge?' '+resHtml(S.iron,'iron'):''}${S.shards?' '+resHtml(S.shards,'shard'):''}${S.keys?' '+resHtml(S.keys,'key'):''}`);
   const ph=phase(),m=Math.floor(ph.left/60),s=Math.floor(ph.left%60);
   $('lvlTxt').textContent=S.lvl;$('xpTxt').textContent=`${Math.floor(S.xp)}/${xpNeed(S.lvl)}`+(restOn()?` · отдых ${mmss(S.rested)}`:'')+(P.rage?` · раж ×${P.rage}`:'');$('xpbar').firstChild.style.width=(100*S.xp/xpNeed(S.lvl))+'%';
   $('dayTxt').textContent=ph.night?`Ночь ${S.day}`:`День ${S.day}`;
-  $('streakTxt').textContent=`Серия ночей: ${S.streak}`+(S.bestStreak>S.streak?` · рекорд ${S.bestStreak}`:'');
+  $('streakTxt').textContent=`· серия ночей ${S.streak}`+(S.bestStreak>S.streak?` (рекорд ${S.bestStreak})`:'');
   potBtn.hidden=S.potions<=0;setHtml('potBtn',`${ICONS.potion} ×${S.potions}`);potBtn.title='Зелье лечения (Q)';
   {const b=S.buffAtk>0,t=Math.ceil(S.buffAtk);atkBtn.hidden=S.potAtk<=0&&!b;atkBtn.classList.toggle('on',b);setHtml('atkBtn',`<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="6.4" y="1.5" width="3.2" height="3" rx=".6" fill="#d8d2c0"/><path d="M6.6 4.4h2.8v1.8a4.6 4.6 0 1 1-2.8 0z" fill="#e8822e"/><path d="M6 12.6l4-4" stroke="#ffe0b0" stroke-width="1.3" stroke-linecap="round"/></svg> ×${S.potAtk}${b?` <small>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</small>`:''}`);atkBtn.title='Зелье силы: +20% урона на минуту (F)'}
   wpnBtn.hidden=S.bow<=0;const wl=S.weapon==='bow'?secName():'Топор';if(wpnBtn.textContent!==wl)wpnBtn.textContent=wl;
@@ -4366,16 +4438,22 @@ function drawBigMap(now){
 /* ================= МЕНЮ ЛАГЕРЯ ================= */
 const TABS=[['hero','Герой'],['log','Летопись'],['items','Вещи'],['gear','Снаряжение'],['camp','Лагерь'],['def','Оборона'],['vil','Деревня'],['farm','Хутора'],['save','Сохранение']];
 let tab='hero', menuSig='';
+// какие вкладки в каком окне
+const MENUS={hero:{title:'Персонаж',tabs:['hero','items','gear','log']},camp:{title:'Лагерь',tabs:['camp','def','vil','farm']},cfg:{title:'Настройки',tabs:['save']}};
+let menuKind='camp';const lastTab={hero:'hero',camp:'camp',cfg:'save'};
+const tabOk=t=>MENUS[menuKind].tabs.includes(t)||(t==='shop'&&menuKind==='camp'&&merchantHere());
+function openMenu(kind,t){if(menuOpen&&menuKind===kind&&!menuFarm&&!t){toggleMenu(false);return}menuKind=kind;tab=t||lastTab[kind];if(!tabOk(tab))tab=MENUS[kind].tabs[0];toggleMenu(true)}
 const menu=$('menu'),list=$('list'),tabsEl=$('tabs'),menuTitle=$('menuTitle');
 function toggleMenu(force,farmId){
   menuOpen=force===undefined?!menuOpen:force;menu.hidden=!menuOpen;actTap=false;
   menuFarm=menuOpen?(farmId||null):null;
   if(menuOpen){keys.clear();actHeld=false;menuSig='';renderMenu()}
 }
-function openMenuHere(){if(menuOpen){toggleMenu(false);return}const q=nearFarm();toggleMenu(true,q?q.id:null)}
+function openMenuHere(){if(menuOpen&&menuKind==='camp'){toggleMenu(false);return}const q=nearFarm();if(q){menuKind='camp';toggleMenu(true,q.id)}else{if(menuOpen)toggleMenu(false);openMenu('camp')}}
+$('heroBtn').onclick=()=>openMenu('hero');$('pfBtn').onclick=()=>openMenu('hero');$('cfgBtn').onclick=()=>openMenu('cfg','save');
 $('campBtn').onclick=openMenuHere;$('closeBtn').onclick=()=>toggleMenu(false);
 menu.addEventListener('click',e=>{if(e.target===menu)toggleMenu(false)});
-tabsEl.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;menuSig='';renderMenu()}});
+tabsEl.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;if(tab!=='shop')lastTab[menuKind]=tab;menuSig='';renderMenu()}});
 list.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled){const t0=S.wood+S.stone;doAct(b.dataset.act);if(S.wood+S.stone<t0)sfx.buy();menuSig='';renderMenu()}});
 
 function gateFor(c0){
@@ -4522,7 +4600,7 @@ function rowsFor(t){
     R.push({note:`Заданий выполнено: ${S.questsDone}`});
   }
   if(t==='log')return logRows();
-  if(t==='save'){R.push({save:true});R.push({title:'Тряска экрана',desc:FX.shake?'Включена: экран вздрагивает от ударов, падений деревьев и смерти боссов':'Выключена',mode:true,act:'fxshake'})}
+  if(t==='save'){R.push({title:'Звук',desc:Snd.on?'Включён · клавиша M':'Выключен · клавиша M',mode:true,act:'sound'});R.push({save:true});R.push({title:'Тряска экрана',desc:FX.shake?'Включена: экран вздрагивает от ударов, падений деревьев и смерти боссов':'Выключена',mode:true,act:'fxshake'})}
   return R;
 }
 function farmRows(q){
@@ -4559,11 +4637,12 @@ const nearFarm=()=>{if(inCamp())return null;let best=null,bd=90;for(const q of p
 function renderMenu(){
   const fq=menuFarm&&poiById(menuFarm);
   if(menuFarm&&(!fq||!farmOf(fq)||dist(fq.x,fq.y,P.x,P.y)>140)){toggleMenu(false);return}
+  if(!fq&&!tabOk(tab))tab=MENUS[menuKind].tabs[0];
   const rows=fq?farmRowsHead(fq).concat(farmRows(fq)):rowsFor(tab);
   const sig=(fq?'F'+fq.id:tab)+'|'+inCamp()+'|'+merchantHere()+'|'+S.shards+'|'+S.iron+'|'+(tab==='items'?JSON.stringify(heroStats()):'')+'|'+JSON.stringify(rows.map(r=>[r.title,r.lvl,r.cost,r.why,r.note,r.k,r.md,r.boss,r.desc,r.itm&&r.itm.id,r.itm&&r.itm.rar,r.itm&&JSON.stringify(r.itm.mods),r.eqd,r.raw]));
   if(sig===menuSig)return;menuSig=sig;
-  menuTitle.textContent=fq?farmName(fq):'Лагерь';tabsEl.hidden=!!fq;
-  tabsEl.innerHTML=fq?'':(merchantHere()?[['shop','Торговец']]:[]).concat(TABS).map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
+  menuTitle.textContent=fq?farmName(fq):MENUS[menuKind].title;tabsEl.hidden=!!fq;
+  tabsEl.innerHTML=fq?'':(menuKind==='camp'&&merchantHere()?[['shop','Торговец']]:[]).concat(MENUS[menuKind].tabs.map(id=>TABS.find(q=>q[0]===id))).map(([id,n])=>`<button class="tab${id===tab?' on':''}" data-tab="${id}" type="button">${n}</button>`).join('');
   let h='';
   if(tab==='shop'&&!merchantHere())tab='hero';
   if(!fq&&!inCamp()&&tab!=='save'&&tab!=='vil'&&tab!=='farm'&&tab!=='hero'&&tab!=='items'&&tab!=='log')h+=`<p class="warn">Строить и улучшать можно только в лагере.</p>`;
@@ -4597,6 +4676,7 @@ let resetArm=false;
 function encodeSave(){try{save();return btoa(unescape(encodeURIComponent(JSON.stringify(S))))}catch(e){return ''}}
 function spend(c0){const c=disc(c0);if(!inCamp()||S.wood<c.w||S.stone<(c.s||0)||S.iron<c.i||S.shards<c.sh)return false;S.wood-=c.w;S.stone-=(c.s||0);S.iron-=c.i;S.shards-=c.sh;if(c.w>=10)S.stats.upgrades++;return true}
 function doAct(a){
+  if(a==='sound'){setSound(!Snd.on);return}
   if(a==='fxshake'){FX.shake=!FX.shake;try{localStorage.setItem('lumber-camp-shake',FX.shake?'1':'0')}catch(e){}return}
   const [k,arg,arg2]=a.split(':');
   if(k==='up'){const u=UP[arg],l=S.up[arg];if(l<u.max&&spend(u.cost(l))){S.up[arg]++;if(arg==='hp')S.p.hp=maxHp(S.up.hp);toast(`${u.name}: уровень ${S.up[arg]}`,'good');if(arg==='axe'&&AXE_SKINS.some(q=>q.from===S.up.axe))toast(`Новый облик топора: «${axeSkin(S.up.axe).name}»`,'good')}}
@@ -4607,7 +4687,7 @@ function doAct(a){
   if(k==='farmtower'){const q=poiById(arg),f=q&&farmOf(q);if(f&&(f.tower||0)<FARM_TOWER_MAX&&spendFarm(farmTowerCost(q.zone,f.tower||0))){f.tower=(f.tower||0)+1;toast(f.tower===1?`${farmName(q)}: вышка с лучником построена`:`${farmName(q)}: вышка ур. ${f.tower}`,'good')}}
   if(k==='road'){const q=poiById(arg),f=q&&farmOf(q);if(f&&!f.road&&S.base>=FARM.roadBase&&spendFarm(farmRoadCost(q.zone))){f.road=true;toast('Дорога проложена. Вагончик повезёт древесину, когда поленница наполнится на треть.','good')}}
   if(k==='farmmode'){const q=poiById(arg),f=q&&farmOf(q);if(f){f.mode=f.mode==='stone'?'wood':'stone';for(const pe of peasants)if(pe.farm===q.id){if(pe.tree)pe.tree.claim=null;pe.tree=null;pe.carry=0;pe.state='idle'}toast(`${farmName(q)}: теперь добывают ${f.mode==='stone'?'камень':'древесину'}`,'good')}}
-  if(k==='forge'&&!S.forge&&spend(FORGE.build)){S.forge=true;toast('Кузница построена. Вещи улучшаются во вкладке «Вещи».','good')}
+  if(k==='forge'&&!S.forge&&spend(FORGE.build)){S.forge=true;toast('Кузница построена. Вещи улучшаются в окне персонажа (I), вкладка «Вещи».','good')}
   if(k==='equip'){const i=S.inv.findIndex(x=>x.id===+arg);if(i>=0){const it=S.inv.splice(i,1)[0],old=S.eq[it.slot];S.eq[it.slot]=it;if(old)S.inv.push(old);const mh=maxHp(S.up.hp);if(S.p.hp>mh)S.p.hp=mh;toast(`Надето: ${it.name}`,'good')}}
   if(k==='unequip'){const it=S.eq[arg];if(it){if(S.inv.length>=INV_MAX)toast('Сумка вещей полна','bad');else{S.eq[arg]=null;S.inv.push(it);const mh=maxHp(S.up.hp);if(S.p.hp>mh)S.p.hp=mh}}}
   if(k==='salvage'){const i=S.inv.findIndex(x=>x.id===+arg);if(i>=0){const it=S.inv.splice(i,1)[0];S.shards+=RAR[it.rar].sh;toast(`Разобрано: +${RAR[it.rar].sh} осколков`,'good')}}
@@ -4695,7 +4775,7 @@ const Z1=()=>CFG.zones[0];
 const TUT=[
  {say:'Здравствуй, путник. Я Ермолай, живу тут дольше, чем стоят эти деревья. Лагерю нужно дерево — сруби пять стволов и отнеси брёвна на склад.',task:'Срубить 5 деревьев',n:5,p:()=>S.stats.chopped,
   tgt:()=>tutAt(tutNear(trees,t=>t.alive&&S.up.axe>=CFG.trees[t.tier].axe),'дерево'),rw:{w:30,xp:10}},
- {say:'Тупым топором много не нарубишь. Загляни в меню построек и улучши топор.',task:'Улучшить топор до 2-го уровня',n:2,p:()=>S.up.axe,tgt:tutCamp,rw:{w:40,xp:12}},
+ {say:'Тупым топором много не нарубишь. Открой окно персонажа — клавиша I или портрет слева вверху — и во вкладке «Снаряжение» улучши топор. Улучшать можно только в лагере.',task:'Улучшить топор до 2-го уровня',n:2,p:()=>S.up.axe,tgt:tutCamp,rw:{w:40,xp:12}},
  {say:'Без камня не построишь ни забора, ни башни. Разбей три валуна и принеси камень на склад.',task:'Разбить 3 валуна',n:3,p:()=>S.stats.mined,
   tgt:()=>tutAt(tutNear(rocks,r=>r.alive),'валун'),rw:{w:20,s:15,xp:14}},
  {say:'Ратуша у нас пока одно название. Расширь лагерь — откроются новые постройки.',task:'Улучшить ратушу до 2-го уровня',n:2,p:()=>S.base,tgt:tutCamp,rw:{w:60,s:20,xp:16}},
@@ -4706,12 +4786,12 @@ const TUT=[
  {say:'Пустой дом — хорошее место для хутора. Восстанови его, и он будет сам добывать дерево или камень.',task:'Восстановить хутор',n:1,p:()=>Object.keys(S.farms).length,
   tgt:()=>tutAt(tutNear(pois,q=>S.poi[q.id]&&!farmOf(q)),'хутор'),rw:{w:80,s:30,xp:24}},
  {say:'Забор мертвецов задержит, но не остановит. Построй башню — лучники будут стрелять, пока ты спишь.',task:'Построить башню',n:1,p:()=>S.towers.some(l=>l>0)?1:0,tgt:tutCamp,rw:{w:60,s:30,xp:26}},
- {say:'Одним топором от всех не отобьёшься. Попроси в лагере сделать тебе второе оружие.',task:()=>`Изготовить второе оружие: ${secName().toLowerCase()}`,n:1,p:()=>S.bow,tgt:tutCamp,rw:{w:100,xp:28}},
+ {say:'Одним топором от всех не отобьёшься. Второе оружие делают в лагере: окно персонажа, вкладка «Снаряжение».',task:()=>`Изготовить второе оружие: ${secName().toLowerCase()}`,n:1,p:()=>S.bow,tgt:tutCamp,rw:{w:100,xp:28}},
  {say:'Мертвецы лезут из могильников. Разрушь хотя бы один — внутри часто лежит ключ от склепа.',task:'Разрушить могильник',n:1,p:()=>Math.max(S.stats.moundsDone||0,Object.keys(S.mounds).length),
   tgt:()=>tutAt(tutNear(mounds,m=>!m.dead&&!S.mounds[m.id]),'могильник'),rw:{w:80,p:1,xp:30}},
  {say:()=>`В роще хозяйничает ${CFG.bosses[1].name}. Пока он жив, покоя не будет. Подготовься и одолей его на арене.`,task:()=>`Победить: ${CFG.bosses[1].name}`,n:1,p:()=>S.bosses[1]?1:0,
   tgt:()=>tutAt(lairs.find(l=>l.zone===1),'логово'),rw:{w:150,s:50,p:1,xp:40}},
- {say:'С боссов, из сундуков и склепов выпадают вещи. Открой снаряжение и надень что-нибудь.',task:'Надеть любую вещь',n:1,p:()=>Object.values(S.eq).some(Boolean)?1:0,tgt:()=>null,rw:{k:1,xp:30}},
+ {say:'С боссов, из сундуков и склепов выпадают вещи. Открой окно персонажа, вкладку «Вещи», и надень что-нибудь.',task:'Надеть любую вещь',n:1,p:()=>Object.values(S.eq).some(Boolean)?1:0,tgt:()=>null,rw:{k:1,xp:30}},
  {say:'Вот тебе ключ. Под землёй, в склепе, лежат лучшие сокровища — и стерегут их лучшие мертвецы.',task:'Пройти склеп',n:1,p:()=>S.cryptRuns||0,tgt:()=>tutAt(tutNear(crypts,()=>true),'склеп'),rw:{w:150,s:60,xp:45}},
  {say:'Последнее. Очисти Берёзовую рощу целиком: перебей нечисть и разрушь все могильники. Тогда я спокойно тебя отпущу.',task:()=>`Очистить зону «${Z1().name}»`,n:1,p:()=>zoneCleared(Z1())?1:0,
   tgt:()=>{const m=tutNear(mounds,m=>m.zone===1&&!m.dead&&!S.mounds[m.id]);if(m)return tutAt(m,'могильник');if(!S.bosses[1])return tutAt(lairs.find(l=>l.zone===1),'логово');const z=tutNear(zombies,z=>z.zone===1&&!z.wave&&!z.boss);return tutAt(z,'нечисть')},rw:{w:250,s:80,p:2,k:1,xp:60}},
@@ -4880,7 +4960,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 // режим проверки для снимков экрана: только при #dev в адресе
-if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},openCryptGate,get floats(){return floats},showPerks,showRelics,makeItem,toggleMenu,useAbility,get CX(){return CX},get CY(){return CY},TUT,tutTarget,openTut,renderTut,P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets,useSetAbility,SX,openDunChest,makeSetItem};
+if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},openMenu,get menuKind(){return menuKind},openCryptGate,get floats(){return floats},showPerks,showRelics,makeItem,toggleMenu,useAbility,get CX(){return CX},get CY(){return CY},TUT,tutTarget,openTut,renderTut,P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets,useSetAbility,SX,openDunChest,makeSetItem};
 function start(data){
   const saved=(data&&data.state)||loadLocal();
   S=migrate(saved);
@@ -4892,8 +4972,9 @@ function start(data){
   requestAnimationFrame(t=>{last=t;frame(t)});
 }
 addEventListener('beforeunload',save);
-document.getElementById('clsList').addEventListener('click',e=>{const b=e.target.closest('[data-cls]');if(!b)return;S.cls=b.dataset.cls;document.getElementById('clsPick').hidden=true;relicBarSig='';sfx.levelup();toast(`Класс: ${CLASSES[S.cls].name}. Способность «${CLASSES[S.cls].abil}» — клавиша C или кнопка вверху. ${S.bow>0?CLASSES[S.cls].weap+' уже в руках (прокачка сохранена).':'Второе оружие — в меню «Снаряжение».'}`,'good');save()});
-document.getElementById('relicBar').addEventListener('click',e=>{const b=e.target.closest('[data-relic-use]');if(!b)return;const k=b.dataset.relicUse;if(k==='_cls'){useAbility();return}if(k==='_set'){useSetAbility();return}if(RELIC2[k]&&RELIC2[k].act)useRelic(k);else toast(`${relicName(k)}: ${relicDesc(k,rl(k))}`,'', 'rinfo')});
+document.getElementById('clsList').addEventListener('click',e=>{const b=e.target.closest('[data-cls]');if(!b)return;S.cls=b.dataset.cls;document.getElementById('clsPick').hidden=true;relicBarSig='';sfx.levelup();toast(`Класс: ${CLASSES[S.cls].name}. Способность «${CLASSES[S.cls].abil}» — клавиша C или кнопка вверху. ${S.bow>0?CLASSES[S.cls].weap+' уже в руках (прокачка сохранена).':'Второе оружие — в окне персонажа (I), вкладка «Снаряжение».'}`,'good');save()});
+const relicClick=e=>{const b=e.target.closest('[data-relic-use]');if(!b)return;const k=b.dataset.relicUse;if(k==='_cls'){useAbility();return}if(k==='_set'){useSetAbility();return}if(RELIC2[k]&&RELIC2[k].act)useRelic(k);else toast(`${relicName(k)}: ${relicDesc(k,rl(k))}`,'', 'rinfo')};
+['relicBar','relicPas'].forEach(id=>document.getElementById(id).addEventListener('click',relicClick));
 mini.addEventListener('click',()=>{if(!S.over)toggleMap(true)});
 addEventListener('resize',()=>{if(mapOpen){bmResize();bmZoom(1)}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();lastWall=Date.now()}else checkWallGap()});

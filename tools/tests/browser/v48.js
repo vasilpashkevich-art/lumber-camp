@@ -14,20 +14,22 @@ let bad=0,errs=0;
   await p.evaluate(()=>{const G=__G;G.S.p.hp=1e6;for(const sl of ['weapon','head','armor','legs','amulet','ring'])G.S.eq[sl]=G.makeItem(4,3,sl);G.S.inv.push(G.makeItem(3,2,'weapon'),G.makeItem(3,3,'ring'));document.getElementById('dawn').hidden=true;document.querySelectorAll('.comp,#comp').forEach(e=>e.remove())});
   await p.waitForTimeout(300);await grab('экран');await p.screenshot({path:path.join(OUT,`a_${cl}_hud.png`)});
   // меню: все вкладки, все кнопки
-  await p.keyboard.press('KeyB');await p.waitForTimeout(300);
-  const tabs=await p.$$eval('#tabs [data-tab]',a=>a.map(x=>x.dataset.tab));
-  for(const t of tabs){await p.click(`#tabs [data-tab="${t}"]`);await p.waitForTimeout(250);await grab('меню '+t);
+  const tabs=[];
+  for(const open of ['KeyB','KeyI','cfg']){
+  if(open==='cfg')await p.click('#cfgBtn');else await p.keyboard.press(open);await p.waitForTimeout(300);
+  const tb=await p.$$eval('#tabs [data-tab]',a=>a.map(x=>x.dataset.tab));tabs.push(...tb);
+  for(const t of tb){await p.click(`#tabs [data-tab="${t}"]`);await p.waitForTimeout(250);await grab('меню '+t);
     await p.screenshot({path:path.join(OUT,`a_${cl}_tab_${t}.png`)});
     if(t==='save')continue;
     const n=await p.$$eval('#list [data-act]',a=>a.length);
     for(let i=0;i<n;i++){const ok=await p.evaluate(i=>{const b=document.querySelectorAll('#list [data-act]')[i];if(!b||b.disabled)return false;b.click();return true},i);if(ok)await p.waitForTimeout(30)}
     await grab('меню '+t+' после кнопок')}
-  await p.keyboard.press('Escape');await p.waitForTimeout(200);
+  await p.keyboard.press('Escape');await p.waitForTimeout(200)}
   // окно умений, реликвии
   await p.evaluate(()=>{__G.S.perkPend=1;__G.showPerks()});await p.waitForTimeout(250);await grab('умения');await p.screenshot({path:path.join(OUT,`a_${cl}_perks.png`)});
   await p.click('#perkList .perk');await p.waitForTimeout(200);
   // кнопки внизу и вверху
-  for(const id of ['dashBtn','wpnBtn','sndBtn','sndBtn','potBtn','atkBtn']){await p.evaluate(id=>{const e=document.getElementById(id);if(e&&!e.hidden)e.click()},id);await p.waitForTimeout(120);await grab('кнопка '+id)}
+  for(const id of ['dashBtn','wpnBtn','potBtn','atkBtn']){await p.evaluate(id=>{const e=document.getElementById(id);if(e&&!e.hidden)e.click()},id);await p.waitForTimeout(120);await grab('кнопка '+id)}
   for(const k of ['KeyC','KeyV','Digit1','Digit2','Digit3','KeyR','KeyR']){await p.keyboard.press(k);await p.waitForTimeout(150);await grab('клавиша '+k)}
   await p.$$eval('#relicBar [data-relic-use]',a=>a.forEach(x=>x.click()));await p.waitForTimeout(200);await grab('панель реликвий');
   await p.click('#questHead');await p.waitForTimeout(100);await p.click('#questHead');

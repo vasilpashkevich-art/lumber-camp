@@ -7,5 +7,5 @@ const {chromium}=require('playwright');
  await p.keyboard.press('Digit3');await p.waitForTimeout(150);await p.keyboard.press('Digit1');await p.waitForTimeout(250);
  await p.screenshot({path:require('path').resolve(process.env.SHOTS||'/tmp','r_game.png')});
  await p.keyboard.press('Digit2');await p.waitForTimeout(120);await p.screenshot({path:require('path').resolve(process.env.SHOTS||'/tmp','r_frost.png'),clip:{x:350,y:200,width:500,height:400}});
- await p.click('#campBtn');await p.waitForTimeout(300);await p.click('[data-tab="hero"]');await p.waitForTimeout(300);await p.screenshot({path:require('path').resolve(process.env.SHOTS||'/tmp','r_hero.png')});
+ await p.click('#heroBtn');await p.waitForTimeout(300);await p.click('[data-tab="hero"]');await p.waitForTimeout(300);await p.screenshot({path:require('path').resolve(process.env.SHOTS||'/tmp','r_hero.png')});
  await b.close()})();
