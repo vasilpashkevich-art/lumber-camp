@@ -1,0 +1,90 @@
+<title>Звуки лагеря лесоруба</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700&display=swap">
+<style>
+/* Раскладка: одна колонка разделов-карточек в стиле окон игры; кнопки-плашки как в меню лагеря */
+:root{--night:#0d120f;--panel:#161c17;--panel2:#1e261f;--line:#2c372d;--ink:#ece6d3;--muted:#98a191;--ember:#e98b3d;--gold:#f4c766;--moss:#86a85c;
+  --f-display:"Russo One","Arial Black",system-ui,sans-serif;--f-body:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--night);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:24px 48px}
+main{max-width:920px;margin:0 auto;display:grid;gap:18px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,34px);margin:0;color:var(--gold);letter-spacing:.02em;text-wrap:balance}
+.lead{color:var(--muted);max-width:65ch;margin:6px 0 0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+h2{font-family:var(--f-display);font-weight:400;font-size:19px;margin:0;color:var(--ink);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 small{font-family:var(--f-body);font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+button.s{all:unset;cursor:pointer;display:grid;gap:3px;background:var(--panel2);border:1px solid var(--line);border-top:3px solid var(--c,var(--ember));border-radius:8px;padding:10px 12px;min-width:0}
+button.s b{font-size:14px}button.s span{font-size:12px;color:var(--muted)}
+button.s:hover,button.s:focus-visible{border-color:var(--c,var(--ember));outline:none}
+button.s[aria-pressed="true"]{background:color-mix(in srgb,var(--c,var(--ember)) 22%,var(--panel2))}
+button.s[aria-pressed="true"] b::before{content:"▶ ";color:var(--c,var(--ember))}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+input[type=range]{accent-color:var(--ember);width:140px}
+.cls{display:grid;gap:8px}.cls h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+.note{font-size:13px;color:var(--muted);margin:0;max-width:70ch}
+#start{all:unset;cursor:pointer;background:var(--ember);color:#1a1208;font-weight:700;border-radius:8px;padding:10px 18px}
+#start:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.lvls{display:flex;flex-wrap:wrap;gap:6px}
+.lvls button{all:unset;cursor:pointer;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:6px 10px;font-size:13px}
+.lvls button[aria-pressed="true"]{border-color:var(--moss);background:color-mix(in srgb,var(--moss) 25%,var(--panel2))}
+.lvls button:focus-visible{outline:2px solid var(--moss)}
+</style>
+<main>
+  <header><h1>Звуки и музыка лагеря</h1><p class="lead">Всё сочинено прямо в браузере, без чужих записей. Нажми «Включить звук», потом любую плашку. Повторное нажатие на музыку или шум лагеря — стоп.</p></header>
+  <div class="row"><button id="start" type="button">Включить звук</button>
+    <label for="vm">Музыка <input id="vm" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+    <label for="va">Шум лагеря <input id="va" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+    <label for="vf">Звуки <input id="vf" type="range" min="0" max="1.2" step="0.05" value="0.9"></label></div>
+  <section><h2>Музыка <small>играет вне лагеря</small></h2>
+    <div class="grid" id="music">
+      <button class="s" type="button" data-m="day" style="--c:var(--moss)"><b>Лес днём</b><span>ре мажор, арфа, флейта, тёплый фон</span></button>
+      <button class="s" type="button" data-m="night" style="--c:#7ea8d8"><b>Ночь</b><span>ля минор, низкие струнные, стук сердца</span></button>
+      <button class="s" type="button" data-m="blood" style="--c:#cf4b3f"><b>Кровавая луна</b><span>боевые барабаны, медь</span></button>
+      <button class="s" type="button" data-m="crypt" style="--c:#b08ae8"><b>Склеп</b><span>хор, колокол, капли</span></button>
+    </div><p class="note">Каждая тема — 8 или 16 тактов: первая часть с мелодией, вторая тише, потом снова. Переход между темами — плавный.</p></section>
+  <section><h2>Шум лагеря <small>вместо треска костра</small></h2>
+    <div class="lvls" id="lvls"><button type="button" data-l="1">1 · Огонёк</button><button type="button" data-l="2">2 · Костёр</button><button type="button" data-l="3">3 · Стоянка</button><button type="button" data-l="4">4 · Изба</button><button type="button" data-l="5">5 · Крепость</button><button type="button" data-l="6">6 · Замок</button></div>
+    <p class="note">1–2: потрескивает костёр. С 3-го: ветер, птицы, куры, кто-то рубит. С 4-го: кузница и еле слышные голоса. С 5-го: колокол, телеги, голосов больше. Ночью птиц и кур нет.</p>
+    <div class="grid" id="ev">
+      <button class="s" type="button" data-e="birds" style="--c:var(--moss)"><b>Птицы</b><span>днём</span></button>
+      <button class="s" type="button" data-e="hens" style="--c:var(--moss)"><b>Куры</b><span>днём</span></button>
+      <button class="s" type="button" data-e="rooster" style="--c:var(--gold)"><b>Петух</b><span>на рассвете</span></button>
+      <button class="s" type="button" data-e="chop" style="--c:var(--moss)"><b>Рубят дрова</b><span>с 3-го уровня</span></button>
+      <button class="s" type="button" data-e="anvil" style="--c:var(--ember)"><b>Кузница</b><span>с 4-го уровня</span></button>
+      <button class="s" type="button" data-e="voices" style="--c:var(--ember)"><b>Голоса громче</b><span>слышно, если включён уровень 4–6</span></button>
+      <button class="s" type="button" data-e="bell" style="--c:var(--gold)"><b>Колокол</b><span>с 5-го уровня</span></button>
+      <button class="s" type="button" data-e="cart" style="--c:var(--gold)"><b>Телега</b><span>с 5-го уровня</span></button>
+    </div></section>
+  <section><h2>Умения</h2>
+    <div class="cls" style="--c:#d9784a"><h3>Варвар</h3><div class="grid">
+      <button class="s" type="button" data-f="axe"><b>Удар топором</b><span>взмах и удар</span></button>
+      <button class="s" type="button" data-f="hammer"><b>Удар молотом</b><span>тяжёлый удар по площади</span></button>
+      <button class="s" type="button" data-f="whirl"><b>Вихрь (C)</b><span>крутится с оружием 1,2 с</span></button>
+      <button class="s" type="button" data-f="hammerStorm"><b>Буря молотов (V)</b><span>способность комплекта</span></button></div></div>
+    <div class="cls" style="--c:#8a7aff"><h3>Маг</h3><div class="grid">
+      <button class="s" type="button" data-f="staff"><b>Выстрел посохом</b><span>маленький огненный шар</span></button>
+      <button class="s" type="button" data-f="fireVolley"><b>Огненный залп (C)</b><span>три шара веером</span></button>
+      <button class="s" type="button" data-f="fireBoulder"><b>Огненная глыба</b><span>способность комплекта, падает с неба</span></button></div></div>
+    <div class="cls" style="--c:#5fc98a"><h3>Лучник</h3><div class="grid">
+      <button class="s" type="button" data-f="bow"><b>Выстрел из лука</b><span>тетива и свист стрелы</span></button>
+      <button class="s" type="button" data-f="arrowVolley"><b>Град стрел (C)</b><span>рог, затем три стрелы разом</span></button>
+      <button class="s" type="button" data-f="arrowRain"><b>Дождь стрел (V)</b><span>способность комплекта</span></button></div></div>
+    <div class="cls" style="--c:#7ec8ff"><h3>Реликвия и общее</h3><div class="grid">
+      <button class="s" type="button" data-f="mjolnir"><b>Молот Громовержца</b><span>бросок, треск молний, три удара, гром, возврат в руку</span></button>
+      <button class="s" type="button" data-f="levelUp"><b>Новый уровень</b><span>арфа и колокольчик</span></button></div></div>
+  </section>
+</main>
+<script>/*AUDIO*/</script>
+<script>
+let ac=null;const $=id=>document.getElementById(id);
+function start(){if(ac){if(ac.state==='suspended')ac.resume();return}const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ac=new AC();const m=ac.createGain();m.gain.value=0.8;m.connect(ac.destination);AUD.init(ac,m);AUD.nodes().mus.gain.value=0.0001;$('start').textContent='Звук включён'}
+$('start').onclick=start;
+const pressed=(box,el)=>box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));
+$('music').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;start();const on=b.getAttribute('aria-pressed')==='true';AUD.music.play(on?null:b.dataset.m);pressed($('music'),on?null:b)};
+$('lvls').onclick=e=>{const b=e.target.closest('[data-l]');if(!b)return;start();const on=b.getAttribute('aria-pressed')==='true';AUD.camp.set(on?-1:+b.dataset.l,true);pressed($('lvls'),on?null:b)};
+$('ev').onclick=e=>{const b=e.target.closest('[data-e]');if(!b)return;start();AUD.ev[b.dataset.e]()};
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{start();AUD.fx[b.dataset.f]()});
+$('vm').oninput=e=>{if(ac)AUD.music.setVol(+e.target.value)};$('va').oninput=e=>{if(ac)AUD.setAmb(+e.target.value)};$('vf').oninput=e=>{if(ac)AUD.setFx(+e.target.value)};
+</script>
