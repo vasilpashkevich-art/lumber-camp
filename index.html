@@ -1206,8 +1206,8 @@ function nearIn(p,x,y,rad){
   if(p.o){let u=x-p.x,v=y-p.y;const su=Math.sign(u)||1,sv=Math.sign(v)||1;u=Math.min(Math.abs(u),p.hw-rad)*su;v=Math.min(Math.abs(v),p.hh-rad)*sv;const lim=p.hw+p.hh-p.k-rad*1.42,s=Math.abs(u)+Math.abs(v)-lim;if(s>0){u-=su*s/2;v-=sv*s/2}return {x:p.x+u,y:p.y+v}}
   return {x:Math.max(p.x+rad,Math.min(p.x+p.w-rad,x)),y:Math.max(p.y+rad,Math.min(p.y+p.h-rad,y))}}
 function enterCrypt(c){
-  S.keys--;S.crypts[c.id]=S.day+CRYPT_CD;
-  const d=cryptDiff(),tier=cryptTier(),n=4+(d>=15?1:0)+(d>=30?1:0);
+  // зал 0 — притвор: врагов нет, ключ тратится только у врат во второй зал
+  const d=cryptDiff(),tier=cryptTier(),n=1+4+(d>=15?1:0)+(d>=30?1:0);
   const beaten=Object.keys(S.bosses).filter(k=>S.bosses[k]&&CFG.bosses[k]).map(Number),theme=beaten.length?randOf(beaten):1;
   const mid=['rect','round','cross','gallery','L'].sort(()=>Math.random()-0.5);
   const rooms=[],cors=[];let x=DUN.X;
@@ -1218,9 +1218,16 @@ function enterCrypt(c){
     r.pieces=roomPieces(r);rooms.push(r);x+=w;
     if(i<n-1){cors.push({i,x,y:DUN.Y-75,w:170,h:150});x+=170}}
   const traps=[];for(const r of rooms){if(r.i===0||r.last)continue;const k=1+Math.floor(tier/2);for(let j=0;j<k;j++){for(let g=0;g<20;g++){const tx=r.x+80+Math.random()*(r.w-160),ty=r.y+70+Math.random()*(r.h-140);if(r.pieces.some(p=>inPiece(p,tx,ty,30))&&r.cols.every(q=>dist(q.x,q.y,tx,ty)>q.r+30)){traps.push({x:tx,y:ty,t:Math.random()*2.4,hit:false,room:r.i});break}}}}
-  DG={crypt:c,zone:c.zone,tier,diff:d,theme,skin:CFG.bosses[theme].skin,rooms,cors,traps,chest:null,exit:null,ex:c.x,ey:c.y+46,entry:{x:rooms[0].x+60,y:DUN.Y},hz:[],hzT:2,banner:null,boss:null,seed:Math.floor(Math.random()*1e6)};
+  rooms[0].spawned=rooms[0].cleared=rooms[0].foyer=true;
+  DG={crypt:c,zone:c.zone,tier,diff:d,theme,skin:CFG.bosses[theme].skin,rooms,cors,traps,chest:null,exit:null,gateOpen:false,gate:{x:cors[0].x+18,y:DUN.Y},ex:c.x,ey:c.y+46,entry:{x:rooms[0].x+60,y:DUN.Y},hz:[],hzT:2,banner:null,boss:null,seed:Math.floor(Math.random()*1e6)};
   P.x=rooms[0].x+110;P.y=DUN.Y;S.p.x=P.x;S.p.y=P.y;
-  sfx.roar(0.25);toast(`Склеп: ${n} залов, в конце — ${CFG.bosses[theme].name}. Сложность ${d}. Снаружи время стоит.`,'');
+  sfx.roar(0.25);toast(`Притвор склепа: здесь безопасно. Впереди врата — ключ откроет склеп (${n-1} ${n-1<5?'зала':'залов'}, в конце — ${CFG.bosses[theme].name}, сложность ${d}), и он закроется на ${CRYPT_CD} дня. Выйти из притвора можно без потерь.`,'');
+}
+function openCryptGate(){
+  if(!DG||DG.gateOpen)return;
+  if(S.keys<=0){toast('Нужен ключ от склепа: падает с могильников, боссов и у торговца','bad');return}
+  S.keys--;S.crypts[DG.crypt.id]=S.day+CRYPT_CD;DG.gateOpen=true;sfx.roar(0.25);shake(3,0.2);
+  toast(`Врата открыты, ключ потрачен. Склеп закроется на ${CRYPT_CD} дня. Снаружи время стоит.`,'good');save();
 }
 function leaveCrypt(msg){
   if(!DG)return;
@@ -1228,7 +1235,8 @@ function leaveCrypt(msg){
   P.x=DG.ex;P.y=DG.ey;S.p.x=P.x;S.p.y=P.y;DG=null;spits=[];
   if(msg)toast(msg,'good');save();
 }
-function dunPieces(){const R=[];for(const r of DG.rooms){if(r.i===0||DG.rooms[r.i-1].cleared)R.push(...r.pieces)}for(const c of DG.cors)if(DG.rooms[c.i].cleared)R.push({x:c.x-60,y:c.y,w:c.w+120,h:c.h});return R}
+const gateShut=i=>i===0&&DG.gateOpen===false;// врата между притвором и первым залом
+function dunPieces(){const R=[];for(const r of DG.rooms){if(r.i===0||DG.rooms[r.i-1].cleared&&!gateShut(r.i-1))R.push(...r.pieces)}for(const c of DG.cors)if(DG.rooms[c.i].cleared&&!gateShut(c.i))R.push({x:c.x-60,y:c.y,w:c.w+120,h:c.h});return R}
 const dunRects=dunPieces;
 function clampIn(o,rad,ps){if(ps.some(p=>inPiece(p,o.x,o.y,rad)))return;let best=null,bd=1e9;for(const p of ps){const q=nearIn(p,o.x,o.y,rad),d=(q.x-o.x)**2+(q.y-o.y)**2;if(d<bd){bd=d;best=q}}if(best){o.x=best.x;o.y=best.y}}
 function pushCols(o,rad,r){for(const c of r.cols){const d=dist(o.x,o.y,c.x,c.y),m=c.r+rad;if(d<m&&d>0){o.x=c.x+(o.x-c.x)/d*m;o.y=c.y+(o.y-c.y)/d*m}}}
@@ -1398,7 +1406,7 @@ const RELIC2 = {
   totem:  {name:'Тотем предков',     max:2, key:'Digit3', kl:'3', act:true, cd:r=>r>1?30:40, desc:r=>`Ставит тотем, который ${r>1?40:25} с сам стреляет по нечисти рядом`},
   mirror: {name:'Зеркало возврата',  max:2, key:'Digit4', kl:'4', act:true, cd:r=>r>1?50:90, desc:r=>`Мгновенно переносит в лагерь (не из склепа). Перезарядка ${r>1?50:90} с`},
   storm:  {name:'Венец бури',        max:2, desc:r=>`Каждые ${r>1?3.5:5} с молния бьёт до ${r>1?5:3} ближайших врагов цепью`},
-  twin:   {name:'Двойная тетива',    max:2, desc:r=>`Второе оружие бьёт дважды: второй удар — по соседнему врагу, урон ${r>1?100:60}%`},
+  twin:   {get name(){return ({warrior:'Двойной замах',mage:'Двойное заклятие'})[cls()]||'Двойная тетива'},max:2, desc:r=>`Второе оружие бьёт дважды: второй удар — по соседнему врагу, урон ${r>1?100:60}%`},
   boots:  {name:'Сапоги-скороходы',  max:2, desc:r=>`+${r>1?25:15}% к скорости, болото не замедляет, два рывка подряд`},
   phoenix:{name:'Перо феникса',      max:2, desc:r=>`Раз в день спасает от гибели: воскрешение с ${r>1?100:50}% здоровья и огненный взрыв вокруг`},
   wolf:   {name:'Дух волка',         max:2, desc:r=>`Призрачный волк бегает рядом и рвёт нечисть. Урон ×${r>1?1.8:1} от удара в секунду`},
@@ -1426,7 +1434,8 @@ const RELIC_ICO = {
   wolf:'<path d="M3 16c4-3 8-4 12-4l6-6 1 6 8 3c1 1 1 2 0 3l-8 2-6 3c-5 0-9-2-13-7z" fill="#9fb4c8" stroke="#4c6178"/><path d="M15 12l6-6 1 6z" fill="#7f96ab" stroke="#4c6178"/><path d="M22 18l8-1" stroke="#d6e2ec" stroke-width="1.6"/><circle cx="30" cy="16.5" r="1.1" fill="#22303c"/><rect x="20" y="13.6" width="2.4" height="1.4" fill="#7ec8ff"/>',
   sack:'<path d="M10 9c-4 5-6 10-4 15 1 3 4 4 10 4s9-1 10-4c2-5 0-10-4-15z" fill="#a87a4c" stroke="#3b2a1c"/><path d="M10 9h12M12 9l-2-4h12l-2 4" stroke="#3b2a1c" stroke-width="1.5" fill="#8d6540"/><path d="M4 16h-2M30 16h-2M5 11 3 9M27 11l2-2" stroke="#f4c766" stroke-width="1.5"/>',
 };
-const relicSvg=(k,sz=32)=>`<svg viewBox="0 0 32 32" width="${sz}" height="${sz}" aria-hidden="true">${(k==='wolf'&&PET_ICO[S.cls])||RELIC_ICO[k]||''}</svg>`;
+const TWIN_ICO={warrior:'<g stroke="#24180f" stroke-width="1"><rect x="9" y="13" width="2.5" height="15" fill="#8d6540"/><rect x="4" y="6" width="12" height="7" rx="1.5" fill="#9ea5aa"/><rect x="21" y="13" width="2.5" height="15" fill="#8d6540"/><rect x="16" y="6" width="12" height="7" rx="1.5" fill="#9ea5aa"/></g>',mage:'<path d="M3 21q6-2 10-9" stroke="#ffb347" stroke-width="3" fill="none" opacity=".6"/><circle cx="14" cy="10" r="5" fill="#ff7a2a" stroke="#24180f"/><circle cx="13" cy="9" r="2" fill="#ffe08a"/><path d="M10 29q6-2 10-9" stroke="#ffb347" stroke-width="3" fill="none" opacity=".6"/><circle cx="21" cy="19" r="5" fill="#ff7a2a" stroke="#24180f"/><circle cx="20" cy="18" r="2" fill="#ffe08a"/>'};
+const relicSvg=(k,sz=32)=>`<svg viewBox="0 0 32 32" width="${sz}" height="${sz}" aria-hidden="true">${(k==='wolf'&&PET_ICO[S.cls])||(k==='twin'&&TWIN_ICO[S.cls])||RELIC_ICO[k]||''}</svg>`;
 const relicName=k=>k==='wolf'?petOf().name:(RELIC2[k]||RELICS[k]).name;
 const relicDesc=(k,r)=>{if(k==='wolf')return petOf().desc(Math.max(1,r));const R=RELIC2[k];return R?R.desc(Math.max(1,r)):RELICS[k].desc};
 const ownedRelics=()=>Object.keys(S.meta.relics).filter(k=>rl(k)>0);
@@ -1582,7 +1591,7 @@ function updRelics(dt){
 function twinShot(t,d,cr){const r=rl('twin');if(!r||t.k!=='z')return;const mel=cls()==='warrior';
   let o=null,bd=mel?90:bowRange(S.bow);for(const z of zombies){if(z===t.o)continue;const dd=mel?dist(z.x,z.y,t.o.x,t.o.y):dist(z.x,z.y,P.x,P.y);if(dd<bd&&canHit(z,mel?'melee':'ranged')){bd=dd;o=z}}if(mel&&!o)return;
   const tg=o||t.o;tracers.push({x1:P.x,y1:P.y,x2:tg.x,y2:tg.y,t:0.12,lvl:Math.min(6,1+Math.floor(S.bow/2))});
-  if(zombies.includes(tg))hitEnemy({k:'z',o:tg},d*(r>1?1:0.6),mel?'melee':'ranged',cr)}
+  if(zombies.includes(tg))hitEnemy({k:'z',o:tg},d*(r>1?1:0.6),mel&&!tg.fly?'melee':'ranged',cr)}
 // феникс: возвращает true, если спас
 function phoenixSave(){
   const r=rl('phoenix');if(!r||S.phoenixDay===S.day)return false;
@@ -1736,14 +1745,14 @@ function heroStats(){
   const spd=1+gear('spd')/100,dm=(1+gear('dmg')/100)*(1+0.10*rl('steel'))*(1+0.12*pr('str'));
   const crit=Math.min(100,gear('crit')),critMul=1+crit/100;
   const axeHit=axeDmg(S.up.axe)*dm*(1+0.2*S.forgeUp.melee),axeCdv=axeCd(S.up.axe)/spd;
-  const bowHit=S.bow?bowDmg(S.bow)*dm*(1+0.2*S.forgeUp.bow):0,bowCdv=S.bow?bowCd(S.bow)/spd:0;
+  const wc=cls()==='warrior',mc=cls()==='mage',bowHit=S.bow?bowDmg(S.bow)*dm*(1+0.2*S.forgeUp.bow)*(wc?1.5:mc?0.95:1):0,bowCdv=S.bow?bowCd(S.bow)*(wc?1.35/(1+0.1*pr('aim')):1)/spd:0;
   const gm=(1+0.15*pr('hand'))*(1+gear('gather')/100)*(1+0.15*rl('gather'));
   const buff=S.buffAtk>0?' (сейчас ×1,2 от зелья силы)':'';
   const f1=n=>Math.round(n*10)/10;
   return [
     ['Уровень героя',`${S.lvl} · опыт ${Math.floor(S.xp)}/${xpNeed(S.lvl)}`],
     ['Урон топором',`${f1(axeHit)} за удар · ${f1(axeHit*critMul/axeCdv)} в секунду${buff}`],
-    [`Урон: ${secName().toLowerCase()}`,S.bow?`${f1(bowHit)} за выстрел · ${f1(bowHit*critMul/bowCdv)} в секунду · дальность ${bowRange(S.bow)}`:'лука нет'],
+    [`Урон: ${secName().toLowerCase()}`,S.bow?(wc?`${f1(bowHit)} за удар по площади · ${f1(bowHit*critMul/bowCdv)} в секунду`:`${f1(bowHit)} за ${mc?'огненный шар':'выстрел'} · ${f1(bowHit*critMul/bowCdv)} в секунду · дальность ${bowRange(S.bow)}`):'ещё не изготовлен'],
     ['Скорость удара',`топор раз в ${f1(axeCdv)} с${S.bow?` · ${secName().toLowerCase()} раз в ${f1(bowCdv)} с`:''}${gear('spd')?` (+${gear('spd')}%)`:''}`],
     ['Шанс крита (×2)',`${crit}%`],
     ['Поджог',hasUq('flame')?'каждый удар':`${Math.min(100,gear('burn'))}% ударов`],
@@ -1840,7 +1849,7 @@ function bossAbility(z,dP,dt){
   // возвращает true, если босс в этот кадр занят особым действием
   if(z.skin==='dragon'){
     z.phT=(z.phT??9)-dt;
-    if(z.phT<=0){z.fly=!z.fly;z.phT=9;sfx.roar(0.4);addFloat(z.x,z.y-z.r-30,z.fly?'Взлетел! Бей луком':'Приземлился! Бей топором','#f4c766')}
+    if(z.phT<=0){z.fly=!z.fly;z.phT=9;sfx.roar(0.4);addFloat(z.x,z.y-z.r-30,z.fly?`Взлетел! Бей ${secI()}`:`Приземлился! Бей ${cls()==='warrior'?'топором или молотом':'топором'}`,'#f4c766')}
     if(z.fly){
       // кружит над героем и плюётся огнём
       z.orb=(z.orb||0)+dt*0.9;const R=170,tx=P.x+Math.cos(z.orb)*R,ty=P.y+Math.sin(z.orb)*R,d=dist(z.x,z.y,tx,ty);
@@ -1884,7 +1893,7 @@ function canHit(z,src){
 function drawBoss(z,bob){
   const x=z.x,y=z.y+bob,r=z.r;
   if(z.skin==='dragon'){const fy=z.fly?34+Math.sin(performance.now()/333)*4:0;if(z.fly){ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x,y+r*0.6,r*1.4,r*0.45,0,0,7);ctx.fill()}
-    drawBossFig(z,bob-fy);ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle=z.fly?'#9fc3d6':'#f4c766';ctx.fillText(z.fly?'в воздухе — только лук':'на земле — только топор',x,y+r+16);return}
+    drawBossFig(z,bob-fy);ctx.font='600 11px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle=z.fly?'#9fc3d6':'#f4c766';ctx.fillText(z.fly?'в воздухе — только '+dragonAir():'на земле — только '+dragonGround(),x,y+r+16);return}
   drawBossFig(z,bob);
 }
 // босс в новом облике: смотрит на героя, вспыхивает при ударе
@@ -1953,6 +1962,7 @@ function drawDungeon(now){
     const tops=r.shape==='round'?[[r.x+r.w*0.2,r.y+r.h*0.14],[r.x+r.w*0.8,r.y+r.h*0.14]]:r.shape==='oct'?[[r.x+r.w*0.32,r.y+18],[r.x+r.w*0.68,r.y+18],[r.x+r.w*0.32,r.y+r.h-18],[r.x+r.w*0.68,r.y+r.h-18]]:r.shape==='cross'?[[r.x+r.w*0.4,r.y+18],[r.x+r.w*0.6,r.y+18]]:[[r.x+30,r.y+26],[r.x+r.w-30,r.y+26]];
     for(const [tx,ty] of tops){const g=ctx.createRadialGradient(tx,ty,2,tx,ty,70);g.addColorStop(0,'rgba(255,170,80,.28)');g.addColorStop(1,'rgba(255,170,80,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(tx,ty,70,0,7);ctx.fill();ctx.fillStyle='#4a3424';ctx.fillRect(tx-2,ty-2,4,10);drawFire(tx,ty-2,0.35,now)}}
   for(const c of D2.cors){ctx.fillStyle='#29272d';ctx.fillRect(c.x,c.y,c.w,c.h);
+    if(gateShut(c.i)){drawCryptGate(c,now);continue}
     if(!D2.rooms[c.i].cleared){ctx.fillStyle='#3a3530';ctx.fillRect(c.x+c.w/2-8,c.y,16,c.h);ctx.strokeStyle='#8a8478';ctx.lineWidth=3;for(let k=0;k<6;k++){ctx.beginPath();ctx.moveTo(c.x+c.w/2-12+k*5,c.y);ctx.lineTo(c.x+c.w/2-12+k*5,c.y+c.h);ctx.stroke()}}}
   // ловушки
   for(const t of D2.traps){if(!D2.rooms[t.room].spawned)continue;const armed=t.t>1.8,warn=t.t>1.3;
@@ -1970,8 +1980,16 @@ function drawDungeon(now){
   if(D2.chest){const c=D2.chest;ctx.fillStyle='#6b4a2c';ctx.fillRect(c.x-20,c.y-12,40,26);ctx.fillStyle=c.open?'#3a2a1c':'#8a6240';ctx.fillRect(c.x-20,c.y-18,40,10);ctx.fillStyle='#f4c766';ctx.fillRect(c.x-3,c.y-8,6,6);
     if(!c.open){const g=0.3+0.2*Math.sin(now/200);ctx.fillStyle=`rgba(244,199,102,${g})`;ctx.beginPath();ctx.arc(c.x,c.y,36,0,7);ctx.fill()}}
   if(D2.exit){const x=D2.exit.x,y=D2.exit.y;ctx.fillStyle='rgba(134,168,92,.3)';ctx.beginPath();ctx.ellipse(x,y,24,34,0,0,7);ctx.fill();ctx.strokeStyle='#86a85c';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y,24,34,0,0,7);ctx.stroke();ctx.fillStyle='#86a85c';ctx.fillText('Наружу',x,y-42)}
-  const cur=roomAt(P.x,P.y);if(cur&&!cur.last){ctx.font='600 13px Rubik, sans-serif';ctx.fillStyle='rgba(236,230,211,.5)';ctx.fillText(`Зал ${cur.i+1} из ${D2.rooms.length}`,cur.x+cur.w/2,cur.y+26)}
+  const cur=roomAt(P.x,P.y);if(cur&&!cur.last){ctx.font='600 13px Rubik, sans-serif';ctx.fillStyle='rgba(236,230,211,.5)';ctx.fillText(cur.foyer?'Притвор — здесь безопасно':`Зал ${cur.i} из ${D2.rooms.length-1}`,cur.x+cur.w/2,cur.y+26)}
 }
+// врата притвора: решётка с золотым замком
+function drawCryptGate(c,now){const x=c.x+18,y0=c.y,h=c.h;
+  ctx.fillStyle='#4a4f56';ctx.fillRect(x-14,y0-22,28,h+44);ctx.fillStyle='#2a2c30';ctx.fillRect(x-10,y0,20,h);
+  ctx.strokeStyle='#9aa0a6';ctx.lineWidth=3;for(let k=0;k<4;k++){const gx=x-8+k*5.3;ctx.beginPath();ctx.moveTo(gx,y0);ctx.lineTo(gx,y0+h);ctx.stroke()}
+  ctx.lineWidth=2.5;for(const yy of [0.25,0.75]){ctx.beginPath();ctx.moveTo(x-10,y0+h*yy);ctx.lineTo(x+10,y0+h*yy);ctx.stroke()}
+  const g=0.35+0.25*Math.sin(now/260);ctx.fillStyle=`rgba(244,199,102,${g})`;ctx.beginPath();ctx.arc(x,y0+h/2,22,0,7);ctx.fill();
+  ctx.fillStyle='#c9a24a';ctx.strokeStyle='#24180f';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(x-8,y0+h/2-4,16,13,2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(x,y0+h/2-4,5,Math.PI,0);ctx.stroke();ctx.fillStyle='#24180f';ctx.fillRect(x-1,y0+h/2+1,2,5);
+  ctx.font='700 12px Rubik, sans-serif';ctx.textAlign='center';ctx.fillStyle='#f4c766';ctx.fillText('Врата склепа',x,y0-30);ctx.font='600 11px Rubik, sans-serif';ctx.fillStyle='rgba(236,230,211,.7)';ctx.fillText(S.keys>0?'откроет ключ':'нужен ключ',x,y0+h+40)}
 // экранная панель боя с боссом склепа
 function drawCryptHud(){
   if(!DG)return;ctx.setTransform(DPR,0,0,DPR,0,0);const B=DG.boss,cx=VW/2;
@@ -2049,6 +2067,8 @@ const mmss=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 /* ================= ЛЕТОПИСЬ: бестиарий, достижения, альбом ================= */
 const LORE_T={1:'Медленный и слабый. Хорош, чтобы набить руку.',2:'Ходят по бору группами. Не давайте себя окружить.',3:'Крепче и быстрее. Нужен топор посерьёзнее.',4:'Житель Мёртвого леса. Бьёт больно, держите зелья.',5:'Опасен вблизи. Лучше встречать луком издалека.',6:'Пепельный лес кишит ими. Без брони не соваться.',7:'Порождение Костяной пущи, слуга Царя Мора.'};
 const LORE_B={9:'Хозяин Снежного края. Тяжёлые удары оземь — держите дистанцию.',1:'Плодит слизней. Сперва мелочь, потом королеву.',2:'Бьёт по земле корнями. Отходите, когда он замахивается.',3:'Две головы, удар по площади. Не стойте вплотную.',4:'Резко бросается вперёд. Уходите рывком вбок.',5:'В воздухе берёт только лук, на земле только топор.',6:'Медленный, но удар оземь сносит половину здоровья.',7:'Владеет приёмами всех своих слуг.'};
+Object.defineProperty(LORE_T,5,{enumerable:true,get(){return ({warrior:'Опасен вблизи. Бейте молотом первым и отходите рывком.',mage:'Опасен вблизи. Лучше встречать посохом издалека.'})[cls()]||'Опасен вблизи. Лучше встречать луком издалека.'}});
+Object.defineProperty(LORE_B,5,{enumerable:true,get(){return `В воздухе его достаёт только ${dragonAir()}, на земле — только ${dragonGround()}.`}});
 function bestiary(){
   const E=[];
   for(const t in CFG.zombies)E.push({key:'t'+t,name:CFG.zombies[t].name,col:CFG.zombies[t].col,lore:LORE_T[t],grp:'Мертвецы'});
@@ -2363,7 +2383,8 @@ function specialTarget(){
   if(!DG&&near(ELDER,50)&&!(merchantHere()&&dist(P.x,P.y,MERCH_POS.x,MERCH_POS.y)<dist(P.x,P.y,ELDER.x,ELDER.y)))return {k:'x',o:ELDER,ok:true,lbl:'Говорить',msg:'Старец Ермолай: нажмите E, пробел или «Говорить»',fn:openTut};
   if(!DG&&merchantHere()&&near(MERCH_POS,70))return {k:'x',o:MERCH_POS,ok:true,lbl:'Торговать',msg:'Торговец: нажмите E, пробел или «Торговать», чтобы открыть лавку',fn:openShop};
   if(DG){
-    if(near(DG.entry,60))return {k:'x',o:DG.entry,ok:true,lbl:'Выйти',msg:'Покинуть склеп (сокровища останутся непройденными)',fn:()=>leaveCrypt('Вы покинули склеп')};
+    if(near(DG.entry,60))return DG.gateOpen===false?{k:'x',o:DG.entry,ok:true,lbl:'Выйти',msg:'Выйти из притвора: ключ не тратится, склеп не закроется',fn:()=>leaveCrypt('Вы вышли из притвора. Ключ при вас, склеп открыт')}:{k:'x',o:DG.entry,ok:true,lbl:'Выйти',msg:'Покинуть склеп (сокровища останутся непройденными)',fn:()=>leaveCrypt('Вы покинули склеп')};
+    if(DG.gateOpen===false&&near(DG.gate,90))return S.keys>0?{k:'x',o:DG.gate,ok:true,lbl:'Открыть',msg:`Врата склепа: потратить ключ (их ${S.keys}). Склеп закроется на ${CRYPT_CD} дня`,fn:openCryptGate}:{k:'x',o:DG.gate,ok:false,msg:'Врата склепа: нужен ключ',fn:()=>{}};
     if(DG.chest&&!DG.chest.open&&near(DG.chest,60))return {k:'x',o:DG.chest,ok:true,lbl:'Открыть',msg:'Открыть сундук хранителя',fn:openDunChest};
     if(DG.exit&&near(DG.exit,60))return {k:'x',o:DG.exit,ok:true,lbl:'Выйти',msg:'Портал наружу',fn:()=>leaveCrypt('Склеп пройден!')};
     return null;
@@ -2372,7 +2393,7 @@ function specialTarget(){
     if(!near(c,58))continue;
     if((S.crypts[c.id]||0)>S.day){const d=S.crypts[c.id]-S.day;return {k:'x',o:c,ok:false,msg:`Склеп закрыт: откроется на ${S.crypts[c.id]}-й день (через ${d} ${d===1?'день':d<5?'дня':'дней'})`,fn:()=>{}}}
     if(S.keys<=0)return {k:'x',o:c,ok:false,msg:'Нужен ключ от склепа: падает с могильников, боссов и у торговца',fn:()=>{}};
-    return {k:'x',o:c,ok:true,lbl:'Войти',msg:`Войти в склеп: потратить ключ (их ${S.keys}). Пройдено: ${S.cryptRuns||0}, сложность ${cryptDiff()}`,fn:()=>enterCrypt(c)};
+    return {k:'x',o:c,ok:true,lbl:'Войти',msg:`Войти в притвор склепа. Ключ (их ${S.keys}) тратится у врат. Пройдено: ${S.cryptRuns||0}, сложность ${cryptDiff()}`,fn:()=>enterCrypt(c)};
   }
   const pp=portalPos();
   if(pp&&allCleared()&&!S.final.killed&&near(pp,70)&&!zombies.some(z=>z.final))return {k:'x',o:pp,ok:true,lbl:'Призвать',msg:'Портал Мора. Призвать Владыку Мора — финальная битва',fn:summonFinal};
@@ -2461,7 +2482,7 @@ function mine(r,dmg){
 }
 function hitZombie(z,dmg,fx,fy,src){
   if(!zombies.includes(z))return;
-  if(!canHit(z,src)){if(!z.immT||performance.now()-z.immT>700){z.immT=performance.now();addFloat(z.x,z.y-z.r-20,z.fly?'неуязвим: бейте луком':'неуязвим: бейте топором','#9fc3d6')}return}
+  if(!canHit(z,src)){if(!z.immT||performance.now()-z.immT>700){z.immT=performance.now();addFloat(z.x,z.y-z.r-20,z.fly?`неуязвим: бейте ${secI()}`:`неуязвим: бейте ${cls()==='warrior'?'топором или молотом':'топором'}`,'#9fc3d6')}return}
   if(z.shield){if(!z.immT||performance.now()-z.immT>700){z.immT=performance.now();addFloat(z.x,z.y-z.r-20,'щит: убейте слуг','#7ec8ff')}return}
   z.hp-=dmg;z.hit=0.12;burst(z.x,z.y,3,['#2a3320','#6a1f1f'],90,0.35,2.5);
   if(!z.boss&&!z.guard){const d=dist(z.x,z.y,fx,fy)||1;z.x+=(z.x-fx)/d*10;z.y+=(z.y-fy)/d*10}
@@ -3924,12 +3945,15 @@ function skinIcon(kind,i){
 function skinNote(arr,l){const i=skinTier(arr,l),n=arr[i+1];return ` · облик «${arr[i].name}»${n?`, следующий «${n.name}» на ур. ${n.from}`:''}`}
 /* ================= КЛАССЫ ГЕРОЯ ================= */
 const CLASSES={
-  warrior:{name:'Воин',  br:'Варвар',  col:'#d9784a',body:'#a8452a',weap:'Молот', abil:'Вихрь',        cd:8,  abilD:'крутится с оружием и бьёт всех вокруг',weapD:'тяжёлый удар по площади перед собой',set:'Доспех Варвара'},
-  mage:   {name:'Маг',   br:'Чародей', col:'#8a7aff',body:'#5a3a8a',weap:'Посох', abil:'Огненный залп',cd:10, abilD:'3 огненных шара веером, поджигают',weapD:'стреляет маленьким огненным шаром, может поджечь',set:'Облачение Чародея'},
-  archer: {name:'Лучник',br:'Следопыт',col:'#5fc98a',body:'#3e6a3a',weap:'Лук',   abil:'Град стрел',   cd:14, abilD:'10 с каждый выстрел — 3 стрелы',weapD:'дальний выстрел',set:'Снаряжение Следопыта'},
+  warrior:{name:'Воин',  br:'Варвар',  col:'#d9784a',body:'#a8452a',weap:'Молот',weapI:'молотом',weapA:'молот', abil:'Вихрь',        cd:8,  abilD:'крутится с оружием и бьёт всех вокруг',weapD:'тяжёлый удар по площади перед собой',set:'Доспех Варвара'},
+  mage:   {name:'Маг',   br:'Чародей', col:'#8a7aff',body:'#5a3a8a',weap:'Посох',weapI:'посохом',weapA:'посох', abil:'Огненный залп',cd:10, abilD:'3 огненных шара веером, поджигают',weapD:'стреляет маленьким огненным шаром, может поджечь',set:'Облачение Чародея'},
+  archer: {name:'Лучник',br:'Следопыт',col:'#5fc98a',body:'#3e6a3a',weap:'Лук',weapI:'луком',weapA:'лук',   abil:'Град стрел',   cd:14, abilD:'10 с каждый выстрел — 3 стрелы',weapD:'дальний выстрел',set:'Снаряжение Следопыта'},
 };
 const cls=()=>S&&S.cls&&CLASSES[S.cls]?S.cls:null;
 const secName=()=>cls()?CLASSES[cls()].weap:'Лук';
+const secI=()=>cls()?CLASSES[cls()].weapI:'луком';// чем бить: «молотом», «посохом», «луком»
+const dragonAir=()=>cls()?CLASSES[cls()].weapA:'лук';// что достаёт летящего дракона
+const dragonGround=()=>cls()==='warrior'?'топор и молот':'топор';
 const brLabel=br=>br==='Воин'&&cls()?CLASSES[cls()].br:br;
 Object.assign(BR_COL,{'Варвар':'#d9784a','Чародей':'#8a7aff','Следопыт':'#5fc98a'});
 // умения ветки класса: общие получают своё имя, плюс уникальные
@@ -3941,7 +3965,7 @@ Object.assign(PERKS,{
   pierce:{br:'Воин',cls:'archer', name:'Пробивание',   max:2,desc:'Стрела задевает ещё одного врага рядом с целью'},
 });
 const PERK_NAMES={str:{warrior:'Ярость',mage:'Сила чар',archer:'Тугой лук'},vit:{warrior:'Крепкая шкура',mage:'Стойкость',archer:'Выносливость'},vamp:{warrior:'Кровожадность',mage:'Похищение жизни',archer:'Охотничий трофей'},aim:{warrior:'Размах',mage:'Сосредоточение',archer:'Меткость'}};
-const PERK_DESC={aim:{warrior:'+10% к скорости удара молотом',mage:'+10% к дальности и скорости посоха'}};
+const PERK_DESC={str:{warrior:'+12% урона по нечисти топором и молотом',mage:'+12% урона по нечисти топором и посохом'},aim:{warrior:'+10% к скорости удара молотом',mage:'+10% к дальности и скорости посоха'}};
 const perkName=k=>(PERK_NAMES[k]&&PERK_NAMES[k][cls()])||PERKS[k].name;
 const perkDesc=k=>(PERK_DESC[k]&&PERK_DESC[k][cls()])||PERKS[k].desc;
 const perkAvail=k=>!PERKS[k].cls||PERKS[k].cls===cls();
@@ -4052,9 +4076,9 @@ function secAttack(t){
   const crit4=(d,cr)=>{if(mast('cleave')&&(P.arrowN=(P.arrowN||0)+1)%4===0&&!cr){d*=2;cr=true}return [d,cr]};
   if(c==='warrior'){
     P.cd=bowCd(S.bow)*1.35/(1+gear('spd')/100)/(1+0.1*pr('aim'));P.swing=0.3;sfx.hit();
-    let [d,cr]=crit4(...heroHit(base*1.5));hitEnemy(t,d,'melee',cr);
+    let [d,cr]=crit4(...heroHit(base*1.5));hitEnemy(t,d,t.k==='z'&&t.o.fly?'ranged':'melee',cr);
     const R=60*(1+0.2*pr('smash'));RX.rings.push({x:t.o.x,y:t.o.y,r:10,max:R,t:0.25,col:'#e8e0cc'});shake(2,0.08);
-    if(t.k==='z')for(const o of zombies.slice()){if(o===t.o||dist(o.x,o.y,t.o.x,t.o.y)>R+o.r||!canHit(o,'melee'))continue;dmgNum(o.x,o.y-o.r-4,d*0.6,false);hitZombie(o,d*0.6,P.x,P.y,'melee')}
+    if(t.k==='z')for(const o of zombies.slice()){const os=o.fly?'ranged':'melee';if(o===t.o||dist(o.x,o.y,t.o.x,t.o.y)>R+o.r||!canHit(o,os))continue;dmgNum(o.x,o.y-o.r-4,d*0.6,false);hitZombie(o,d*0.6,P.x,P.y,os)}
     twinShot(t,d,cr);return}
   P.cd=bowCd(S.bow)/(1+gear('spd')/100);P.shot=0.2;sfx.shoot();
   const lv=Math.min(6,1+Math.floor(S.bow/2));
@@ -4196,7 +4220,10 @@ const mini=$('mini'),mctx=mini.getContext('2d');
 const htmlCache={};
 function setHtml(id,h){if(htmlCache[id]!==h){htmlCache[id]=h;$(id).innerHTML=h}}
 const wpnBtn=$('wpnBtn'),campBtn=$('campBtn');
+let helpSig='';
+function renderHelp(){const c=cls();$('help').innerHTML=`WASD / стрелки — идти · Пробел или E (держать) — рубить, копать, бить<br>Shift — рывок · R — ${secName().toLowerCase()}/топор${c?` · C — ${CLASSES[c].abil.toLowerCase()}`:''} · B — меню лагеря · K — карта · Q — лечение · F — сила · M — звук · болото замедляет`}
 function hud(){
+  {const hs=cls()+'';if(hs!==helpSig){helpSig=hs;renderHelp()}}
   updRelicBar();
   const mh=maxHp(S.up.hp),cap=bagCap(S.up.bag);
   $('hpTxt').textContent=`${Math.ceil(Math.max(0,S.p.hp))}/${mh}`;$('hpbar').firstChild.style.width=(100*Math.max(0,S.p.hp)/mh)+'%';
@@ -4386,7 +4413,7 @@ function rowsFor(t){
     for(const it of S.inv.slice().sort((a,b)=>itemCompare(b).delta-itemCompare(a).delta))R.push({itm:it,eqd:false});
     if(S.forge){
       R.push({note:'<b>Кузница: закалка</b>'});
-      for(const [k,nm] of [['melee','Окованный топор: +20% урона в ближнем бою'],['bow','Железные наконечники: +20% урона луком']]){const l=S.forgeUp[k];
+      for(const [k,nm] of [['melee','Окованный топор: +20% урона в ближнем бою'],['bow',({warrior:'Тяжёлый боёк: +20% урона молотом',mage:'Заряженный кристалл: +20% урона посохом'})[cls()]||'Железные наконечники: +20% урона луком']]){const l=S.forgeUp[k];
         if(l<3){const c=FORGE.temper(l);R.push({title:nm.split(':')[0],lvl:`${l}/3`,desc:nm.split(': ')[1]+' за уровень',cost:c,why:gateFor(c),act:'temper:'+k})}
         else R.push({title:nm.split(':')[0],lvl:'3/3',desc:'максимум'})}
     }
@@ -4853,7 +4880,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 // режим проверки для снимков экрана: только при #dev в адресе
-if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},get CX(){return CX},get CY(){return CY},TUT,tutTarget,openTut,renderTut,P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets,useSetAbility,SX,openDunChest,makeSetItem};
+if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},openCryptGate,get floats(){return floats},showPerks,showRelics,makeItem,toggleMenu,useAbility,get CX(){return CX},get CY(){return CY},TUT,tutTarget,openTut,renderTut,P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets,useSetAbility,SX,openDunChest,makeSetItem};
 function start(data){
   const saved=(data&&data.state)||loadLocal();
   S=migrate(saved);

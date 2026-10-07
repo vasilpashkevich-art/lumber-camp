@@ -3,7 +3,7 @@ require('./harness.js');boot();frames(2);const g=G_;let bad=0;const ok=(c,m)=>{i
 ok(g.crypts().length===1,'один склеп на мир');
 g.S.p.hp=9999;g.S.up.hp=30;g.S.keys=50;g.S.bosses={1:true};const c=g.crypts()[0];
 const clock0=g.S.clock,ext=g.zombies().find(z=>z.dun==null&&!z.boss);const ex0=ext&&[ext.x,ext.y];
-g.P.x=c.x;g.P.y=c.y;g.enterCrypt(c);frames(1);
+g.P.x=c.x;g.P.y=c.y;g.enterCrypt(c);g.openCryptGate();frames(1);
 const DG=g.DG;console.log('формы залов:',DG.rooms.map(r=>r.shape).join(' → '),'тема',DG.theme,'сложность',DG.diff);
 ok(new Set(DG.rooms.map(r=>r.shape)).size>=3,'залы разной формы');
 // пройти залы: идти к центру каждого зала, слуг и мертвецов убивать, босса бить понемногу

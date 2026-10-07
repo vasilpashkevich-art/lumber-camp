@@ -2,11 +2,11 @@
 require('./harness.js');boot();frames(2);const g=G_;let bad=0;const ok=(c,m)=>{if(!c){bad++;console.log('FAIL',m)}else console.log('ok',m)};
 const S=g.S;S.cls='warrior';S.p.hp=1e6;
 const c=g.crypts()[0];S.keys=5;S.day=4;g.P.x=c.x;g.P.y=c.y;
-let t=g.specialTarget();ok(t&&t.ok,'склеп открыт');g.enterCrypt(c);ok(S.crypts[c.id]===7,'после входа закрыт до 7-го дня');g.leaveCrypt();
+let t=g.specialTarget();ok(t&&t.ok,'склеп открыт');g.enterCrypt(c);g.openCryptGate();ok(S.crypts[c.id]===7,'после врат закрыт до 7-го дня');g.leaveCrypt();
 S.day=5;g.P.x=c.x;g.P.y=c.y;t=g.specialTarget();ok(t&&!t.ok&&/7-й день/.test(t.msg),'на 5-й день закрыт: '+(t&&t.msg));S.day=7;t=g.specialTarget();ok(t&&t.ok,'на 7-й день снова открыт');
 // сундук: всегда вещь; комплект — гарантия на 6-м походе без удачи
 let items=0,sets=0;const R=Math.random;Math.random=()=>0.99;
-for(let i=0;i<6;i++){g.enterCrypt(c);const D=g.DG;D.chest={x:g.P.x,y:g.P.y,open:false};const n0=g.drops().length;g.openDunChest();const nd=g.drops().slice(n0).filter(d=>d.kind==='item');items+=nd.filter(d=>!d.it.set).length;sets+=nd.filter(d=>d.it.set).length;g.leaveCrypt();S.keys=5;S.day+=3}
+for(let i=0;i<6;i++){S.keys=5;g.enterCrypt(c);g.openCryptGate();const D=g.DG;D.chest={x:g.P.x,y:g.P.y,open:false};const n0=g.drops().length;g.openDunChest();const nd=g.drops().slice(n0).filter(d=>d.kind==='item');items+=nd.filter(d=>!d.it.set).length;sets+=nd.filter(d=>d.it.set).length;g.leaveCrypt();S.keys=5;S.day+=3}
 Math.random=R;ok(items===6,'каждый поход — вещь: '+items);ok(sets===1,'без удачи вещь комплекта на 6-м походе: '+sets);
 // способности (окно выбора умения после походов закрываем, чтобы игра не стояла)
 S.perkPend=0;els.perks.hidden=true;els.dawn.hidden=true;

@@ -17,7 +17,7 @@ g.tab='items';g.rowsFor('items');g.rowsFor('camp');g.rowsFor('shop');
 // crypt
 g.S.keys=2;const c=g.crypts()[0];g.P.x=c.x;g.P.y=c.y+10;frames(1);
 const st=g.specialTarget();console.log('crypt target',st&&st.lbl,st&&st.msg);
-g.enterCrypt(c);frames(2);console.log('in dungeon',!!g.DG,'rooms',g.DG.rooms.length,'P',Math.round(g.P.x),Math.round(g.P.y));
+g.enterCrypt(c);g.openCryptGate();frames(2);console.log('in dungeon',!!g.DG,'rooms',g.DG.rooms.length,'P',Math.round(g.P.x),Math.round(g.P.y));
 // fight through rooms with strong hero
 g.S.up.axe=20;g.S.up.hp=12;
 for(let step=0;step<600&&g.DG&&!g.DG.chest;step++){
