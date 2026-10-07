@@ -1,0 +1,65 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#0b0f0c"><canvas id=c></canvas>
+<img id=old src="hud/bg.png" style="display:none">
+<script>const HO='#24180f',SETC={};</script>
+<script src="../parts/herofig2.js"></script>
+<script src="../parts/look50.js"></script>
+<script>
+// Эскизы v50: земля и деревья, ратуша и площадь по уровням, ограда с толщиной, залежи камня. ?s=1..4 — лист
+const cv=document.getElementById('c'),c=cv.getContext('2d');const L=LOOK;L.use(c);
+const sheet=+(new URLSearchParams(location.search).get('s')||1);
+cv.width=1240;cv.height=840;c.fillStyle='#0b0f0c';c.fillRect(0,0,cv.width,cv.height);
+function txt(t,x,y,f=13,col='#ece6d3',w=700,al='center'){c.font=`${w} ${f}px sans-serif`;c.textAlign=al;c.lineWidth=3;c.strokeStyle='rgba(0,0,0,.75)';c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y)}
+function hero(x,y,s=1,cl='warrior'){heroFig(c,cl,x,y,s,1,{},0)}
+function frame(x,y,w,h){c.strokeStyle='#3a4a3a';c.lineWidth=1;c.strokeRect(x+0.5,y+0.5,w-1,h-1)}
+function scatter(x0,y0,w,h,kind,n,seed){const r=(()=>{let a=seed;return()=>{a=(a*16807)%2147483647;return a/2147483647}})();const P=[];for(let i=0;i<n;i++)P.push([x0+r()*w,y0+r()*h,0.8+r()*0.5,r()]);P.sort((a,b)=>a[1]-b[1]);for(const p of P)L.tuft(p[0],p[1],p[2],kind,p[3])}
+function clipRect(x,y,w,h,f){c.save();c.beginPath();c.rect(x,y,w,h);c.clip();f();c.restore()}
+const go=()=>{
+if(sheet===1){
+  txt('Лист 1. Земля и деревья: было — стало',620,28,20,'#fff',800);
+  // было: кусок текущей игры
+  const im=document.getElementById('old');clipRect(10,44,600,380,()=>c.drawImage(im,160,560,1200,760,10,44,600,380));frame(10,44,600,380);txt('Было',40,68,15,'#f4c766',800,'left');
+  // стало
+  clipRect(630,44,600,380,()=>{L.ground(630,44,600,380,'z1',7);scatter(630,44,600,380,'z1',90,11);
+    L.deposit(1130,120,62,1,0.4);for(const [dx,dy,r,v] of [[-22,-6,13,0.2],[16,4,12,0.6],[-2,16,10,0.8]])L.boulder(1130+dx,120+dy,r,L.STONE_COL[1],v);
+    const T=[];const r=(()=>{let a=91;return()=>{a=(a*16807)%2147483647;return a/2147483647}})();for(let i=0;i<22;i++){const x=640+r()*580,y=70+r()*350;if(Math.hypot(x-1130,y-120)<80||Math.hypot(x-900,y-260)<50)continue;T.push([x,y,r()])}
+    T.push([900,262,-1]);T.sort((a,b)=>a[1]-b[1]);for(const [x,y,v] of T){if(v<0)hero(x,y,1);else L.tree(1,x,y,0.95+v*0.15,v)}});
+  frame(630,44,600,380);txt('Стало',660,68,15,'#9fe0a8',800,'left');
+  // все деревья
+  const K=[[1,'Берёза','z1'],[2,'Сосна','z2'],[3,'Дуб','z3'],[4,'Мёртвое древо','z4'],[5,'Чёрная ель','z5'],[6,'Пепельный ясень','z6'],[7,'Костяное древо','z7'],
+    ['snow','Снежная ель','snow'],['marsh','Ива на болоте','marsh'],['shroom','Гриб-великан','shroom'],['waste','Обугленное','waste'],['high','Горная сосна','high'],['mist','Туманный кипарис','mist']];
+  const W=93;K.forEach(([k,n,g],i)=>{const x0=10+i*W,y0=440;clipRect(x0,y0,W-2,330,()=>{L.ground(x0,y0,W-2,330,g,i*13+3);scatter(x0,y0+150,W-2,180,g,10,i+5);c.save();c.translate(x0+W/2,y0+250);c.scale(1.5,1.5);c.translate(-(x0+W/2),-(y0+250));L.tree(k,x0+W/2,y0+250,1,0.5,1.2);if(i===0)hero(x0+W/2+24,y0+252,1);c.restore()});frame(x0,y0,W-2,330);
+    txt(n,x0+W/2-1,y0+300,11,'#ece6d3',700);txt(i<7?'зона '+(i+1):'край',x0+W/2-1,y0+316,10,'#98a191',500)});
+  txt('Деревья в 1,3 раза выше, с обводкой и тенями; рубятся и задевают по-прежнему по стволу. Крона над героем и мертвецами становится полупрозрачной.',620,800,13,'#c9c2b0',500);
+  txt('Земля: оттенки, светлые склоны и тёмные ложбины, кусты травы, цветы, камушки; у каждого края своя.',620,822,13,'#c9c2b0',500)}
+if(sheet===2){
+  txt('Лист 2. Ратуша и площадь по уровням',620,28,20,'#fff',800);
+  const N=['Огонёк','Костёр','Стоянка','Изба','Крепость','Замок'],PL=['земля','утоптано, камни','щебень','брусчатка','плитка','узорная плитка, клумбы'],SC=[1,1,1,1,0.85,0.72];
+  for(let i=0;i<6;i++){const lv=i+1,x0=10+(i%3)*410,y0=44+Math.floor(i/3)*395,W=400,H=385;
+    clipRect(x0,y0,W,H,()=>{L.ground(x0,y0,W,H,'z1',lv*7+1);scatter(x0,y0,W,H,'z1',60,lv+3);const cx=x0+W/2,cy=y0+H*0.66,R=[0,70,95,120,150,150,150][lv]*0.82;
+      L.plaza(cx,cy-8,R,lv,lv*5+1);c.save();c.translate(cx,cy);const s=SC[i]*1.25;c.scale(s,s);c.lineJoin='round';c.lineCap='round';L.HQ[lv](1.3,false);c.restore();hero(cx+R*0.6,cy+R*0.35,1.25)});
+    frame(x0,y0,W,H);txt(`${lv}. ${N[i]}`,x0+14,y0+24,16,'#f4c766',800,'left');txt('площадь: '+PL[i],x0+14,y0+42,12,'#ece6d3',600,'left')}
+  txt('Объём: фасад, боковая стена и крыша сверху; каменная кладка, черепица, окна с рамами, бойницы, флаги. Ночью окна горят.',620,830,13,'#c9c2b0',500)}
+if(sheet===3){
+  txt('Лист 3. Ограда лагеря: толщина и высота',620,28,20,'#fff',800);
+  const K=[[1,'Плетень (ур. 1–2)','остаётся тонким'],[2,'Частокол (ур. 3–4)','два ряда толстых брёвен, острые концы, обвязка'],[3,'Каменная стена (ур. 5–6)','толщина 14, галерея сверху, зубцы, кладка'],[4,'Крепостная стена (ур. 7–8)','толщина 20, выше, бойницы, шипы']];
+  K.forEach(([k,n,d],i)=>{const x0=10+(i%2)*615,y0=44+Math.floor(i/2)*395,W=605,H=385;
+    clipRect(x0,y0,W,H,()=>{L.ground(x0,y0,W,H,'z1',i*9+2);scatter(x0,y0,W,H,'z1',70,i+7);const cx=x0+W/2,cy=y0+H/2+10,R=150;L.plaza(cx,cy,104,4,9);
+      const n=k===2?72:k===1?72:56,S=[];for(let j=0;j<n;j++){const a0=j/n*6.283,a1=(j+1)/n*6.283,am=(a0+a1)/2;S.push({y:cy+Math.sin(am)*R,f:()=>L.fenceSeg(cx,cy,R,k,a0,a1,j)})}
+      S.push({y:cy+30,f:()=>hero(cx+40,cy+30,1.1)});S.push({y:cy+R+8,f:()=>hero(cx-60,cy+R+18,1.1,'mage')});S.sort((a,b)=>a.y-b.y);S.forEach(e=>e.f())});
+    frame(x0,y0,W,H);txt(n,x0+14,y0+24,16,'#f4c766',800,'left');txt(d,x0+14,y0+42,12,'#ece6d3',600,'left')});
+  txt('Видна та сторона, что смотрит на нас: у южной половины — внешняя, у северной — внутренняя. Наверху стены — галерея, по краю зубцы.',620,830,13,'#c9c2b0',500)}
+if(sheet===4){
+  txt('Лист 4. Залежи камня и железа',620,28,20,'#fff',800);
+  const im=document.getElementById('old');
+  const K=[['old','Было'],[1,'Берёзовая роща','z1'],[2,'Сосновый бор','z2'],[3,'Дубрава','z3'],['iron','Железо','z3'],[4,'Мёртвый лес (кристаллы)','z4'],[6,'Пепельный лес (угли)','z6'],['snow','Снежный край','snow']];
+  K.forEach(([k,n,g],i)=>{const x0=10+(i%4)*307,y0=44+Math.floor(i/4)*395,W=300,H=385;
+    clipRect(x0,y0,W,H,()=>{if(k==='old'){c.drawImage(im,480,150,300,380,x0,y0,W,H);return}
+      L.ground(x0,y0,W,H,g,i*11+5);scatter(x0,y0,W,H,g,40,i+2);const cx=x0+W/2,cy=y0+H/2+10,z=typeof k==='number'?k:k==='iron'?3:1,bio=k==='snow'?'snow':null;
+      L.deposit(cx,cy,95,z,i*0.13+0.1,k==='iron',bio);const col=L.STONE_COL[bio]||L.STONE_COL[z];
+      const B=[[-48,4,19,0.2],[44,0,17,0.5],[-6,34,21,0.7],[48,38,15,0.35],[-50,44,14,0.9]];B.sort((a,b)=>a[1]-b[1]);
+      for(const [dx,dy,r,v] of B)L.boulder(cx+dx,cy+dy,r,col,v,k==='iron',k==='snow'?'snow':k===4?'crystal':k===6?'ember':null);hero(cx+70,cy+60,1.1)});
+    frame(x0,y0,W,H);txt(n,x0+14,y0+24,15,'#f4c766',800,'left')});
+  txt('Залежь — выход породы: плиты, трещины, щебень, мягкий край в траву. Валуны гранёные: светлый верх, тёмный бок. Железо — рыжие прожилки и блёстки.',620,830,13,'#c9c2b0',500)}
+document.title='done';};
+const im=document.getElementById('old');if(im.complete)go();else im.onload=go;
+</script>
