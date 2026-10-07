@@ -2,7 +2,7 @@
 // Стиль героев: тёмная обводка, 3 тона, мягкие тени. Все функции получают контекст c и рисуют в мировых координатах.
 const LOOK=(()=>{
 const O='#24180f',SQ=1;// SQ — сжатие кольца лагеря по высоте (в игре круг)
-let c=null;
+let c=null,NOFX=false;
 const use=cc=>{c=cc};
 function hp(fn,fill,lw=1.2,stroke=O){c.beginPath();fn();if(fill){c.fillStyle=fill;c.fill()}if(lw){c.strokeStyle=stroke;c.lineWidth=lw;c.stroke()}}
 function rnd(seed){let a=(seed*2654435761)>>>0||1;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -21,7 +21,7 @@ const GROUND={z1:[112,148,66],z2:[52,96,62],z3:[118,108,54],z4:[78,66,80],z5:[40
 const DETAIL={};
 function detailTile(kind){if(DETAIL[kind])return DETAIL[kind];
   const S=256,cv=document.createElement('canvas');cv.width=S;cv.height=S;const g=cv.getContext('2d'),r=rnd(kind.length*977+13);
-  const blades=!['snow','waste','high','camp','z6','z7'].includes(kind),dark='rgba(20,30,10,',lite='rgba(255,255,220,';
+  const blades=!['snow','waste','high','camp','z6','z7','neutral'].includes(kind),dark='rgba(20,30,10,',lite='rgba(255,255,220,';
   for(let i=0;i<70;i++){const x=r()*S,y=r()*S,rr=6+r()*22;g.fillStyle=(r()<0.5?dark:lite)+(0.02+r()*0.025)+')';g.beginPath();g.ellipse(x,y,rr,rr*0.7,r()*3,0,7);g.fill();
     for(const [ox,oy] of [[S,0],[-S,0],[0,S],[0,-S]]){g.beginPath();g.ellipse(x+ox,y+oy,rr,rr*0.7,0,0,7);g.fill()}}
   for(let i=0;i<900;i++){const x=r()*S,y=r()*S;g.fillStyle=(r()<0.55?dark:lite)+(0.06+r()*0.08)+')';g.fillRect(x,y,1.2,1.2)}
@@ -216,9 +216,13 @@ function shade(hex,k){const n=parseInt(hex.slice(1),16);return rgb([(n>>16)&255,
 function banner(x,y,t,col,h=20){c.strokeStyle=O;c.lineWidth=2.4;c.beginPath();c.moveTo(x,y);c.lineTo(x,y-h);c.stroke();c.strokeStyle='#c9a24a';c.lineWidth=1.2;c.stroke();const w=Math.sin(t*4)*2;
   hp(()=>{c.moveTo(x,y-h);c.quadraticCurveTo(x+7,y-h-2+w,x+14,y-h+1+w);c.lineTo(x+13,y-h+9+w);c.quadraticCurveTo(x+7,y-h+7,x,y-h+9);c.closePath()},col,1)}
 function fireS(x,y,s,t){glow(x,y-4*s,26*s,'255,150,50',0.45);for(let i=0;i<3;i++){const f=1+0.15*Math.sin(t*9+i*2);c.fillStyle=['#ff6a2a','#ffb347','#fff2a0'][i];const w=(8-i*2.5)*s,h=(16-i*4.5)*s*f;c.beginPath();c.moveTo(x-w,y);c.quadraticCurveTo(x-w,y-h*0.6,x,y-h);c.quadraticCurveTo(x+w,y-h*0.6,x+w,y);c.closePath();c.fill()}}
-function torch(x,y,t){hp(()=>c.rect(x-1.3,y-9,2.6,10),'#4a3020',0.7);fireS(x,y-9,0.35,t)}
+function torch(x,y,t){if(NOFX)return;hp(()=>c.rect(x-1.3,y-9,2.6,10),'#4a3020',0.7);fireS(x,y-9,0.35,t)}
 function stoneRing(x,y,r,n){for(let i=0;i<n;i++){const a=i/n*6.283;hp(()=>c.ellipse(x+Math.cos(a)*r,y+Math.sin(a)*r*0.5,3.8,2.8,0,0,7),i%2?'#7a776f':'#8a867d',0.8)}}
 function logs(x,y,s){for(const [a] of [[0.5],[-0.5]]){c.save();c.translate(x,y);c.rotate(a);hp(()=>c.rect(-9*s,-2*s,18*s,4*s),'#6b4a2c',0.9);hp(()=>c.ellipse(9*s,0,1.4*s,2*s,0,0,7),'#c9a06a',0.6);c.restore()}}
+function smoke4(t){for(let k=0;k<4;k++){const q=((t*0.35+k/4)%1);c.fillStyle=`rgba(190,190,180,${0.4*(1-q)})`;c.beginPath();c.arc(27+Math.sin(q*4+k)*4+q*8,-106-q*30,3+q*6,0,7);c.fill()}}
+// живые части ратуши (факелы, дым) — рисуются поверх готовой картинки
+const HQ_FX={4:[[-50,-4],[50,-4]],5:[[-22,-8],[22,-8]],6:[[-24,-10],[24,-10]]};
+function hqFx(lv,t){for(const [x,y] of HQ_FX[lv]||[])torch(x,y,t);if(lv===4)smoke4(t)}
 const HQ={
 1(t,N){shadow(0,4,26,7);stoneRing(0,0,11,8);logs(0,-1,0.8);fireS(0,-2,0.7,t);hp(()=>c.rect(-28,2,16,5),'#7b5634',1);hp(()=>c.ellipse(-12,4.5,1.6,2.5,0,0,7),'#c9a06a',0.6)},
 2(t,N){shadow(0,6,36,10);stoneRing(0,0,14,10);logs(0,-1,1);fireS(0,-2,1,t);
@@ -237,7 +241,7 @@ const HQ={
   box(-38,-10,76,36,16,'#8a6038','#6a4628','#9a7048',logsTex);
   roofTiles([[-46,-46],[0,-84],[46,-46]],'#5a3a28','#3a2418',6);roofTiles([[0,-84],[46,-46],[55,-53],[9,-91]],'#4a2e1e','#2e1a10',6);
   hp(()=>c.rect(22,-102,10,22),'#6a6560',1.1);hp(()=>c.rect(20,-104,14,4),'#55514c',1);
-  for(let k=0;k<4;k++){const q=((t*0.35+k/4)%1);c.fillStyle=`rgba(190,190,180,${0.4*(1-q)})`;c.beginPath();c.arc(27+Math.sin(q*4+k)*4+q*8,-106-q*30,3+q*6,0,7);c.fill()}
+  if(!NOFX)smoke4(t);
   hp(()=>{c.moveTo(-8,-10);c.lineTo(-8,-34);c.quadraticCurveTo(0,-42,8,-34);c.lineTo(8,-10);c.closePath()},'#4a3020',1.2);c.fillStyle='#c9a24a';c.beginPath();c.arc(5,-21,1.3,0,7);c.fill();
   win(-30,-36,11,13,N);win(19,-36,11,13,N);hp(()=>c.rect(-14,-10,28,5),'#6b4a2c',1);hp(()=>c.rect(-18,-5,36,4),'#5a3e26',1);
   c.fillStyle='#c9a06a';c.beginPath();c.moveTo(0,-90);c.lineTo(-6,-82);c.lineTo(6,-82);c.fill();for(const tx of [-50,50])torch(tx,-4,t)},
@@ -295,5 +299,5 @@ function fenceSeg(cx,cy,Rr,k,a0,a1,i){const am=(a0+a1)/2,P=(r,a)=>[cx+Math.cos(a
   if(i%2===0){const [zx,zy]=P(ro-2.5,am),w=Math.max(4,Math.abs(bx-ax)*0.55);hp(()=>c.rect(zx-w/2,zy-H-6,w,6),topc,1);hp(()=>c.rect(zx-w/2,zy-H-6,w,1.6),shade(topc,1.12),0)}
   if(k===4&&i%3===0){const [sx,sy]=P(ro+1,am);c.strokeStyle='#b9c0c8';c.lineWidth=1.6;c.beginPath();c.moveTo(sx,sy-8);c.lineTo(sx+Math.cos(am)*9,sy+Math.sin(am)*7-6);c.stroke()}
 }
-return {use,ground,tuft,tree,boulder,deposit,plaza,HQ,fenceSeg,detailTile,GROUND,STONE_COL,shadow,hp};
+return {use,setNoFx:v=>{NOFX=v},hqFx,ground,tuft,tree,boulder,deposit,plaza,HQ,fenceSeg,detailTile,GROUND,STONE_COL,shadow,hp};
 })();
