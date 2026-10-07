@@ -425,7 +425,11 @@ const pickCd = l => Math.max(0.25, 0.6 - 0.03*(l-1));
 const pr = id => (S&&S.perks&&S.perks[id])||0;
 const bagCap = l => 10 + 6*(l-1) + 4*pr('pack');
 const speedOf= l => Math.round((150 + 15*(l-1))*(1+0.06*pr('legs'))*(1+gear('move')/100)*(hasUq('stride')?1.15:1)*(1+(rl('boots')>1?0.25:rl('boots')?0.15:0)));
-const maxHp  = l => Math.round(10 + 6*(l-1) + 8*pr('vit') + gear('hp') + 15*rl('heart'));
+// Варвар: больше здоровья, своя защита, бьёт дальше, в Вихре получает вдвое меньше урона
+const WAR={hp:1.4,armor:15,armorCap:70,reach:55,mound:60,smashR:80,whirlDmg:0.5};
+const isWar=()=>cls()==='warrior';
+const maxHp  = l => Math.round((10 + 6*(l-1) + 8*pr('vit') + gear('hp') + 15*rl('heart'))*(isWar()?WAR.hp:1));
+const heroArmor=()=>Math.min(isWar()?WAR.armorCap:60,gear('armor')+(isWar()?WAR.armor:0));
 const bowDmg  = l => 1.5 + 0.8*(l-1);
 const bowRange= l => Math.round((240 + 15*(l-1))*(1+0.1*pr('aim')));
 const bowCd   = l => Math.max(0.3, 0.85 - 0.04*(l-1))/(1+0.1*pr('aim'));
@@ -964,6 +968,7 @@ const keys=new Set();
 let actHeld=false, actTap=false, joy=null, menuOpen=false;
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='TEXTAREA')return;
+  if(P.ko&&!['Escape','KeyK','KeyM','KeyB','KeyI'].includes(e.code))return;
   if(e.code==='KeyK'||(e.code==='Escape'&&mapOpen)){if(e.code==='Escape'||!S.over)toggleMap(e.code==='Escape'?false:undefined);e.preventDefault();return}
   if(mapOpen)return;
   if(e.code==='KeyC'){useAbility();return}
@@ -1966,7 +1971,7 @@ function heroStats(){
     ['Шанс крита (×2)',`${crit}%`],
     ['Поджог',hasUq('flame')?'каждый удар':`${Math.min(100,gear('burn'))}% ударов`],
     ['Здоровье',`${Math.ceil(S.p.hp)} / ${maxHp(S.up.hp)}`],
-    ['Защита',`−${Math.min(60,gear('armor'))}% входящего урона`],
+    ['Защита',`−${heroArmor()}% входящего урона${isWar()?` (Варвар: +${WAR.armor}% всегда, в Вихре урон вдвое меньше)`:''}`],
     ['Здоровье за убийство',`+${f1(pr('vamp')+gear('vamp'))}`],
     ['Скорость бега',`${speedOf(S.up.boots)}`],
     ['Рывок',`раз в ${f1(dashCd())} с`],
@@ -2484,6 +2489,7 @@ function update(dt){
   if(keys.has('KeyW')||keys.has('ArrowUp'))my--; if(keys.has('KeyS')||keys.has('ArrowDown'))my++;
   if(keys.has('KeyA')||keys.has('ArrowLeft'))mx--; if(keys.has('KeyD')||keys.has('ArrowRight'))mx++;
   if(joy){mx+=joy.dx;my+=joy.dy}
+  if(P.ko){mx=0;my=0}
   const m=Math.hypot(mx,my);
   audioTick(dt,m>0.1);
   if(S.buffAtk>0){S.buffAtk=Math.max(0,S.buffAtk-dt);if(S.buffAtk===0)toast('Зелье силы закончилось','', 'atkend')}
@@ -2531,7 +2537,7 @@ function update(dt){
 
   // --- действие
   P.cd-=dt;P.swing=Math.max(0,P.swing-dt);P.shot=Math.max(0,P.shot-dt);P.hurt=Math.max(0,P.hurt-dt);
-  const act=actHeld||actTap||keys.has('Space')||keys.has('KeyE');actTap=false;
+  const act=!P.ko&&(actHeld||actTap||keys.has('Space')||keys.has('KeyE'));actTap=false;
   const tgt=findTarget();
   showPrompt(tgt);
   if(act&&P.cd<=0&&tgt&&tgt.ok)doAction(tgt);
@@ -2578,10 +2584,13 @@ function update(dt){
 
   if(p.hp<=0)phoenixSave();
   if(p.hp<=0&&S.hq<=0){gameOver();return}
+  if(P.ko&&S.hq<=0){gameOver();return}
+  P.rez=Math.max(0,(P.rez||0)-dt);
   if(p.hp<=0){
     if(phase().night&&S.night.active){S.night.died=true;if(S.streak>0)toast(`Серия из ${S.streak} ночей сгорела`,'bad');S.streak=0}
     if(DG){for(let i=zombies.length-1;i>=0;i--)if(zombies[i].dun!=null)zombies.splice(i,1);DG=null;spits=[]}
-    const lw=S.bag,ls=S.bagStone;S.bag=0;S.bagStone=0;S.bagIron=0;p.hp=maxHp(S.up.hp);P.x=CX;P.y=CY+40;p.x=P.x;p.y=P.y;
+    const lw=S.bag,ls=S.bagStone;S.bag=0;S.bagStone=0;S.bagIron=0;p.hp=maxHp(S.up.hp);P.x=CX;P.y=CY+40;p.x=P.x;p.y=P.y;P.rez=REZ.inv;
+    if(phase().night&&S.night.active){S.night.deaths=(S.night.deaths||0)+1;if(S.night.deaths>=2){P.ko=true;toast('Вы без сознания до рассвета. Лагерь держится сам.','bad','ko')}}
     toast(lw||ls?`Вас одолели. Сумка потеряна (${lw} древесины, ${ls} камня).`:'Вас одолели. Вы очнулись в лагере.','bad');save();
   }
   saveT+=dt;if(saveT>4){saveT=0;save()}
@@ -2611,8 +2620,8 @@ function specialTarget(){
 function findTarget(){
   const bow=S.weapon==='bow'&&S.bow>0&&cls()!=='warrior', reach=bow?bowRange(S.bow):0;
   let best=null,bd=1e9;
-  for(const z of zombies){const d=dist(P.x,P.y,z.x,z.y);if(d<(bow?reach:z.r+38)&&d<bd){bd=d;best={k:'z',o:z,ok:true}}}
-  for(const m of mounds){if(m.dead)continue;const d=dist(P.x,P.y,m.x,m.y);if(d<(bow?reach:44)&&d<bd){bd=d;best={k:'m',o:m,ok:true}}}
+  for(const z of zombies){const d=dist(P.x,P.y,z.x,z.y);if(d<(bow?reach:z.r+(isWar()?WAR.reach:38))&&d<bd){bd=d;best={k:'z',o:z,ok:true}}}
+  for(const m of mounds){if(m.dead)continue;const d=dist(P.x,P.y,m.x,m.y);if(d<(bow?reach:(isWar()?WAR.mound:44))&&d<bd){bd=d;best={k:'m',o:m,ok:true}}}
   if(best)return best;
   const xt=specialTarget();if(xt)return xt;
   const ft=farmTarget();if(ft)return ft;
@@ -2743,7 +2752,7 @@ function hitMound(m,dmg){
     toast('Могильник разрушен','good');checkZone(m.zone);save();
   }
 }
-function damagePlayer(n){if(P.inv>0){addFloat(P.x,P.y-24,'уклон','#9fc3d6');return}n*=1-Math.min(0.6,gear('armor')/100);n*=1-0.06*pr('mshield');S.p.hp-=n;P.hurt=0.2;sfx.hurt();shake(3.5,0.18);addFloat(P.x,P.y-24,'−'+Math.round(n),'#cf4b3f')}
+function damagePlayer(n){if(P.ko||P.rez>0)return;if(P.inv>0){addFloat(P.x,P.y-24,'уклон','#9fc3d6');return}n*=1-heroArmor()/100;if(isWar()&&RX.whirl>0)n*=WAR.whirlDmg;n*=1-0.06*pr('mshield');S.p.hp-=n;P.hurt=0.2;sfx.hurt();shake(3.5,0.18);addFloat(P.x,P.y-24,'−'+Math.round(n),'#cf4b3f')}
 
 function leashBack(z,dt){
   // обычные мертвецы не уходят далеко от своего места и своего кольца
@@ -2772,7 +2781,7 @@ function updateZombies(dt){
     if(!zombies.includes(z))continue;
     if(DG&&z.dun==null)continue;
     z.hit=Math.max(0,z.hit-dt);z.atk-=dt;z.ph+=dt*6;
-    const dP=dist(z.x,z.y,P.x,P.y), dC=dist(z.x,z.y,CX,CY);
+    const dP=P.ko?1e9:dist(z.x,z.y,P.x,P.y), dC=dist(z.x,z.y,CX,CY);
     if(dC>CFG.fenceR+2)z.outside=true;else if(!fOn)z.outside=false;
     let tx,ty,sp=z.speed*(inSwamp(z.x,z.y)?(z.skin==='croc'?1.5:0.6):1)*zSlow(z,dC,dt);
     if(z.burn>0){z.burn-=dt;z.hp-=z.burnDps*dt;if(z.hp<=0){killZombie(z);continue}}
@@ -3061,7 +3070,9 @@ function startNight(){
   sfx.night();if(blood){sfx.blood();toast(`КРОВАВАЯ ЛУНА! Мертвецов в полтора раза больше, награда на рассвете тоже ×1,5.`,'bad')}
   toast(alive?`Ночь ${S.day}. Из леса идут ещё ${n}, и ${alive} уже здесь.`:`Ночь ${S.day}. Из леса идут ${n} мертвецов к лагерю.`,'bad');
 }
+const REZ={inv:4,fast:3};// неуязвимость после гибели, ускорение времени без сознания
 function endNight(){
+  if(P.ko){P.ko=false;P.rez=REZ.inv;S.p.hp=maxHp(S.up.hp);P.x=CX;P.y=CY+40;toast('Рассвет. Вы очнулись в ратуше.','good','ko')}
   let burnt=0;for(let i=zombies.length-1;i>=0;i--){const z=zombies[i];if(z.wave&&z.farm){zombies.splice(i,1);burnt++}}
   const left=zombies.filter(z=>z.wave).length;
   const N=S.night, day=S.day;
@@ -3227,7 +3238,8 @@ function render(now){
   for(const f of floats){ctx.font=`700 ${f.sz||14}px Rubik, sans-serif`;ctx.globalAlpha=Math.min(1,f.t*1.5);ctx.fillStyle='#000';ctx.fillText(f.text,f.x+1,f.y+1);ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,f.y)}
   ctx.globalAlpha=1;
 
-  mistFog();drawCryptHud();drawTutArrow(camX,camY,now);
+  mistFog();drawCryptHud();
+  if(P.ko){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='rgba(8,10,14,.45)';ctx.fillRect(0,0,VW,VH);ctx.textAlign='center';ctx.font='400 26px "Russo One", sans-serif';ctx.fillStyle='#000';ctx.fillText('Без сознания до рассвета',VW/2+2,VH*0.32+2);ctx.fillStyle='#ece6d3';ctx.fillText('Без сознания до рассвета',VW/2,VH*0.32);ctx.font='500 14px Rubik, sans-serif';ctx.fillStyle='#c9c2b0';ctx.fillText('Время идёт быстрее. Если ратуша падёт — лагерь падёт.',VW/2,VH*0.32+26)}drawTutArrow(camX,camY,now);
   // джойстик
   ctx.setTransform(DPR,0,0,DPR,0,0);
   if(joy){ctx.strokeStyle='rgba(236,230,211,.3)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(joy.ox,joy.oy,50,0,7);ctx.stroke();ctx.fillStyle='rgba(233,139,61,.6)';ctx.beginPath();ctx.arc(joy.ox+joy.dx*50,joy.oy+joy.dy*50,20,0,7);ctx.fill()}
@@ -4640,7 +4652,7 @@ function secAttack(t){
   if(c==='warrior'){
     P.cd=bowCd(S.bow)*1.35/(1+gear('spd')/100)/(1+0.1*pr('aim'));P.swing=0.3;if(AUD.ready&&sndReady())afx('hammer');else sfx.hit();
     let [d,cr]=crit4(...heroHit(base*1.5));hitEnemy(t,d,t.k==='z'&&t.o.fly?'ranged':'melee',cr);
-    const R=60*(1+0.2*pr('smash'));RX.rings.push({x:t.o.x,y:t.o.y,r:10,max:R,t:0.25,col:'#e8e0cc'});shake(2,0.08);
+    const R=WAR.smashR*(1+0.2*pr('smash'));RX.rings.push({x:t.o.x,y:t.o.y,r:10,max:R,t:0.25,col:'#e8e0cc'});shake(2,0.08);
     if(t.k==='z')for(const o of zombies.slice()){const os=o.fly?'ranged':'melee';if(o===t.o||dist(o.x,o.y,t.o.x,t.o.y)>R+o.r||!canHit(o,os))continue;dmgNum(o.x,o.y-o.r-4,d*0.6,false);hitZombie(o,d*0.6,P.x,P.y,os)}
     twinShot(t,d,cr);return}
   P.cd=bowCd(S.bow)/(1+gear('spd')/100);P.shot=0.2;if(AUD.ready&&sndReady())afx(c==='mage'?'staff':'bow');else sfx.shoot();
@@ -4739,13 +4751,15 @@ function clsPortrait(k){const cv=document.createElement('canvas');cv.width=cv.he
 function showClassPick(){
   const el=document.getElementById('clsPick');if(!el)return;const box=document.getElementById('clsList');box.textContent='';
   for(const k in CLASSES){const C=CLASSES[k],b=document.createElement('button');b.type='button';b.className='cls-card';b.dataset.cls=k;b.style.setProperty('--cc',C.col);
-    b.innerHTML=`<img src="${clsPortrait(k)}" alt="" width="120" height="120"><b>${C.name}</b><small>${C.br}</small><span><em>Оружие</em>Топор + ${C.weap.toLowerCase()}: ${C.weapD}</span><span><em>Способность (C)</em>${C.abil}: ${C.abilD}, перезарядка ${C.cd} с</span><span><em>Ветка умений</em>${C.br}</span><span><em>Комплект в склепе</em>${C.set}</span><i>Выбрать</i>`;box.append(b)}
+    b.innerHTML=`<img src="${clsPortrait(k)}" alt="" width="120" height="120"><b>${C.name}</b><small>${C.br}</small><span><em>Оружие</em>Топор + ${C.weap.toLowerCase()}: ${C.weapD}</span><span><em>Способность (C)</em>${C.abil}: ${C.abilD}, перезарядка ${C.cd} с</span>${k==='warrior'?'<span><em>Живучесть</em>+40% здоровья, 15% защиты, бьёт дальше, в Вихре урон вдвое меньше</span>':''}<span><em>Ветка умений</em>${C.br}</span><span><em>Комплект в склепе</em>${C.set}</span><i>Выбрать</i>`;box.append(b)}
   el.hidden=false;keys.clear();actHeld=false;
 }
 const clsOpen=()=>{const el=document.getElementById('clsPick');return !!el&&!el.hidden};
 
 function drawPlayer(){
   const x=P.x,y=P.y;
+  if(P.ko){ctx.save();ctx.globalAlpha=0.55;ctx.translate(x,y);ctx.rotate(-1.4);ctx.translate(-x,-y);drawHeroBody(ctx,x,y,cls(),false,0,1,heroSet());ctx.restore();ctx.fillStyle='rgba(236,230,211,.8)';ctx.font='700 16px Rubik, sans-serif';ctx.textAlign='center';ctx.fillText('z z z',x+10,y-30-Math.sin(performance.now()/400)*3);return}
+  if(P.rez>0){const a=0.35+0.2*Math.sin(performance.now()/120);const g=ctx.createRadialGradient(x,y-8,4,x,y-8,34);g.addColorStop(0,`rgba(244,199,102,${a})`);g.addColorStop(1,'rgba(244,199,102,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y-8,34,0,7);ctx.fill()}
   if(S.buffAtk>0){const a=0.25+0.12*Math.sin(performance.now()/180);const g=ctx.createRadialGradient(x,y,4,x,y,26);g.addColorStop(0,`rgba(240,140,50,${a})`);g.addColorStop(1,'rgba(240,140,50,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill()}
   if(P.dash>0||P.inv>0.15){ctx.fillStyle='rgba(159,195,214,.3)';for(let k=1;k<4;k++){ctx.beginPath();ctx.arc(x-P.ddx*k*14,y-P.ddy*k*14,12-k*2,0,7);ctx.fill()}}
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x+2,y+11,12,5,0,0,7);ctx.fill();
@@ -5469,14 +5483,14 @@ function frame(now){
   checkWallGap();
   let dt=Math.min(0.05,(now-last)/1000);last=now;if(slowT>0&&!menuOpen){slowT-=dt;dt*=0.3}
   if(!S.over&&!cls()&&!clsOpen()&&!perksOpen()&&$('win').hidden)showClassPick();
-  if(!menuOpen&&!mapOpen&&!S.over&&!perksOpen()&&!clsOpen()&&!tutOpen()&&$('win').hidden)update(dt);
+  if(!menuOpen&&!mapOpen&&!S.over&&!perksOpen()&&!clsOpen()&&!tutOpen()&&$('win').hidden){update(dt);if(P.ko)for(let i=1;i<REZ.fast&&P.ko;i++)update(dt)}
   render(now);if(mapOpen)drawBigMap(now);
   hudT+=dt;if(hudT>0.1){hudT=0;hud();if(menuOpen)renderMenu()}
   miniT+=dt;if(miniT>0.25){miniT=0;drawMini()}
   requestAnimationFrame(frame);
 }
 // режим проверки для снимков экрана: только при #dev в адресе
-if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},AUD,soundTry,trees:()=>trees,rocks:()=>rocks,patches2:()=>patches,LOOK,openMenu,get menuKind(){return menuKind},openCryptGate,get floats(){return floats},showPerks,showRelics,makeItem,toggleMenu,useAbility,get CX(){return CX},get CY(){return CY},TUT,tutTarget,openTut,renderTut,P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets,useSetAbility,SX,openDunChest,makeSetItem};
+if(typeof location!=='undefined'&&location.hash==='#dev')window.__G={get S(){return S},WAR,REZ,AUD,soundTry,trees:()=>trees,rocks:()=>rocks,patches2:()=>patches,LOOK,openMenu,get menuKind(){return menuKind},openCryptGate,get floats(){return floats},showPerks,showRelics,makeItem,toggleMenu,useAbility,get CX(){return CX},get CY(){return CY},TUT,tutTarget,openTut,renderTut,P,get DG(){return DG},crypts:()=>crypts,enterCrypt,zombies:()=>zombies,hitZombie,killZombie,get WG(){return WG},patches:()=>patches,onIce,makeZombie,RX,DST,drawZombie,makeBoss,ZSPR,BLD,pois:()=>pois,mounds:()=>mounds,peasants:()=>peasants,lairs:()=>lairs,useRelic,hammerTargets,useSetAbility,SX,openDunChest,makeSetItem};
 function start(data){
   const saved=(data&&data.state)||loadLocal();
   S=migrate(saved);
