@@ -5,6 +5,7 @@
 - Главная версия — артефакт в Claude: https://claude.ai/artifact/Hpt9gL3yZRckNAYWFgi1Fu (каждая новая версия публикуется поверх, ссылка не меняется).
 - GitHub — только копия: https://github.com/vasilpashkevich-art/lumber-camp, сайт для телефона: https://vasilpashkevich-art.github.io/lumber-camp/
 - Сохранения только в браузере (localStorage). Онлайн-сохранения и логин не делать, пока Василий сам не попросит.
+- Есть вторая ветка «Лагерь лесоруба II» (копия v52, своя ссылка https://claude.ai/artifact/7CSM76BvXpvGd4ZvaXuyWM, репозиторий lumber-camp-2, сохранения `lumber-camp2-*`). Изменения основной игры туда сами не переходят.
 - В приоритете компьютер (браузер), телефон вторичен, но не ломать его.
 
 ## Как работаем с запросом
